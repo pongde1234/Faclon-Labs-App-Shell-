@@ -1,0 +1,45 @@
+{
+  "$schema": "./guard.schema.json",
+  "package": "@faclon-labs/app-shell",
+  "version": "0.1.0",
+  "description": "Machine-readable usage contracts for every component this package exports. Each guard states what the component is for, how an AI should choose it and its prop values, which combinations are illegal, and the anti-patterns that keep recurring. Soft guidance — not a runtime or type system.",
+  "readFirst": "AppShell.guard.json, then the guard for whatever you are placing inside it. The layout vocabulary (Stack, Grid, Card) is what page content should be built from; Box is the escape hatch.",
+  "invariants": [
+    "react and react-dom are the only runtime dependencies. Never add an icon library, a router or a CSS framework to make something work here.",
+    "Theme by overriding --shell-* custom properties on the global .appShell class. Never patch the package CSS: class names are hashed and change between versions.",
+    "Every spacing, size and colour value comes from a token scale. A raw px or hex in consumer code is a value that will not follow a theme change.",
+    "Navigation is data. AppShell renders no rows of its own, and depth and active state are derived from the tree rather than passed.",
+    "Nesting in navItems is capped at 3 levels; a 4th throws a named error in development.",
+    "Spacing inside <main> is owned by the shell: it zeroes UA block margins and supplies a 16px gutter and gap. Do not set margins on page content."
+  ],
+  "guards": [
+    {
+      "component": "AppShell",
+      "path": "./guards/AppShell.guard.json"
+    },
+    {
+      "component": "Box",
+      "path": "./guards/Box.guard.json"
+    },
+    {
+      "component": "Breadcrumb",
+      "path": "./guards/Breadcrumb.guard.json"
+    },
+    {
+      "component": "Card",
+      "path": "./guards/Card.guard.json"
+    },
+    {
+      "component": "Grid",
+      "path": "./guards/Grid.guard.json"
+    },
+    {
+      "component": "SideNavLink",
+      "path": "./guards/SideNavLink.guard.json"
+    },
+    {
+      "component": "Stack",
+      "path": "./guards/Stack.guard.json"
+    }
+  ]
+}

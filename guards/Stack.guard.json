@@ -1,0 +1,112 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "Stack",
+  "import": "@faclon-labs/app-shell",
+  "purpose": "A run of children with one gap between them — the default way to space anything inside a page.",
+  "useInstead": [
+    {
+      "when": "the children are peers that should reflow into columns",
+      "use": "Grid — is this a sequence, or a set?"
+    },
+    {
+      "when": "the content needs a visible surface",
+      "use": "Card"
+    },
+    {
+      "when": "there is one child",
+      "use": "the child on its own"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for Stack decisions in this package.",
+    "aliases": ["vstack", "hstack", "flex column", "spacer", "group"],
+    "order": ["direction", "gap", "alignment"],
+    "beforeTheRules": "Stack exists so spacing is not something a caller can forget. <main> spaces its own direct children, but that reach stops one level down — the moment anything is wrapped in a plain div, the rhythm inside is whatever the markup happened to do.",
+    "rules": [
+      {
+        "stage": "direction",
+        "if": "the children read top to bottom",
+        "then": "leave `direction` at 'vertical'",
+        "because": "it is the default and the common case",
+        "certainty": "high"
+      },
+      {
+        "stage": "direction",
+        "if": "the children sit side by side — a toolbar, a label and its control",
+        "then": "set direction=\"horizontal\"",
+        "because": "it also centres them vertically and wraps by default, so a narrow viewport does not overflow",
+        "certainty": "high"
+      },
+      {
+        "stage": "gap",
+        "if": "the children are separate blocks of page content",
+        "then": "leave `gap` alone",
+        "because": "it defaults to the same 16px as <main> and Grid, which is what makes the page read as one rhythm",
+        "certainty": "high"
+      },
+      {
+        "stage": "gap",
+        "if": "the children are tightly related — a heading and its subtitle",
+        "then": "step DOWN the scale, gap=\"spacing.1\" or \"spacing.2\"",
+        "because": "closeness is how the layout says two things belong together; that is the same reason Card's inner gap is 8px",
+        "certainty": "high"
+      },
+      {
+        "stage": "alignment",
+        "if": "you need something pushed to the far end — actions against a title",
+        "then": "use justify=\"between\" on a horizontal Stack",
+        "because": "it beats a spacer element or margin-left: auto, both of which stop working when a child is removed",
+        "certainty": "medium"
+      }
+    ],
+    "constraints": [
+      "Stack sets no margins on its children. Spacing is the gap, always.",
+      "min-width is 0, so a long unbroken string in one child cannot force the row wider than its container."
+    ],
+    "certainty": "high"
+  },
+  "defaults": {
+    "direction": "'vertical'",
+    "gap": "'contentGap' (16px)",
+    "wrap": "true for horizontal, false for vertical"
+  },
+  "composition": {
+    "childrenContract": "Anything. Each child is a flex item with the gap between it and the next.",
+    "notes": "Nesting Stacks is normal and correct — an outer one at 16px with an inner one at 4px is how a heading group sits inside a page."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Adding margin-bottom to children to space them",
+      "do": "Let the gap do it",
+      "why": "the last child gets a trailing margin nothing needs, and the value drifts wherever someone forgets"
+    },
+    {
+      "dont": "Wrapping content in a plain <div> for layout inside a page",
+      "do": "Use Stack",
+      "why": "a bare div has no gap, so spacing inside it becomes whatever the markup happened to do"
+    },
+    {
+      "dont": "Using an empty element as a spacer",
+      "do": "Change the gap, or use justify=\"between\"",
+      "why": "a spacer is invisible state that breaks the moment the layout changes"
+    },
+    {
+      "dont": "Passing a raw gap value",
+      "do": "Pass a token from the spacing scale",
+      "why": "a raw value escapes the rhythm and that one group stops matching the page"
+    }
+  ],
+  "examples": {
+    "canonical": "<Stack>\n  <Stack gap=\"spacing.1\">\n    <h1>Orders</h1>\n    <p className={styles.path}>/orders</p>\n  </Stack>\n\n  <Grid>\n    <Card title=\"Revenue\">…</Card>\n  </Grid>\n</Stack>",
+    "incorrect": [
+      {
+        "code": "<div>\n  <Card style={{ marginBottom: 16 }} />\n  <Card />\n</div>",
+        "why": "a bare div plus margins — use a Stack and let the gap space them"
+      },
+      {
+        "code": "<Stack direction=\"horizontal\"><Title /><div style={{ flex: 1 }} /><Actions /></Stack>",
+        "why": "the spacer div is doing what justify=\"between\" does declaratively"
+      }
+    ]
+  }
+}

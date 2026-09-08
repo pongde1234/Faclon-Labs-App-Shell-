@@ -1,0 +1,96 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "Card",
+  "import": "@faclon-labs/app-shell",
+  "purpose": "The surface a dashboard tile or a block of page content sits on — a bordered box with an optional heading row.",
+  "useInstead": [
+    {
+      "when": "you only need spacing between things",
+      "use": "Stack — does this content need a visible surface, or just breathing room?"
+    },
+    {
+      "when": "it is the page's own container",
+      "use": "nothing — <main> is already the surface"
+    },
+    {
+      "when": "it opens over the page",
+      "use": "a dialog or Menu — a Card does not float or trap focus"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for Card decisions in this package.",
+    "aliases": ["tile", "panel", "stat card", "widget", "surface"],
+    "order": ["heading", "spacing"],
+    "rules": [
+      {
+        "stage": "heading",
+        "if": "the tile needs a name",
+        "then": "pass `title`",
+        "because": "it renders a consistently-sized <h3> in a header row; a hand-written heading inside children gets neither",
+        "certainty": "high"
+      },
+      {
+        "stage": "heading",
+        "if": "the tile needs a control beside its name — a menu, a filter, a link",
+        "then": "pass `actions`",
+        "because": "it sits at the header's right edge, vertically centred against the title",
+        "certainty": "high"
+      },
+      {
+        "stage": "spacing",
+        "if": "nothing special",
+        "then": "leave `gap` and `padding` alone",
+        "because": "the inner gap is spacing.2 (8px) against 16px between cards — one step down the same scale, saying that things inside a card are more related to each other than two cards are",
+        "certainty": "high"
+      }
+    ],
+    "constraints": [
+      "The title is always an <h3>. There is no `titleAs` override, because a generator choosing heading levels per tile is how a page ends up jumping from h1 to h5.",
+      "Card sets no margins. Spacing between cards is the parent Stack's or Grid's gap."
+    ],
+    "certainty": "high"
+  },
+  "defaults": {
+    "padding": "'spacing.4' (16px)",
+    "gap": "'spacing.2' (8px)"
+  },
+  "composition": {
+    "childrenContract": "Any content. Children are laid out as a flex column with the card's gap between them.",
+    "notes": "Cards nest legally but rarely should — two borders inside each other read as a mistake more often than as a hierarchy."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Writing <h2> or <h3> inside children instead of passing `title`",
+      "do": "Pass title",
+      "why": "the header row gives you consistent size, weight and alignment with `actions`; a hand-written heading gets none of it and will not match the next card"
+    },
+    {
+      "dont": "Adding margin-bottom to a Card to separate it from the next one",
+      "do": "Let the parent Stack or Grid supply the gap",
+      "why": "margin adds to the gap, so the rhythm drifts from 16px wherever someone remembered to add it"
+    },
+    {
+      "dont": "Nesting Cards to group content inside a tile",
+      "do": "Use a Stack, or a heading and a divider",
+      "why": "two nested borders read as an accident; the inner grouping does not need a surface of its own"
+    },
+    {
+      "dont": "Overriding padding to a raw value for one tile",
+      "do": "Pass a token from the spacing scale, or leave it",
+      "why": "a raw value escapes the scale and that one card stops matching every other"
+    }
+  ],
+  "examples": {
+    "canonical": "<Card title=\"Revenue\" actions={<MoreMenu />}>\n  <p className={styles.metric}>$1,000</p>\n  <p className={styles.muted}>vs last month</p>\n</Card>",
+    "incorrect": [
+      {
+        "code": "<Card>\n  <h2>Revenue</h2>\n  <p>$1,000</p>\n</Card>",
+        "why": "pass title instead — the header row is what keeps every card's heading identical"
+      },
+      {
+        "code": "<Card style={{ marginBottom: 24 }}>…</Card>",
+        "why": "spacing between cards belongs to the parent's gap; this margin adds to it"
+      }
+    ]
+  }
+}
