@@ -16,12 +16,7 @@ import {
   Workflow,
 } from 'lucide-react'
 
-import {
-  NAV_ICON_SIZE,
-  type AppNotification,
-  type NavItem,
-  type Profile,
-} from '@faclon-labs/iosense-shell'
+import { NAV_ICON_SIZE, type NavItem, type Profile } from '@faclon-labs/iosense-shell'
 
 /**
  * Shared story fixtures.
@@ -135,46 +130,6 @@ export const DEMO_SECTION_DEFAULT: Record<string, string> = {
 export const DEMO_RECORD_PARENT: Record<string, string> = {
   'workflows-create': 'workflows-all',
 }
-
-/**
- * Invented, not the product's. The real sample lives in `demo/sampleData.ts`
- * and is not exported by the package — it names real floors in a real building.
- */
-export const DEMO_NOTIFICATIONS: AppNotification[] = [
-  {
-    id: 'n1',
-    kind: 'alert',
-    title: 'Temperature above threshold',
-    source: 'Site A · Cold room 2',
-    at: '2026-07-17T15:50:00',
-    isRead: false,
-    isPinned: false,
-    action: '',
-    remarks: [],
-  },
-  {
-    id: 'n2',
-    kind: 'report',
-    title: 'Weekly summary ready',
-    source: 'Scheduled reports',
-    at: '2026-07-17T09:00:00',
-    isRead: false,
-    isPinned: false,
-    action: '',
-    remarks: [],
-  },
-  {
-    id: 'n3',
-    kind: 'system',
-    title: 'Firmware rollout finished',
-    source: 'Devices',
-    at: '2026-07-16T18:20:00',
-    isRead: true,
-    isPinned: false,
-    action: '',
-    remarks: [],
-  },
-]
 
 /** Invented too. Not a real person — that distinction is why it is invented. */
 export const DEMO_PROFILE: Profile = {

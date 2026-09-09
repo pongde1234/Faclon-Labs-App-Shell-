@@ -1,8 +1,8 @@
 import { useState } from 'react'
 
-import { IosenseShell, useNotifications, useProfile } from '@faclon-labs/iosense-shell'
+import { IosenseShell, useProfile } from '@faclon-labs/iosense-shell'
 
-import { DEMO_NOTIFICATIONS, DEMO_PROFILE } from './sampleData'
+import { DEMO_PROFILE } from './sampleData'
 
 /**
  * The demo: the chrome, and nothing else in it.
@@ -37,10 +37,9 @@ export function IosenseDemo() {
   // host wires it, rather than being handed a constant it can never change.
   const [activeId, setActiveId] = useState('')
 
-  // A convenience for hosts with no account or notifications API. Both default
-  // to empty; these placeholders are passed in explicitly.
+  // A convenience for a host with no account API. It defaults to a BLANK
+  // profile; the placeholder is passed in explicitly.
   const { profile } = useProfile(DEMO_PROFILE)
-  const notifications = useNotifications(DEMO_NOTIFICATIONS)
 
   return (
     <IosenseShell
@@ -50,8 +49,9 @@ export function IosenseDemo() {
       // which is correct: there is no page to describe the position of.
       trail={[]}
       profile={profile}
-      notifications={notifications.items}
-      unreadCount={notifications.unreadCount}
+      // The bell takes a COUNT and a click. The panel is not in the package —
+      // what opens is the host's, and this demo opens nothing.
+      unreadCount={2}
       onOpenNotifications={() => {}}
     />
   )

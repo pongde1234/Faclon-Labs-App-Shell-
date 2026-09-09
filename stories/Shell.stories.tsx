@@ -13,7 +13,6 @@ import {
 
 import {
   ACCORDION_ROWS,
-  DEMO_NOTIFICATIONS,
   DEMO_PROFILE,
   DEMO_RECORD_PARENT,
   DEMO_SECTION_DEFAULT,
@@ -89,7 +88,6 @@ function ShellHarness({
       onNavigate={navigate}
       trail={trail}
       profile={DEMO_PROFILE}
-      notifications={DEMO_NOTIFICATIONS}
       unreadCount={3}
       onOpenNotifications={() => {}}
     >

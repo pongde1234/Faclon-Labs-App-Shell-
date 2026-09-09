@@ -462,32 +462,72 @@ opens an assistant this package knows nothing about. Both go in `actions`.
 > reference a paint server that exists in the document, so the defs now render
 > next to the button that needs them.
 
-### What the notifications bell opens
+### The notifications bell — and the panel that is NOT in the package
 
-```
-┌── Notifications ──────────────────┐
-│ ● Temperature above threshold     │   ← Indicator: Intense unread, Subtle read
-│   Alert · Site A · 2h             │   ← kind · source · when
-│ ● Weekly summary ready            │
-│   Report · Scheduled reports · 5h │
-│ ○ Firmware rollout finished       │
-│ …                        up to 5  │
-│              View more            │   ← hands off to your page
-└───────────────────────────────────┘
+**The bell ships. The panel does not.** `NotificationBell` takes a count and a
+click handler and hands the click straight back to you. What opens is yours: a
+popover of your own, a drawer, a route to a notifications page.
+
+```tsx
+unreadCount={2}
+onOpenNotifications={() => openMyPanel()}   // or navigate, or anything
 ```
 
-**Five is a preview, not a list.** A panel that scrolls is a page in a popover,
-and the honest version of that is a page — so "View more" calls
-`onOpenNotifications` and the rest is yours.
+**Why the panel was removed.** A preview panel is *product*, not chrome. It
+decides how many rows to show, what a row says, what "view more" does, and what
+the empty state reads — and a shell that guessed at those would be wrong for
+most hosts. The bell is chrome because its *position* is: same corner, same
+order, every page.
 
-The whole row navigates; there is no per-row action, because most of the time
-the title is the whole answer. Empty, it shows an fds `EmptyState` reading
-"You're all caught up" — a popover that opens onto nothing reads as broken.
+That also means the package types nothing about a notification. `AppNotification`,
+`KIND_LABEL`, `KIND_COLOR` and `useNotifications` went with the panel — a shell
+that typed your notifications would be claiming to know what one is.
 
-The unread pill is a Counter positioned in the bell's corner, with a 2px ring cut
-out against the bar so it separates from the glyph underneath. Placement is all
-that is ours: Counter owns its box, radius, fill, ink and type, and has no anchor
-mode by design.
+**What the bell still guarantees:**
+
+| | |
+|---|---|
+| Position | right edge, immediately left of the avatar, always |
+| Count | a Counter, **capped at 99** — `max` has no default and an uncapped count stretches the bar |
+| Zero | the pill **disappears** rather than rendering a `0` |
+| Colour | Negative Intense — 5.42:1, clears AA |
+| Placement | `.topnav__bell-count`, corner + a 2px cut-out ring; Counter has no anchor mode, so the corner is the caller's job |
+| Label | "Notifications, 3 unread" — the count is announced once, and the pill is `aria-hidden` so it is not read twice |
+
+#### Rules for the panel, if you build one
+
+These are the rules the removed panel followed. They are here because the
+decisions were paid for once and should not be re-derived:
+
+```
+┌── Notifications ─────────────  2 new ─┐
+│ ● A threshold was crossed             │  ← Indicator, Intense unread / Subtle read
+│   Alert · Some source · Jul 17        │  ← kind · source · when
+│ ● A scheduled report is ready         │
+│   Report · Some source · Jul 17       │
+│ ○ A background job finished           │
+│ …                            up to 5  │
+│               View more               │  ← hands off to a real page
+└───────────────────────────────────────┘
+```
+
+1. **Five is a preview, not a list.** A panel that scrolls is a page in a
+   popover, and the honest version of that is a page. "View more" goes there.
+2. **The whole row navigates.** No per-row actions — most of the time the title
+   is the whole answer, and a row with three controls on it is a settings screen.
+3. **Read state is an Indicator's *emphasis*, not a second colour.** Intense for
+   unread, Subtle for read. Using colour would collide with `kind`, which
+   already owns it.
+4. **One line of metadata, in one order:** `kind · source · when`. Kind first
+   because it decides whether you care.
+5. **Empty needs an `EmptyState`**, not a blank panel — a popover that opens
+   onto nothing reads as broken. "You're all caught up" is a fine line.
+6. **The header carries the count** ("2 new"), so the panel repeats what the
+   pill said rather than making you count rows.
+
+Build it out of the SDK: `Popover`, `ActionList` + `ActionListItem`,
+`Indicator`, `EmptyState`, `LinkButton`. Same rule as any other content — see
+§3.3.
 
 ### What the avatar opens
 
@@ -847,11 +887,11 @@ stories/
   SideNav.stories.tsx    §1   — 14 stories
   Rules.stories.tsx      §1.4 the guardrails — 8: sizes, states, collapsed/expanded
   TopNav.stories.tsx     §2   — 15: the toggle, every crumb case, the actions container
-  Menus.stories.tsx      §2.3 — 11 stories, the two panels OPEN
+  Menus.stories.tsx      §2.3 — 9: the profile menu open, and the bell alone
   Shell.stories.tsx      §3 + the whole shell — 7, including Scrolling
 ```
 
-55 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
+53 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
 because a bell and an avatar shown closed tell you nothing about what they do —
 and both are portalled, so those plays query `document.body` rather than the
 canvas.
@@ -876,7 +916,7 @@ If §4's component split happens, these files split with it.
 | §2.2 breadcrumbs | `OneCrumb`, `TwoCrumbs` (first is inert text), `ThreeCrumbs` (text → LINK → current), `LongCrumb` |
 | §2.3 right edge | `RightEdge`, `WithActions`, `ActionsIsAContainer` (four things in the slot), `NoActions`, `NoUnread`, `ManyUnread`, `AvatarFallsBackToInitials` |
 | §2.3 profile menu | `Trigger`, `Open` (Settings / Theme / Log Out), `OpenWithInitials`, `ThemeDefaultsToLight`, `OpenOnDarkTheme`, `AppearancePicker` |
-| §2.3 notifications | `NotificationsOpen`, `NotificationsEmpty`, `NotificationsOverflowing`, `NotificationsManyUnread`, `NotificationsNoUnread` |
+| §2.3 the bell | `Bell`, `BellNoUnread`, `BellManyUnread` — the trigger only; **no panel ships** |
 | §3 content | `ContentSpacing`, `DenserContentSpacing`, `Scrolling` (chrome stays put; a new page starts at the top) |
 | whole shell | `Default` (empty — what ships), `Branded`, `EveryRowType`, `DeepLinked` |
 

@@ -2,14 +2,9 @@ import { useState } from 'react'
 import { expect, userEvent, within } from 'storybook/test'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import {
-  NotificationMenu,
-  ProfileMenu,
-  type AppNotification,
-  type ThemePreference,
-} from '@faclon-labs/iosense-shell'
+import { NotificationBell, ProfileMenu, type ThemePreference } from '@faclon-labs/iosense-shell'
 
-import { DEMO_NOTIFICATIONS, DEMO_PROFILE } from './fixtures'
+import { DEMO_PROFILE } from './fixtures'
 
 /**
  * STORY.md §2.3 — the two controls at the right edge of the top bar, OPEN.
@@ -136,60 +131,46 @@ export const AppearancePicker: Story = {
   },
 }
 
-// ── the notification menu ──────────────────────────────────────────────────
+// ── the notification bell ──────────────────────────────────────────────────
 
-type BellStory = StoryObj<typeof NotificationMenu>
+type BellStory = StoryObj<typeof NotificationBell>
 
-const bell = (items: AppNotification[], unreadCount: number): BellStory => ({
-  render: () => (
-    <NotificationMenu items={items} unreadCount={unreadCount} onOpenAll={() => {}} />
-  ),
-  play: openOnMount(/notification/i),
+const bell = (unreadCount: number): BellStory => ({
+  render: () => <NotificationBell unreadCount={unreadCount} onOpen={() => {}} />,
 })
 
 /**
- * The bell, OPEN. A titled panel, a preview of the five most recent, and a
- * "View more" footer that hands off to your notifications page.
+ * THE BELL, AND ONLY THE BELL. There is no panel to open — that is the point.
  *
- * Five is a preview, not a list. A panel that scrolls is a page in a popover,
- * and the honest version of that is a page.
+ * The package ships the TRIGGER: a control that is always in the same corner of
+ * the bar, carrying a count, handing the click back to you. What opens is
+ * yours — a popover of your own, a drawer, a route to a page.
  *
- * Each row is title + `kind · source · when`, with an Indicator whose emphasis
- * carries read state — Intense unread, Subtle read. The whole row navigates;
- * there is no per-row action, because most of the time the title is the whole
- * answer.
- */
-export const NotificationsOpen: BellStory = bell(DEMO_NOTIFICATIONS, 2)
-
-/**
- * The empty state — an fds EmptyState reading "You're all caught up", not a
- * blank panel. A popover that opens onto nothing reads as broken.
- */
-export const NotificationsEmpty: BellStory = bell([], 0)
-
-/**
- * More than the preview holds. Nine items, five shown; "View more" is the
- * route to the rest.
- */
-export const NotificationsOverflowing: BellStory = bell(
-  Array.from({ length: 9 }, (_, i) => ({
-    ...DEMO_NOTIFICATIONS[i % DEMO_NOTIFICATIONS.length],
-    id: `n${i}`,
-    title: `Notification ${i + 1}`,
-    isRead: i > 2,
-  })),
-  3,
-)
-
-/**
- * The unread pill is a Counter positioned in the bell's corner, with a 2px ring
- * cut out against the bar so it separates from the glyph underneath.
+ * The panel was removed because a preview panel is PRODUCT, not chrome: it
+ * decides how many rows to show, what a row says, what "view more" does, and
+ * what the empty state reads. A shell that guessed at those would be wrong for
+ * most hosts.
  *
- * Placement is all that is ours: Counter owns its box, radius, fill, ink and
- * type, and has no anchor mode by design ("it renders inline exactly where you
- * place it"), so the corner is the caller's job and that is the whole of it.
+ * IF YOU BUILD ONE, the rules the removed panel followed are in STORY.md §2.3 —
+ * five is a preview and not a list, the row is `title` over
+ * `kind · source · when`, read state is an Indicator's *emphasis* rather than a
+ * second colour, and an empty panel needs an EmptyState because a popover that
+ * opens onto nothing reads as broken.
  */
-export const NotificationsManyUnread: BellStory = bell(DEMO_NOTIFICATIONS, 1284)
+export const Bell: BellStory = bell(2)
 
 /** No unread — the pill disappears rather than rendering a zero. */
-export const NotificationsNoUnread: BellStory = bell(DEMO_NOTIFICATIONS, 0)
+export const BellNoUnread: BellStory = bell(0)
+
+/**
+ * Over the cap. `max={99}` is set explicitly because Counter has no default, and
+ * an uncapped count stretches the bar it sits in.
+ *
+ * The pill is a Counter — a quantity, which is Counter's job rather than
+ * Badge's (a word) or Indicator's (a state). Negative Intense by product
+ * decision: the guard reserves Negative for counts OF failures, but an unread
+ * badge should read as "attend to me" and red is the convention people arrive
+ * with. It clears AA at 5.42:1. The cost is that red now appears here and on a
+ * genuine alert, so it stays off everything else.
+ */
+export const BellManyUnread: BellStory = bell(1284)

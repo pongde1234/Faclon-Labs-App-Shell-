@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { AppTopBar, buildTrail, type ThemePreference } from '@faclon-labs/iosense-shell'
 
-import { ACCORDION_ROWS, DEMO_NOTIFICATIONS, DEMO_PROFILE } from './fixtures'
+import { ACCORDION_ROWS, DEMO_PROFILE } from './fixtures'
 
 const PAGE_TITLES: Record<string, string> = {
   home: 'Home',
@@ -32,7 +32,6 @@ const meta = {
     profile: DEMO_PROFILE,
     preference: 'light' as ThemePreference,
     onPreferenceChange: () => {},
-    notifications: DEMO_NOTIFICATIONS,
     unreadCount: 3,
     onOpenNotifications: () => {},
     isPinned: true,

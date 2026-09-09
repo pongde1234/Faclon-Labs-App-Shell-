@@ -4,7 +4,7 @@ The iosense application chrome, extracted as a package. This repository is the
 package — there is nothing else in it.
 
 The iosense application chrome, as shipped in the product: the collapsible rail,
-the top bar, and the notification, profile and theme menus.
+the top bar, the notification bell, and the profile and theme menus.
 
 **This package is not dependency-free**, and that is the point of it being
 separate. It is built on `@faclon-labs/design-sdk` and `@faclon-labs/fds` and
@@ -25,7 +25,6 @@ import {
   NavFooterRow,
   buildTrail,
   useProfile,
-  useNotifications,
   type NavItem,
 } from '@faclon-labs/iosense-shell'
 import { House, HardDrive, FileText, CircleQuestionMark } from 'lucide-react'
@@ -59,7 +58,6 @@ const PAGE_TITLES: Record<string, string> = { home: 'Overview', devices: 'Device
 export default function App() {
   const [activeId, setActiveId] = useState('home')
   const { profile } = useProfile()
-  const notifications = useNotifications()
   const title = PAGE_TITLES[activeId] ?? ''
 
   return (
@@ -71,8 +69,7 @@ export default function App() {
       onNavigate={setActiveId}
       trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}
       profile={profile}
-      notifications={notifications.items}
-      unreadCount={notifications.unreadCount}
+      unreadCount={unread}
       onOpenNotifications={() => setActiveId('notifications')}
     >
       <YourPage />
@@ -131,17 +128,16 @@ pass, never a default you inherit:
 | `AppSideNav footer` | nothing rendered, and no divider above it |
 | `AppSideNav logo` | design-sdk's built-in iosense mark — **set this** |
 | `AppTopBar actions` | empty; the bell and the avatar are all the bar shows |
+| notifications **panel** | **not shipped** — the bell hands you the click, see STORY.md §2.3 |
 | `useProfile(seed?)` | `EMPTY_PROFILE` — blank |
-| `useNotifications(seed?)` | `[]` |
 | `IosenseShell children` | empty; the content container is yours to fill |
 
 `useProfile()` used to default to a real person — a name, a phone number and a
 working email address — which every install would then have carried. Nothing
 does now: shipping content is something you have to *type*.
 
-The hooks are a convenience for hosts with no account or notifications API of
-their own. If you have real data, skip them and pass it straight to
-`IosenseShell`.
+`useProfile` is a convenience for a host with no account API of its own. If you
+have a real user, skip it and pass them straight to `IosenseShell`.
 
 > Local storage keys are still namespaced `iosense:` — the rail's pinned state,
 > its open groups, the profile and the theme. Harmless, but they are ours, and

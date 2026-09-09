@@ -49,7 +49,7 @@ export type { AppSideNavProps } from './AppSideNav'
 export { AppTopBar } from './AppTopBar'
 export type { Crumb, AppTopBarProps } from './AppTopBar'
 export { AppNavDrawer } from './AppNavDrawer'
-export { NotificationMenu } from './NotificationMenu'
+export { NotificationBell } from './NotificationBell'
 export { ProfileMenu } from './ProfileMenu'
 export { WorkspaceLabel } from './WorkspaceSwitcher'
 
@@ -69,11 +69,11 @@ export type { BuildTrailOptions } from './trail'
 // screens it knows nothing about.
 export { useProfile, EMPTY_PROFILE, fullName } from './profile'
 export type { Profile } from './profile'
-export { useNotifications } from './useNotifications'
-// KIND_LABEL and KIND_COLOR stay: they are the vocabulary of the notification
-// kinds you have to supply, and the menu renders from them.
-export { KIND_LABEL, KIND_COLOR } from './notifications'
-export type { AppNotification, NotificationKind, Remark } from './notifications'
+// NO NOTIFICATION MODEL SHIPS. The panel was removed — this package provides the
+// BELL and hands the click back — so AppNotification, KIND_LABEL, KIND_COLOR and
+// useNotifications went with it. A shell that typed your notifications would be
+// claiming to know what one is. The rules the removed panel followed are in
+// STORY.md §2.3, for whoever builds the panel.
 
 // ── Theme ────────────────────────────────────────────────────────────────────
 // The language picker went the same way as the page helpers above: nothing in

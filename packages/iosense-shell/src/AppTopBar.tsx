@@ -6,10 +6,9 @@ import { Tooltip } from '@faclon-labs/fds/tooltip'
 import { TopNav, TopNavActions, TopNavContent } from '@faclon-labs/design-sdk/TopNav'
 
 
-import { NotificationMenu } from './NotificationMenu'
+import { NotificationBell } from './NotificationBell'
 import { ProfileMenu } from './ProfileMenu'
 import type { Profile } from './profile'
-import type { AppNotification } from './notifications'
 import type { ThemePreference } from './useAppTheme'
 
 /** One step in the top bar's trail. No `id` means a section label, not a page. */
@@ -26,7 +25,6 @@ export interface AppTopBarProps {
   preference: ThemePreference
   onPreferenceChange: (next: ThemePreference) => void
   /** Newest first; the bell previews the top few. */
-  notifications: AppNotification[]
   unreadCount: number
   onOpenNotifications: () => void
   /** Extra controls, to the left of notifications and the avatar. */
@@ -87,7 +85,6 @@ export function AppTopBar({
   profile,
   preference,
   onPreferenceChange,
-  notifications,
   unreadCount,
   onOpenNotifications,
   actions,
@@ -158,11 +155,7 @@ export function AppTopBar({
             applications only the host can enumerate. Pass your own through
             `actions` if you want controls here. */}
         {actions}
-        <NotificationMenu
-          items={notifications}
-          unreadCount={unreadCount}
-          onOpenAll={onOpenNotifications}
-        />
+        <NotificationBell unreadCount={unreadCount} onOpen={onOpenNotifications} />
         <ProfileMenu
           profile={profile}
           onOpenProfile={() => onNavigate('profile')}

@@ -11,7 +11,6 @@ import { WorkspaceLabel } from './WorkspaceSwitcher'
 import { useIsMobile } from './useIsMobile'
 import { railThemeFor, useAppTheme, type ThemePreference } from './useAppTheme'
 import type { Profile } from './profile'
-import type { AppNotification } from './notifications'
 import type { NavItem } from './navItems'
 
 const PINNED_KEY = 'iosense:sidenav-pinned'
@@ -30,7 +29,6 @@ export interface IosenseShellProps {
   /** Breadcrumb trail. Build it with `buildTrail` — see trail.ts. */
   trail: Crumb[]
   profile: Profile
-  notifications: AppNotification[]
   unreadCount: number
   /** Where the bell's "view all" goes. */
   onOpenNotifications: () => void
@@ -115,7 +113,6 @@ export function IosenseShell({
   onNavigate,
   trail,
   profile,
-  notifications,
   unreadCount,
   onOpenNotifications,
   actions,
@@ -243,7 +240,6 @@ export function IosenseShell({
           profile={profile}
           preference={preference}
           onPreferenceChange={setPreference}
-          notifications={notifications}
           unreadCount={unreadCount}
           onOpenNotifications={onOpenNotifications}
           actions={actions}
