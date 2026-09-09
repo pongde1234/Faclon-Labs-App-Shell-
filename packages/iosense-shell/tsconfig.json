@@ -12,12 +12,8 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "allowArbitraryExtensions": true,
-    "allowImportingTsExtensions": true,
     "noEmit": true,
-    "types": ["vite/client", "node"],
-    "paths": {
-      "@faclon-labs/app-shell": ["./packages/app-shell/src/index.ts"]
-    }
+    "types": ["vite/client"]
   },
-  "include": ["packages/app-shell/src", "demo", "vite.config.ts"]
+  "include": ["src"]
 }

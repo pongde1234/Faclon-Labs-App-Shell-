@@ -7,14 +7,14 @@ import react from '@vitejs/plugin-react'
  * published name, so the demo is an ordinary consumer rather than a sibling
  * with privileged access — if it compiles, the public exports are complete.
  *
- * The library build lives in vite.lib.config.ts.
+ * The library build lives in packages/app-shell/vite.config.ts.
  */
 export default defineConfig({
   plugins: [react()],
   root: resolve(import.meta.dirname, 'demo'),
   resolve: {
     alias: {
-      '@faclon-labs/app-shell': resolve(import.meta.dirname, 'src/index.ts'),
+      '@faclon-labs/app-shell': resolve(import.meta.dirname, 'packages/app-shell/src/index.ts'),
     },
   },
 })

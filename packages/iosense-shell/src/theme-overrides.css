@@ -1,0 +1,1586 @@
+/**
+ * App-level overrides on top of the Faclon SDK theme.
+ * Loaded after `@faclon-labs/design-sdk/styles.css` in main.tsx.
+ */
+
+/**
+ * Base reset. Without this the browser default `body { margin: 8px }` survives,
+ * which pushes the 100dvh AppShell 16px past the viewport and produces a second
+ * document-level scrollbar stacked on top of the shell's own <main> scroller.
+ * AppShell height="fill" makes <main> the single scroll container, so the
+ * document itself must never scroll.
+ */
+html,
+body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+}
+
+body {
+  overflow: hidden;
+}
+
+#root {
+  height: 100%;
+  isolation: isolate;
+}
+
+:root {
+  /**
+   * Semibold reads too heavy at these sizes, so every "semibold" in the system
+   * resolves to medium. Done at the token rather than per-class because 18 SDK
+   * component rules read `--font-weight-600` directly, on top of the
+   * `*Semibold` typography classes. Bold (700) is untouched.
+   */
+  --font-weight-600: var(--global-fw-500);
+
+  /**
+   * Type scale, shifted down one step for a dense data UI. The SDK ramp is
+   * tuned for marketing-weight pages: 16px body and a 32–48px display range,
+   * which overpowers tables and stat grids. Retuning the tokens keeps the
+   * SDK's own hierarchy intact and carries every component + local stylesheet
+   * with it, rather than patching sizes per component.
+   *
+   * body 16→14, and the display sizes come down hardest (48→36, 40→32, 32→24)
+   * since those hero figures were the worst offenders. 10px/12px hold as the
+   * floor — anything smaller stops being legible.
+   */
+  --font-size-50: var(--global-fz-12);
+  /* Table cells and headers resolve to this step. The global ramp jumps
+     12→14 with nothing between, and 12px left the table data reading smaller
+     than the body text around it — so this step is set explicitly. */
+  --font-size-100: 13px;
+  --font-size-200: var(--global-fz-14);
+  --font-size-300: var(--global-fz-16);
+  --font-size-400: var(--global-fz-18);
+  --font-size-500: var(--global-fz-20);
+  --font-size-600: var(--global-fz-24);
+  --font-size-700: var(--global-fz-32);
+  --font-size-800: var(--global-fz-36);
+
+  /* Line heights follow the same shift; leaving them at the old ramp would
+     make the smaller text read airy and undo the density. */
+  --line-height-50: var(--global-lh-14);
+  --line-height-100: var(--global-lh-16);
+  --line-height-200: var(--global-lh-20);
+  --line-height-300: var(--global-lh-22);
+  --line-height-400: var(--global-lh-24);
+  --line-height-500: var(--global-lh-26);
+  --line-height-600: var(--global-lh-32);
+
+  /**
+   * Modern shell refresh — soft & elevated.
+   *
+   * Radii capped at 8px across the ramp (small=4, everything else=8) so every SDK surface (cards, inputs,
+   * chips, menus) and every local stylesheet reading these tokens is squared off at
+   * once. Only circles (50%) and hairlines are untouched.
+   */
+  --global-border-radius-small: 4px;
+  --global-border-radius-medium: 8px;
+  --global-border-radius-large: 8px;
+  --global-border-radius-xlarge: 8px;
+  --global-border-radius-2xlarge: 8px;
+  /* Pills/chips: capped to the same 8px ceiling instead of a full 1000px pill. */
+  --global-border-radius-max: 8px;
+
+  /**
+   * The gap between cards, and between the stacked sections of a page — one
+   * number for both, so a page reads on a single rhythm rather than one spacing
+   * across a row and another down it.
+   *
+   * Named rather than written as `var(--spacing-04)` at 31 call sites, because
+   * those 31 are a DECISION (how far apart do cards sit?) and the rest of the
+   * spacing-03 uses in the app are not — they are gaps inside toolbars, chip
+   * rows and card internals, which must not move when this does.
+   *
+   * It sits under the page's own 16px gutter on purpose: the frame around the
+   * group has to stay wider than the gaps within it, or the cards stop reading
+   * as one set. 16/12 is the tightest that still holds; do not raise this to 16
+   * without raising the gutter too, and the gutter is pinned at 16 by the top
+   * bar's alignment.
+   */
+  --app-card-gap: var(--spacing-04);
+
+  /**
+   * The one inset edge of the shell. Left and bottom are flush to the window
+   * and the top bar sits at 0, so this is the only gutter left — which is why
+   * it is named: TWO elements must use it or the shell tears apart.
+   *
+   * `.fds-app-shell__main` takes it as margin-right, and the top bar takes it
+   * as BOTH margin-right and a width subtraction (the SDK sets `width: 100%`,
+   * so a margin alone would overflow rather than narrow the box). They align
+   * on the same right edge, and the top bar's actions are aligned to the page
+   * content inside it — change one without the other and both break.
+   */
+  --app-sheet-inset: var(--spacing-03);
+}
+
+/* ---- Cross-package token conflict: fds borders in dark ---------------------
+ *
+ * design-sdk maps fds's `--border-neutral-default` to --global-neutral-gray-dark-100
+ * on `:root[data-theme="dark"]`. That ramp runs LIGHT to dark (dark-0 is #FFFFFF),
+ * so step 100 is #D5D6D7 — a near-white, meant for text. design-sdk uses
+ * dark-800 for its own borders, and fds's own dark rule asks for the equivalent
+ * (--global-gray-dark-800, #3b3d40). design-sdk simply wins: its selector is
+ * `:root[data-theme="dark"]` at (0,2,0) against fds's `[data-theme="dark"]` at
+ * (0,1,0), so being more specific beats being later in the cascade.
+ *
+ * The result was a near-white 1px outline on every fds panel in dark — dropdowns,
+ * modals and their dividers — against a #1F2123 surface.
+ *
+ * Pointed at --border-gray-subtle rather than a literal, so it tracks whatever
+ * each theme calls a subtle border instead of pinning one hex. Matched
+ * specificity and loaded last, which is what makes it win.
+ */
+:root[data-theme='dark'],
+:root[data-theme='brand'] {
+  --border-neutral-default: var(--border-gray-subtle);
+}
+
+/**
+ * Floating-panel shell.
+ *
+ * Every surface below is a semantic SDK token, so the shell flips with
+ * `:root[data-theme]` and needs no per-theme rules at all. The ladder the SDK
+ * defines (light → dark):
+ *
+ *   canvas  --background-surface-subtle    #EEF0F1 → #1B1C1D
+ *   sheet   --background-surface-moderate  #F7F7F7 → #131415
+ *   cards   --background-surface-intense   #FFFFFF → #1F2123
+ *
+ * Note the canvas/sheet contrast inverts between themes — in light the sheet is
+ * the lighter of the two, in dark it is the darker. That is the SDK's own
+ * scale, and it is why the sheet keeps a hairline in BOTH themes: the border is
+ * what makes the panel edge read, not the tone gap.
+ */
+.fds-app-shell {
+  background: var(--background-surface-subtle);
+}
+
+/* <main> is the scroll container, and a panel that RUNS OFF the bottom of the
+   window rather than floating clear of it: rounded and bordered on the top and
+   the right, square and open at the bottom.
+
+   Both the LEFT and BOTTOM edges are deliberately flush, for different reasons.
+   Left: the rail is flush to the window edge and centres its icons in its own
+   48px width, so any gap here is added ONLY on the icons' right-hand side — an
+   8px left margin made the collapsed strip read 16px on the left against 24px
+   on the right. Bottom: a 12px margin there left a strip of canvas under the
+   sheet and rounded the last row away from the corner; the content is scrolled,
+   so the panel should read as continuing past the fold, not as ending. */
+.fds-app-shell__main {
+  /* Right inset is --app-sheet-inset, shared with the top bar so the two keep
+     one right edge. It no longer matches the popup drawer's 16px: with the
+     left and bottom edges flush, a 16px gutter on the remaining side read as a
+     stray margin rather than a frame. */
+  margin: var(--spacing-04) var(--app-sheet-inset) 0 0;
+  border-radius: var(--global-border-radius-xlarge) var(--global-border-radius-xlarge)
+    0 0;
+  background: var(--background-surface-moderate);
+  /* No bottom border: the edge is off-screen, and a hairline pinned to the
+     window's last pixel reads as a stray rule rather than a panel edge. */
+  border: 1px solid var(--border-gray-subtle);
+  border-bottom: 0;
+  /* No gutter: <main> no longer scrolls (the inner .app-main-scroll does) and
+     its bar is an overlay that costs no width. `overflow: hidden` still makes
+     this a scroll container, so a leftover `stable both-edges` here kept
+     reserving 8px a side for a scrollbar that does not exist. */
+  scrollbar-gutter: auto;
+}
+
+/**
+ * ---- Top bar, variant A: inside the content sheet -----------------------
+ *
+ * The SDK paints TopNav with `--background-surface-subtle` because its native
+ * home is the column ABOVE the sheet, where sharing the canvas colour is the
+ * point (and where variant B leaves it alone). Inside the sheet that same token
+ * is wrong — it prints the canvas over the panel, and charcoal under the brand
+ * theme. Repaint to the sheet's own surface and add the divider that stands in
+ * for the panel edge it no longer has.
+ *
+ * The sheet is the scroll container, so the SDK's default `isSticky` pins the
+ * bar to its top with no extra work.
+ */
+/* When the bar sits ABOVE the sheet it is already a separate surface on the
+   canvas, the two are one surface and the sheet butts straight against it, with
+   no gap at all. The other three
+   margins stay at 8px: they separate the sheet from the window, which is a
+   different relationship. (Variant A keeps all four, since its bar is inside.) */
+.fds-app-shell[data-topbar='column'] .fds-app-shell__main {
+  margin-top: 0;
+}
+
+/* <main> stops being the scroller and becomes a column: a fixed bar row over a
+   scrolling body. Two things follow, both of which the bar could not have as a
+   sticky child of the scroller — it spans the sheet edge to edge instead of
+   being inset 11px by the mirrored gutter, and the scroll track starts BELOW it
+   instead of running up alongside it. Three selectors deep so it beats the
+   SDK's own `.fds-app-shell--fill .fds-app-shell__main { overflow: auto }`
+   on specificity rather than on source order. */
+.fds-app-shell .fds-app-shell__main {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* The positioned box the overlay bars measure against. They are its siblings
+   rather than <main>'s children, so the thumb stops at the sheet's top edge
+   instead of running up past it. */
+.app-scroll-frame {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/**
+ * Equal spacing on all four sides of the content sheet — 16px, everywhere.
+ *
+ * Split across two owners, which is why it is worth writing down: the sides
+ * come from `.app-main-scroll`'s `padding-inline` below, and the top and bottom
+ * from `padding: var(--spacing-05) 0` on each page root. Change one and you
+ * must change the other, or the sheet goes lopsided again.
+ *
+ * 16px rather than 12 is not a taste call: the top bar's breadcrumb is inset
+ * 16px from the same column, so the page content and the bar's first glyph
+ * share a left edge. Pulling the sides in to 12 would misalign them.
+ *
+ * Measured: 17px on every side — the 16 plus the sheet's own 1px border.
+ */
+
+
+.app-main-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* No gutter and no native bar: the overlay thumb is painted on top, so it
+     costs no layout width. That is what stops the content being pushed in and
+     shifting when a page starts or stops overflowing.
+
+     16px, matching the 16px the page roots carry top and bottom, so the sheet
+     is inset the same on all four sides. */
+  padding-inline: var(--spacing-05);
+  scrollbar-width: none;
+}
+
+.app-main-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/**
+ * The overlay bars from `@faclon-labs/fds/scrollarea`.
+ *
+ * fds ships the behaviour (geometry, drag, idle timing) but its CSS lives in the
+ * package's global stylesheet, which would re-point 69 tokens the design-sdk
+ * shell renders with. So the markup is styled here instead, from design-sdk
+ * tokens — the component subpath itself imports nothing but React.
+ *
+ * The track is inert; only the thumb takes pointer events, so clicks and text
+ * selection pass straight through to the content underneath.
+ */
+.ds-scroll__bar {
+  position: absolute;
+  z-index: var(--global-z-index-sticky);
+  pointer-events: none;
+}
+
+.ds-scroll__bar--y {
+  top: 0;
+  bottom: 0;
+  right: var(--spacing-01);
+  width: 5px;
+}
+
+.ds-scroll__bar--x {
+  left: 0;
+  right: 0;
+  bottom: var(--spacing-01);
+  height: 5px;
+}
+
+/* With both axes live, each bar stops short so they do not cross in the corner. */
+.ds-scroll__bar--y[data-has-cross='true'] {
+  bottom: 9px;
+}
+
+.ds-scroll__bar--x[data-has-cross='true'] {
+  right: 9px;
+}
+
+.ds-scroll__thumb {
+  position: absolute;
+  border-radius: var(--global-border-radius-max);
+  /* Semantic, so it flips with the theme — a --global-* ink would be fixed and
+     disappear on the dark surface. */
+  background: var(--text-gray-tertiary);
+  pointer-events: auto;
+  cursor: default;
+  /* Hidden until it is wanted — see the reveal rule below. */
+  opacity: 0;
+  transition:
+    opacity var(--fds-duration-quick) var(--fds-easing-standard),
+    background var(--fds-duration-quick) var(--fds-easing-standard);
+}
+
+/* Shown only while the user is scrolling or has the pointer over the content.
+   `data-scrolling` comes from the fds hook, which holds it true until a short
+   idle timeout after the last scroll event, so the thumb lingers briefly rather
+   than blinking out mid-gesture. Dragging keeps it up even if the pointer
+   leaves the frame. */
+.app-scroll-frame:hover .ds-scroll__thumb,
+.ds-scroll__bar[data-scrolling='true'] .ds-scroll__thumb,
+.ds-scroll__thumb[data-dragging='true'] {
+  opacity: 1;
+}
+
+.ds-scroll__bar--y .ds-scroll__thumb {
+  left: 0;
+  width: 100%;
+}
+
+.ds-scroll__bar--x .ds-scroll__thumb {
+  top: 0;
+  height: 100%;
+}
+
+.ds-scroll__thumb:hover,
+.ds-scroll__thumb[data-dragging='true'] {
+  background: var(--text-gray-secondary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-scroll__thumb {
+    transition: none;
+  }
+}
+
+/**
+ * Let the SDK's own scrollbar design actually render.
+ *
+ * `.fds-scrollbar` ships BOTH rule sets: the standard `scrollbar-width: thin` +
+ * `scrollbar-color`, and a `::-webkit-scrollbar` set describing a 6px bar with a
+ * rounded, hover-revealed thumb. In Chromium those are mutually exclusive — a
+ * non-`auto` `scrollbar-width`/`scrollbar-color` makes it ignore the webkit
+ * pseudo-elements entirely. Measured in this app:
+ *
+ *   native default ................. 15px
+ *   scrollbar-width: thin .......... 10px
+ *   ::-webkit-scrollbar 6px ........  6px
+ *   both (what the SDK ships) ...... 10px  <- webkit rules dead
+ *
+ * So every scroller rendered a 10px square native bar instead of the 6px rounded
+ * one the SDK designed. Releasing the standard properties inside
+ * `@supports selector(::-webkit-scrollbar)` hands Chromium back to the webkit
+ * rules while leaving Firefox — which does not match that selector — on the thin
+ * standard bar it does support.
+ */
+@supports selector(::-webkit-scrollbar) {
+  .fds-scrollbar {
+    scrollbar-width: auto;
+    scrollbar-color: auto;
+  }
+
+  /* Visible at rest, not only on hover. The SDK's own thumb is transparent until
+     hover and then paints `--border-gray-default` (#C8CDD0) — against a white
+     table that is barely there, which is why our scrollers looked absent next to
+     the SDK's preview. A semantic text token is used rather than one of the
+     `--global-neutral-gray-*` inks: those are theme-INVARIANT, so a dark ink
+     would vanish on a dark surface, the same trap that killed the dividers. */
+  .fds-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  .fds-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--text-gray-tertiary);
+    border-radius: var(--global-border-radius-max);
+  }
+
+  .fds-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: var(--text-gray-secondary);
+  }
+}
+
+/* The SDK fixes the bar at 56px. 48px matches the rail header's own height, so
+   the brand tile and the bar's contents sit on one line across the top. */
+:root {
+  --app-topbar-h: 48px;
+}
+
+.fds-topnav {
+  height: var(--app-topbar-h);
+}
+
+
+/**
+ * Search inputs sit level with the controls beside them.
+ *
+ * TextInput is a flex COLUMN with `gap: var(--spacing-02)` and always renders a
+ * `.fds-field-header` above the field, even with no label — the header collapses
+ * to 0px but the 4px gap still applies. That makes the wrapper 40px around a
+ * 36px field, so a row using `align-items: center` drops the field 2px below a
+ * 36px Button next to it. Both controls were always 36px; they were misaligned,
+ * not mis-sized.
+ *
+ * Scoped to SearchInput rather than every TextInput: a labelled field genuinely
+ * needs that 4px, and `:empty` cannot detect this case (the header holds a
+ * <label> element with no text, so it is not empty — only zero-height).
+ */
+.fds-search-input .fds-text-input {
+  gap: 0;
+}
+
+/* Flat surfaces — no elevation, a light hairline border instead of a shadow.
+   Internal rules (card header / footer dividers, table row dividers) are
+   separators and stay as-is.
+
+   Card and Table are absent deliberately: both are flat by fds's own ruling —
+   border + radius, never a shadow — so listing them here would only repaint
+   their borders with a design-sdk token. The rest are still design-sdk. */
+.fds-chart,
+.fds-list-card {
+  border: 1px solid var(--border-gray-subtle);
+  box-shadow: none;
+}
+
+/* ---- Rail footer actions ----------------------------------------------- */
+
+/* The ex-TopNav actions (assistant, apps, notifications, account). Stacked
+   while the rail is collapsed to the 48px icon strip; laid out in a row once
+   it expands, matching the wider label layout. */
+.app-sidenav__actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-01);
+  padding: var(--spacing-02) 0;
+}
+
+[data-state='expanded'] .app-sidenav__actions {
+  flex-direction: row;
+  flex-wrap: wrap;
+  justify-content: flex-start;
+  padding: var(--spacing-02) var(--spacing-03);
+}
+
+/* ---- Nav item states ----------------------------------------------------
+   The SDK paints hover and the active item with the SAME token
+   (--background-gray-default), and its :hover rule outranks --active, so a
+   hovered neighbour looked exactly like the current page. Each state now sits
+   one step up the SDK gray ramp: rest → hover (hover-light) → active
+   (gray-default, primary text) → active + hover (hover-dark). Selectors carry
+   `.fds-sidenav` so they beat the SDK's `:hover` at (0,2,0). The three tokens
+   resolve inside the rail's own provider; the dark provider does not remap
+   hover-dark, so that state falls back to the global dark value there. */
+.fds-sidenav .fds-sidenav-menu-button:hover {
+  background: var(--background-gray-hover-light);
+}
+
+.fds-sidenav .fds-sidenav-menu-button:active:not(.fds-sidenav-menu-button--active) {
+  background: var(--background-gray-default);
+}
+
+.fds-sidenav .fds-sidenav-menu-button--active {
+  background: var(--background-gray-default);
+  color: var(--text-gray-primary);
+}
+
+.fds-sidenav .fds-sidenav-menu-button--active:hover {
+  background: var(--background-gray-hover-dark);
+}
+
+.fds-sidenav-menu-button--active .fds-sidenav-menu-button__icon {
+  color: var(--text-gray-primary);
+}
+
+/**
+ * Pinned sidebar.
+ *
+ * The SDK rail is hover-expand only — its guard states it is "FLOATING-only …
+ * (no locked-open)", and `collapsible` offers just 'icon' (hover/focus expand)
+ * or 'none' (fixed 48px, never expands). There is no pinned-open mode, so this
+ * is an app-level override.
+ *
+ * Mechanically: `.fds-sidenav` reserves a fixed 56px footprint (48px rail + 8px
+ * margin) while `.fds-sidenav__inner` expands to 240px as an ABSOLUTE overlay —
+ * which is why hovering never shifts the page.
+ *
+ * The expanded LOOK is handled in AppSideNav by forcing `data-state="expanded"`
+ * on the rail, which reuses the SDK's own reveal rules. All that's left here is
+ * the footprint: widen the outer element so the content column reflows around
+ * the pinned rail instead of sitting underneath it.
+ *
+ * Desktop only: below the mobile breakpoint the rail is a drawer, where pinning
+ * is meaningless.
+ */
+/**
+ * The rail's own motion, slowed from the SDK's 280ms.
+ *
+ * Retuning the TOKEN rather than the rules, because three separate things
+ * animate on it: the footprint (`.fds-sidenav`), the panel
+ * (`.fds-sidenav__inner`) and each menu button's width. Overriding one rule
+ * would desync them — which is exactly the failure the note on the footprint
+ * transition below already describes. Scoped to the rail's own provider, so no
+ * other SDK component changes speed.
+ */
+.app-sidenav-theme {
+  --fds-duration-moderate: 360ms;
+}
+
+@media (min-width: 769px) {
+  /* The transition belongs on the BASE selector, not the pinned one. Declared
+     inside `[data-sidenav-pinned='true']` it vanished in the same frame as the
+     attribute, so closing snapped the footprint 240 → 48 instantly while
+     `.fds-sidenav__inner` slid over 280ms — the content column jumped and the
+     rail caught up behind it. Both directions need the same token pair the SDK
+     gives the panel, so footprint and panel move as one. */
+  .fds-sidenav {
+    transition: width var(--fds-duration-moderate) var(--fds-easing-standard);
+  }
+
+  [data-sidenav-pinned='true'] .fds-sidenav {
+    width: calc(var(--fds-sidenav-width) + var(--fds-sidenav-margin));
+  }
+
+  /* `:after` is the drop shadow. A pinned rail sits IN the layout rather than
+     over it, so it should not read as floating — but it still wants an edge, so
+     this softens the SDK's full-strength shadow rather than removing it. The
+     peeked rail keeps the full shadow, because that one genuinely is floating
+     over the content, and the difference between the two is the cue for which
+     state you are in. */
+  [data-sidenav-pinned='true'] .fds-sidenav:after,
+  [data-sidenav-pinned='true'] .fds-sidenav[data-state='expanded']:after,
+  [data-sidenav-pinned='true'] .fds-sidenav[data-hovered='true']:after {
+    opacity: 0.35;
+  }
+}
+
+/**
+ * Flush sidebar — sits hard against the left edge instead of floating.
+ *
+ * The SDK rail is a floating card: `--fds-sidenav-margin` (8px) insets it on
+ * the top/bottom/left and `--fds-sidenav-radius` rounds it. Both are plain
+ * custom properties on the provider, so zeroing them is enough — the panel's
+ * margin, its height (`calc(100% - 2 * margin)`), the reserved footprint
+ * (`calc(width + margin)`, including the pinned override above), and the
+ * `:after` shadow all derive from the same two values.
+ *
+ * The margin must carry a unit: the SDK composes it inside calc(), where a
+ * unitless 0 would invalidate the expression.
+ */
+.fds-sidenav-provider {
+  --fds-sidenav-margin: 0px;
+  --fds-sidenav-radius: 0px;
+}
+
+/* Drop the rail's inset hairline — the SDK draws it as an inset box-shadow on
+   the inner panel. The rail now shares the canvas surface, so the outline read
+   as a seam rather than an edge. */
+.fds-sidenav__inner {
+  box-shadow: none;
+}
+
+/**
+ * The rail always carries the canvas colour (`surface-subtle`), in both themes —
+ * its own nested provider is handed whatever the document resolved to. Pinned, that
+ * makes rail and canvas read as one plane with the content sheet raised on
+ * top; unpinned, the hover-peek panel OVERLAYS the page, so the fill is what
+ * keeps its labels from printing over the content underneath. (A transparent
+ * rail was tried and broke exactly that case.)
+ */
+.fds-sidenav__inner {
+  background: var(--background-surface-subtle);
+}
+
+/**
+ * ---- The classic Faclon brand theme ------------------------------------
+ *
+ * Brand chrome on a neutral CONTENT area: the rail and the canvas around the
+ * content sheet both become gray-light-1300 near-black, while the sheet, cards, tables and
+ * charts keep their light surfaces. `[data-theme=brand]` never matches the SDK's
+ * `[data-theme=dark]`, so every page token still falls back to its `:root` light
+ * value and the data keeps the contrast it was designed for.
+ *
+ * This mirrors the SDK's own `.fds-sidenav-provider[data-theme=dark]`, which
+ * re-skins the rail through exactly these tokens. The rail is handed theme="Dark"
+ * (SideNavBarTheme has no 'Brand'), so that block applies first and this one
+ * retints it — (0,3,0) over the SDK's (0,2,0).
+ *
+ * Scoped to `.app-sidenav-theme` — the class AppSideNav puts on its OWN nested
+ * provider — and never to `.fds-sidenav-provider`. AppShell renders a provider
+ * of its own, and it is the SAME ELEMENT as `.fds-app-shell`: targeting the bare
+ * class sets these tokens on the whole app and turns the page canvas charcoal too.
+ *
+ * The second selector covers nested elements that carry their own `data-theme`.
+ * `.fds-sidenav` inside the provider is stamped "dark", and fds's dark block is
+ * `[data-theme='dark']` — so without it, fds re-points every token one level
+ * below this rule and the charcoal never reaches `.fds-sidenav__inner`.
+ *
+ * Note it is `surface-subtle`, not the `surface-moderate` the SDK's dark provider
+ * retints: this app paints the rail from the canvas token (see the rule above),
+ * so overriding the SDK's choice would do nothing.
+ *
+ * Every value is measured against the #050505 ground (luminance 0.0015).
+ */
+/**
+ * The canvas carries the rail's colour, which is what light and dark already do —
+ * both paint rail and canvas from `--background-surface-subtle`, so the two read
+ * as ONE plane with the content sheet floating on it. Scoping the rail alone left
+ * a light-gray gutter running around the sheet against the charcoal, which broke that
+ * reading and made the sheet's margin look like a seam.
+ *
+ * Set as a background rather than by rebinding the token app-wide, because
+ * `--background-surface-subtle` is also what the Opportunities kanban columns
+ * paint with — rebinding would drop charcoal columns into a light page.
+ */
+:root[data-theme='brand'] .fds-app-shell {
+  background: var(--global-gray-light-1300);
+}
+
+:root[data-theme='brand'] .app-sidenav-theme,
+:root[data-theme='brand'] .app-sidenav-theme [data-theme] {
+  --background-surface-subtle: var(--global-gray-light-1300); /* #050505 */
+
+  /* The ground is a NEUTRAL near-black, not a saturated navy, so the washes are
+     neutral too — a blue alpha over near-black reads as a colour cast rather
+     than as a state, and selection was the worst of it: brand-a200 over #050505
+     composites to a murky navy that looks like a rendering artefact, not a
+     chosen colour.
+
+     All three states are now plain white at rising alpha, which is the same
+     move fds's dark rail makes over its own surface. Selected lands at
+     luminance 0.0262 against the brand-blue it replaces at 0.0270 — the same
+     brightness, so only the hue changed. Rest → hover → selected →
+     selected+hover step +0.0082, +0.0165, +0.0267: monotonic, and the rail's
+     label clears 7:1 on every one of them. */
+  --background-gray-hover-light: var(--global-white-a10); /* .08 white */
+  --background-gray-default: var(--global-white-a25); /* selected, .16 */
+  --background-gray-hover-dark: var(--global-white-a50); /* selected + hover, .24 */
+
+  --border-gray-muted: var(--global-gray-dark-a518); /* 1.31:1 separators */
+  /* The nested tree's trunk and elbows. A neutral line on a neutral rail, and
+     stronger than the light rail's 1.35:1 hairline for the same reason as
+     before — a near-surface line vanishes on a dark ground. Stepped back from
+     600 to 700 so the line does not get louder as the ground gets darker: it
+     keeps roughly the brightness it had, rather than the same ratio. */
+  --border-gray-default: var(--global-gray-dark-700); /* #585C5F, 3.02:1 */
+
+  /* Still brand, and still not the dark rail's brand-a200: composited over this
+     ground that is 1.49:1, an invisible ring. brand-400 is 5.96:1. */
+  --border-focused-default: var(--global-brand-400);
+
+  /* fds's neutral dark ramp, measured against #050505.
+     NOT gray-dark-0 for the primary: pure white on a near-black ground is
+     20.38:1 and glares — the ramp is stepped down one so the top of the
+     hierarchy is a bright grey instead. 14.00 / 9.37 / 5.47 keeps the same
+     shape as the navy set's 11.67 / 9.17 / 6.87, on even ramp steps. */
+  --text-gray-primary: var(--global-gray-dark-100); /* #D5D6D7, 14.00:1 */
+  --text-gray-secondary: var(--global-gray-dark-300); /* #AEB0B2, 9.37:1 */
+  --text-gray-tertiary: var(--global-gray-dark-500); /* #808589, 5.47:1 */
+}
+
+/* ---- Brand: the top bar that is NOT inside the sheet --------------------
+ *
+ * `.fds-topnav` paints from `--background-surface-subtle`, which in light and
+ * dark is also the canvas token — so the bar and the page behind it are one
+ * plane and the bar reads as part of the canvas rather than as a strip on it.
+ * Brand broke that: the canvas moved to the theme colour while the bar kept the
+ * root's light grey, leaving a pale plate floating on the brand ground.
+ *
+ * Rebinding the token here (rather than setting `background`) restores the
+ * light/dark behaviour exactly, and carries the same neutral text ramp the rail
+ * uses — the breadcrumb reads `--text-neutral-normal` and the action buttons
+ * read `--text-neutral-muted`, so both families are set.
+ *
+ * Applies to every page: the bar has one home now (AppShell's slot, above the
+ * sheet), so there is no longer a light-surfaced variant to exclude.
+ */
+:root[data-theme='brand'] .fds-topnav {
+  --background-surface-subtle: var(--global-gray-light-1300);
+
+  /* fds families — breadcrumb, icon buttons. */
+  --text-neutral-normal: var(--global-gray-dark-100); /* 14.00:1 */
+  --text-neutral-subtle: var(--global-gray-dark-300); /* 9.37:1 */
+  --text-neutral-muted: var(--global-gray-dark-500); /* 5.47:1 */
+
+  /* design-sdk families — TopNav's own chrome. */
+  --text-gray-primary: var(--global-gray-dark-100);
+  --text-gray-secondary: var(--global-gray-dark-300);
+  --text-gray-tertiary: var(--global-gray-dark-500);
+
+  /* Action buttons hover against the black, not against the light root. */
+  --background-gray-hover-light: var(--global-gray-dark-a512);
+  --background-gray-default: var(--global-gray-dark-a518);
+  --background-gray-hover-dark: var(--global-gray-dark-a532);
+}
+
+/* Action-list rows: put the title's line box back to 20px.
+ *
+ * The SDK hard-sizes a row's leading icon cell and trailing slot at 20px (its
+ * guard: "leading icon cell 16w×20h", "trailing 20px") and expects the title's
+ * line box to match, since the row is laid out `align-items: flex-start` so the
+ * icon tracks the FIRST line of a two-line item. The type ramp at the top of
+ * this file moved --line-height-100 from 20px down to 16px, which shrank the
+ * title box and left the icon sitting 2px below the text on every menu row.
+ * A literal 20px, not a token: it has to equal the fixed cell height, so it
+ * must not drift if the ramp is retuned again.
+ */
+.ds-action-list-item__title {
+  line-height: 20px;
+}
+
+/* fds avatars are circle-only — there is no `variant`. Squaring the handful
+   that were `variant="Square"` is done here instead, at the same 8px ceiling the
+   rest of the UI uses. Everything else stays round, which is fds's default. */
+.app-avatar--square,
+.app-avatar--square .ds-avatar__surface,
+.app-avatar--square .ds-avatar__image,
+.app-avatar--square .ds-avatar__initials,
+.app-avatar--square .ds-avatar__icon {
+  border-radius: var(--global-border-radius-medium);
+}
+
+/* The SDK's radius utility classes hardcode 12px/16px instead of reading the
+   tokens above, so they are pinned to the same 8px ceiling here. */
+.global-br-xlarge,
+.global-br-2xlarge {
+  border-radius: var(--global-border-radius-large);
+}
+
+/* ---- Spacing ----------------------------------------------------------
+   Three tiers: 4px inside a component (icon/text, card rows), 8px between
+   siblings (cards, columns, toolbar buttons), 12px for page gutters and
+   between regions. SDK components keep their own internal gaps. */
+
+/* ---- Rail scrolling -----------------------------------------------------
+ *
+ * The rail scrolls through the same fds ScrollArea the Table and the menus use,
+ * so its bar is the 5px overlay styled above rather than a native gutter. That
+ * matters more here than anywhere else: the collapsed rail is only 48px wide,
+ * and a native bar eats a sixth of it.
+ *
+ * SideNavBarContent stops being the scroller — it keeps its padding and stays
+ * the flex child that fills the rail, but the ScrollArea inside is what
+ * overflows. `.ds-scroll` is `position: relative` and does NOT scroll, which is
+ * exactly the box the absolutely-positioned bars need; rendering them inside a
+ * scroller would make them scroll away with the content.
+ */
+.fds-sidenav-content {
+  overflow: hidden;
+}
+
+/* The SDK pads its content region 8px on all four sides. The vertical half is
+   dead space: the first row already clears the header's own 8px, and the last
+   sits above the footer's, so the two 8px bands only shortened the scroll area.
+   `padding-block` zeroes the top and bottom ONLY — the horizontal 8px stays,
+   because that is what insets every row from the rail's edges and what the
+   overlay scrollbar is offset against. */
+.fds-sidenav-content {
+  padding-block: 0;
+}
+
+/* The rail inside the mobile drawer is always the full 240px list — a 48px icon
+   strip inside a 320px panel would be absurd. The pinned-width rule that
+   normally does this is scoped `@media (min-width: 769px)`, which by definition
+   never matches while the drawer exists, so the drawer states the width itself.
+   The SDK's floating drop shadow is cancelled for the same reason it is on a
+   pinned rail: in here the rail sits IN the panel, not over it. */
+/* AppShell is what normally gives the rail its height — the SDK's provider even
+   dev-warns "[SideNavBarProvider] has zero height … or use <AppShell>, which
+   owns shell height". In the drawer there is no shell, so the rail measured
+   h=0: the rows existed and were 240px wide, and the panel rendered blank.
+   The chain has to be told its height explicitly, and min-height:0 keeps the
+   inner ScrollArea able to shrink rather than pushing the panel open. */
+/* The panel is exactly as wide as the rail it holds. Left at the Drawer's own
+   width the rail sat 240px inside a 351px panel and the remainder rendered as a
+   blank strip. 85vw caps it on very narrow phones, which is the same ceiling the
+   SDK's own mobile drawer uses. */
+.ds-drawer:has(.app-sidenav-theme) {
+  width: calc(var(--fds-sidenav-width) + var(--fds-sidenav-margin));
+  max-width: 85vw;
+}
+
+.ds-drawer .fds-sidenav-provider {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
+
+.ds-drawer .fds-sidenav {
+  width: calc(var(--fds-sidenav-width) + var(--fds-sidenav-margin));
+  height: 100%;
+  min-height: 0;
+}
+
+.ds-drawer .fds-sidenav::after {
+  opacity: 0;
+}
+
+.app-sidenav__scroll {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* The gap SideNavBarContent used to put between the menu and the Connect group
+   moves here, onto the element that now actually holds them both.
+
+   `overflow-y` is ours to set: `.ds-scroll__viewport` deliberately declares only
+   `scrollbar-width: none` and `overscroll-behavior`, leaving the axis to the
+   consumer — the Table does the same on `.ds-table__scroll`. Without it the
+   viewport stays `visible` and no thumb is ever measured. */
+.app-sidenav__viewport {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  gap: var(--spacing-03);
+  min-height: 0;
+  overflow-y: auto;
+}
+
+/* Push the overlay bar out into the rail's own gutter.
+ *
+ * `.ds-scroll__bar--y` is `right: var(--spacing-01)` — 2px inside the SCROLL
+ * ROOT. That works for <main>, whose `padding-inline: 16px` leaves the bar a
+ * lane of its own. The rail has no such padding: its scroll root stops at the
+ * same edge the rows do, so the thumb landed at 223-228 with the row badges
+ * ending at 224 — the bar was drawn ON TOP of the "12", "3" and "Beta" pills.
+ *
+ * The rail is already inset --spacing-03 (8px) from its own edge, and that
+ * 8px lane is empty. Shifting the bar by exactly that inset moves it off the
+ * content and re-measures its 2px margin from the RAIL edge instead of the
+ * viewport's — which is where a panel's scrollbar belongs.
+ *
+ * Content is deliberately NOT moved: padding on the viewport would have worked
+ * too, but it shrinks every row's hover and selected wash on the right only,
+ * leaving the rail visibly lopsided (8px left, 18px right). */
+.app-sidenav__scroll .ds-scroll__bar--y {
+  right: calc(-1 * var(--spacing-03));
+}
+
+/* ---- Nested nav items ---------------------------------------------------
+   The SDK rail has no sub-menu primitive, so a parent MenuButton (the whole
+   row toggles; chevron in
+   its trailing slot) toggles a nested SideNavBarMenu. The SDK <li> is a flex
+   ROW, so the parent item (stable class .app-sidenav__group — NOT keyed on the
+   sub-list being mounted, or the row would change shape on toggle) is stacked
+   vertically to put the sub-list under the
+   button. The sub-list hides while the rail is collapsed to the icon strip —
+   the parent icon stands in.
+
+   Tree: ONE trunk drawn on the list, and per-row elbows that draw only the
+   curve + tick. Every stroke is a 1px border (never a background box) so all
+   of them anti-alias identically at any DPR, and nothing is drawn twice. */
+.fds-sidenav-menu-item.app-sidenav__group {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.fds-sidenav-menu.app-sidenav__sub,
+.fds-mobile-nav .fds-sidenav-menu.app-sidenav__sub {
+  --nav-tree-x: 16px; /* trunk sits under the parent icon's centre: 8px + 8px */
+  --nav-tree-tick: 8px; /* gap between the rule and the child labels */
+  position: relative;
+  width: auto;
+  margin: var(--spacing-01) 0 var(--spacing-01) var(--nav-tree-x);
+  padding-left: calc(var(--nav-tree-tick) + var(--spacing-01));
+  gap: 0; /* the SDK's list gap would open holes between rows */
+}
+
+/* The trunk of the tree. There is no straight-rule variant any more — every
+   nested list draws elbows, so the trunk always has a curve to hand off to.
+
+   THE TRUNK STOPS WHERE THE LAST ELBOW STARTS TO BEND, not at that row's
+   centre. Those are not the same point: the corner radius means the curve
+   leaves the vertical `--nav-tree-radius` ABOVE the centre, so a trunk ending
+   at the centre carried on straight past the bend and left a tail hanging
+   below the last tentacle. Ending at `centre - radius` hands the line over to
+   the arc exactly where the arc takes it. */
+.app-sidenav__sub {
+  --nav-tree-radius: 6px;
+  --nav-tree-half-row: 18px; /* half the 36px row */
+}
+
+.app-sidenav__sub::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: calc(var(--nav-tree-half-row) + var(--nav-tree-radius));
+  width: 0;
+  border-left: 1px solid var(--border-gray-default);
+}
+
+.app-sidenav__sub .fds-sidenav-menu-item {
+  position: relative;
+  justify-content: flex-start;
+  padding: var(--spacing-01) 0; /* 32px button + 4px = 36px row, 50% = 18px */
+}
+
+/* The per-row elbow, curving off the trunk into each label.
+
+   Each elbow draws ONLY its own curve: it starts at the trunk's x and ends at
+   the row's vertical centre, so the short vertical it contributes is collinear
+   with the trunk rather than a second stroke beside it. Both are 1px borders
+   on an opaque colour, so the overlap is invisible — the same reason every
+   other stroke in this tree is a border and never a background box. */
+.app-sidenav__sub .fds-sidenav-menu-item::before {
+  content: '';
+  position: absolute;
+  /* Back out to the trunk: the list's left padding is tick + 2px. */
+  left: calc((var(--nav-tree-tick) + var(--spacing-01)) * -1);
+  top: 0;
+  width: var(--nav-tree-tick);
+  height: var(--nav-tree-half-row); /* down to the row's centre */
+  border-left: 1px solid var(--border-gray-default);
+  border-bottom: 1px solid var(--border-gray-default);
+  border-bottom-left-radius: var(--nav-tree-radius);
+}
+
+.app-sidenav__sub .fds-sidenav-menu-button {
+  width: 100%;
+  height: 32px;
+}
+
+.app-sidenav__sub .fds-sidenav-menu-button__icon {
+  color: var(--text-gray-secondary);
+}
+
+.app-sidenav__toggle {
+  display: inline-flex;
+  color: var(--text-gray-tertiary);
+}
+
+.app-sidenav__toggle svg {
+  transition: transform var(--fds-duration-quick) var(--fds-easing-standard);
+}
+
+.app-sidenav__toggle[data-open='true'] svg {
+  transform: rotate(180deg);
+}
+
+/* ---- Rail typography ---------------------------------------------------
+   Base for every nav label is 14px regular (--font-size-200 / --font-weight-400).
+   The SDK defaults the menu button to --font-size-100 (13px in this app), so the
+   size is lifted one step here; the group labels stay one step below the base
+   (--font-size-50) so the hierarchy still reads. The active item is marked by
+   its background and primary text colour, so it keeps the same weight — no
+   bolding (the SDK's own `--active { font-weight: 500 }` is overridden). */
+.fds-sidenav-menu-button,
+.app-sidenav__sub .fds-sidenav-menu-button__label {
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-400);
+  line-height: var(--line-height-200);
+}
+
+.fds-sidenav-menu-button--active {
+  font-weight: var(--font-weight-400);
+}
+
+/* ---- Collapsible group section -----------------------------------------
+   The section label doubles as its disclosure control (see NavGroup). It is
+   laid out like a nav row — full width, label flush at the 8px icon inset,
+   chevron trailing at the same 8px — so it matches the nested Workflows row.
+   The SDK's label span is absolutely positioned with `left` only (shrink to
+   fit), so it is stretched to both edges first. */
+.fds-sidenav-group-label:has(.app-sidenav__group-label) .fds-sidenav-group-label__text {
+  left: 0;
+  right: 0;
+}
+
+.app-sidenav__group-label {
+  appearance: none;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-02);
+  width: 100%;
+  padding: var(--spacing-01) var(--spacing-03);
+  border-radius: var(--global-border-radius-medium);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.app-sidenav__group-label:hover {
+  background: var(--background-gray-hover-light);
+  color: var(--text-gray-secondary);
+}
+
+.app-sidenav__group-label:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px var(--background-surface-intense),
+    0 0 0 6px var(--border-focused-default);
+}
+
+/* The SDK's collapsed-state hairline is decorative (aria-hidden), but it is an
+   in-flow sibling with `opacity: 0` while the rail is open — which gives it a
+   stacking context that paints over the absolutely-positioned label and eats
+   clicks along its 1px centre line, exactly where the button's centre sits. */
+.fds-sidenav-group-label__divider {
+  pointer-events: none;
+}
+
+.app-sidenav__group-chevron {
+  flex-shrink: 0;
+  transition: transform var(--fds-duration-quick) var(--fds-easing-standard);
+}
+
+/* Same convention as the nested group's chevron: down when folded, up when open. */
+.app-sidenav__group-label[aria-expanded='true'] .app-sidenav__group-chevron {
+  transform: rotate(180deg);
+}
+
+/* Hidden only while the rail is open. In the 48px icon strip the label is a
+   bare hairline with nothing to click, so a folded section must not swallow
+   its icons — they stay visible there. */
+/* ---- Collapsible nav sections ------------------------------------------
+   Sub-lists open and close on a height transition rather than appearing all at
+   once. `0fr -> 1fr` resolves the track to the list's own height, so nothing has
+   to be measured and the animation holds however many children there are; the
+   child needs `min-height: 0` or an fr track's `auto` minimum keeps it at full
+   height and it never collapses. Duration and easing are the SDK's own body
+   pair — the values .fds-accordion-item__body animates on. */
+.app-sidenav__collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  overflow: hidden;
+  transition: grid-template-rows var(--fds-duration-moderate) var(--fds-easing-standard);
+}
+
+.app-sidenav__collapsible[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+/* The grid item is a clipping box, not the list itself: an fr track can only
+   squeeze an item's CONTENT box, so the list's own 2px of vertical breathing
+   space would survive at 0fr and leave a 4px seam. `overflow: hidden` also
+   zeroes the item's automatic minimum size and opens a BFC, so the margins
+   inside are contained and clipped with everything else. */
+.app-sidenav__collapsible-inner {
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* The nested sub-list has no place in the 48px strip — the parent icon stands
+   in for it. (The "Connect" section is the other case: it is forced open there
+   instead, so its icons stay reachable.) */
+.fds-sidenav:not([data-state='expanded']) .app-sidenav__group .app-sidenav__collapsible {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-sidenav__collapsible {
+    transition: none;
+  }
+}
+
+/* ---- Rail header: workspace row ----------------------------------------
+   [logo] [name ⌄] ............ [open/close]. The SDK's trailing slot is
+   normally a fixed-width tail after the title; here it IS the row, so it
+   flexes to fill and lays out its two children at opposite ends. */
+.fds-sidenav-header__trailing {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.app-sidenav__workspace {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--spacing-02);
+  width: 100%;
+  min-width: 0;
+}
+
+/* Organisation label: static text + plan badge, deliberately not a control. */
+.app-sidenav__workspace-org {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-02);
+  min-width: 0;
+  height: 28px;
+  padding: var(--spacing-01) 0;
+  color: var(--text-gray-primary);
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-500);
+  line-height: var(--line-height-200);
+}
+
+.app-sidenav__workspace-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- Collapsed indicator dot ---------------------------------------------
+   The SDK hides a row's trailing slot in the 48px strip, so a count or an alert
+   would vanish exactly when the rail is in its densest mode. The badge collapses
+   to a dot on the icon instead; the tooltip carries the number (see NavRow).
+   Only counts and alerts get one — a label like "Beta" is not state.
+
+   The icon slot is already absolutely positioned by the SDK, so it is the
+   containing block. The ring is the rail's own surface, so the dot reads as
+   lifted off the glyph in light, dark and brand alike. */
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-menu-item[data-indicator] .fds-sidenav-menu-button__icon::after {
+  content: '';
+  position: absolute;
+  top: -2px;
+  right: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  border: 2px solid var(--background-surface-subtle);
+  box-sizing: content-box;
+}
+
+.fds-sidenav-menu-item[data-indicator='info'] .fds-sidenav-menu-button__icon::after {
+  background: var(--background-info-default);
+}
+
+.fds-sidenav-menu-item[data-indicator='alert'] .fds-sidenav-menu-button__icon::after {
+  background: var(--background-error-default);
+}
+
+/* ---- Rail footer: help -----------------------------------------------------
+   Profile, notifications and the assistant moved to the top bar, so the footer
+   is now a distinct section rather than a continuation of the user's own row.
+   That means the SDK's hairline earns its place again — the override that used
+   to remove it is gone, and `flex-shrink: 0` against the scrolling content area
+   already pins the section to the bottom. */
+.fds-sidenav-footer {
+  align-items: stretch;
+}
+
+/* The org row + close button in the header. Same treatment, same tokens as the
+   SDK's `.fds-sidenav-header__text`, which sits right beside it. */
+.app-sidenav__workspace {
+  transition:
+    opacity var(--fds-duration-quick) var(--fds-easing-standard),
+    visibility var(--fds-duration-quick);
+}
+
+.fds-sidenav:not([data-state='expanded']) .app-sidenav__workspace {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Touch density. The SDK sizes rail rows from one token and proves the lever
+   works — its own mobile drawer sets it to 40px. A coarse pointer (panel PC,
+   tablet, gloved hand) gets 44px rows, the WCAG 2.5.5 AAA target size, while a
+   mouse keeps the denser 32px. Keyed to the POINTER, not the viewport: a 1080p
+   factory panel is a big screen with no hover. */
+@media (pointer: coarse) {
+  .fds-sidenav-provider {
+    --fds-sidenav-item-size: 44px;
+  }
+}
+
+/* Tooltip-wrapped nav rows. While collapsed, Tooltip inserts its own
+   `position: relative; display: inline-flex` wrapper between the <li> and the
+   button, which would otherwise shrink-wrap the row and knock the 32px icon
+   square off centre. (Expanded, the tooltip is isDisabled and renders no
+   wrapper at all, so this only ever applies in the icon strip.) */
+.fds-sidenav-menu-item > .app-sidenav__tip {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---- Collapsed rail flyout ----------------------------------------------
+ *
+ * Clicking a nested parent in the 48px strip opens its recent records beside
+ * it, instead of expanding the whole rail (which is what the old
+ * `onRequestOpen` path did — and it was wired to a TOGGLE, so a second click
+ * closed the rail).
+ *
+ * Popover's panel is a rich-content card: 16px padding, an arrow, a floating ✕
+ * and a 16px offset. A rail flyout is a menu surface hung off a 48px strip, so
+ * the rules below turn the card back into a surface. Every one is gated on
+ * `:has(.app-rail-flyout)` — the marker div inside `content` — because Popover
+ * exposes no className of its own and ColorField uses a Popover too.
+ */
+
+/* No arrow. FloatingArrow still renders and the middleware still measures it,
+   so only the paint is removed and the offset stays predictable. */
+.ds-popover:has(.app-rail-flyout) .ds-popover__arrow {
+  display: none;
+}
+
+/* No ✕ — this dismisses by Escape, outside press or picking a row, like every
+   other menu here. MUST be paired with RailFlyout's `initialFocusRef`: this
+   button is Popover's DEFAULT initial focus, and floating-ui cannot focus a
+   display:none node. */
+.ds-popover:has(.app-rail-flyout) .ds-popover__close {
+  display: none;
+}
+
+/* The dialog still needs a NAME, so `title` is passed and hidden here rather
+   than omitted — without it Popover sets no aria-labelledby at all. Clipped,
+   not display:none, so it stays in the accessibility tree. */
+.ds-popover:has(.app-rail-flyout) .ds-popover__header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* Menu geometry: ActionList already pads itself and rounds its rows, so the
+   panel contributes width and chrome only. The card's own 16px padding and
+   16px gap would double every inset. */
+.ds-popover:has(.app-rail-flyout) {
+  width: 264px;
+  max-width: 264px;
+  padding: 0;
+  gap: 0;
+}
+
+.ds-popover:has(.app-rail-flyout) .ds-popover__content {
+  gap: 0;
+}
+
+/* Pull the 16px offset in to 8px — Popover hard-codes it for its taller arrow,
+   and with no arrow the panel reads as detached from the strip. `translate` is
+   a separate property from `transform`, so it fights neither floating-ui's
+   inline transform on the positioner nor the panel's enter/exit keyframes.
+   Keyed on the COMPUTED side so a flipped panel is nudged the right way. */
+.ds-popover:has(.app-rail-flyout)[data-side='right'] {
+  translate: -8px 0;
+}
+
+.ds-popover:has(.app-rail-flyout)[data-side='left'] {
+  translate: 8px 0;
+}
+
+/* ActionList's 300px cap is sized for a dropdown under a control, not a
+   full-height rail. */
+.ds-popover:has(.app-rail-flyout) .ds-action-list {
+  max-height: min(60vh, 480px);
+}
+
+/* The "2h ago" column. */
+.app-rail-flyout__meta {
+  font-size: var(--font-size-50);
+  color: var(--text-gray-tertiary);
+  white-space: nowrap;
+}
+
+/* A corner tick: "there is more behind this icon".
+   Deliberately NOT the `data-indicator` dot — that means STATE (a count, an
+   alert) and already owns `__icon::after`. Overloading it would render "has
+   children" and "has 3 alerts" identically. This hangs off the button instead,
+   which is free.
+
+   Weight is the whole design problem here. It is a HINT, and it sits on only
+   two of twenty icons, so it must lose every contest against the glyphs it
+   annotates — at full tertiary ink and 6px it read as a mark in its own right
+   and pulled the eye down the rail. 4px at just under half opacity is legible
+   when looked for and gone when not.
+
+   Opacity rather than a dimmer token so it stays correct in all three themes:
+   the ink already flips with the theme, and this just holds it back. */
+.fds-sidenav:not([data-state='expanded'])
+  .fds-sidenav-menu-item[data-has-flyout]
+  > .app-sidenav__tip .fds-sidenav-menu-button::after {
+  content: '';
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  border: 2px solid transparent;
+  border-right-color: var(--text-gray-tertiary);
+  border-bottom-color: var(--text-gray-tertiary);
+  opacity: 0.45;
+}
+
+/* Full strength once the row is engaged — hovered, focused, or with its panel
+   open. The hint is quiet at rest and confirms itself the moment you reach for
+   the icon it belongs to. */
+.fds-sidenav:not([data-state='expanded'])
+  .fds-sidenav-menu-item[data-has-flyout]
+  > .app-sidenav__tip .fds-sidenav-menu-button:hover::after,
+.fds-sidenav:not([data-state='expanded'])
+  .fds-sidenav-menu-item[data-has-flyout]
+  > .app-sidenav__tip .fds-sidenav-menu-button:focus-visible::after,
+.fds-sidenav:not([data-state='expanded'])
+  .fds-sidenav-menu-item[data-has-flyout]
+  > .app-sidenav__tip .fds-sidenav-menu-button[aria-expanded='true']::after {
+  opacity: 1;
+}
+
+/* An open flyout is an ENGAGED row, not a selected one. It must NOT borrow
+   --background-gray-default: that is the token line 591 annotates as "selected"
+   and .--active (line 434) already owns it, so the two states were painting
+   identical declarations and a top-level current page + an open flyout read as
+   two selections. This sits one step down the ramp instead, and keeps resting
+   text colour so the pair never match on either axis.
+
+   Scoped to the strip: the EXPANDED parent row also carries aria-expanded (its
+   disclosure state) and must not light up.
+
+   :not(--active) is load-bearing. This selector is (0,4,0) and the --active rule
+   is (0,3,0), so without the guard it would DOWNGRADE the wash on a parent that
+   is both current and open — exactly what `isActive={isCollapsed && childActive}`
+   in AppSideNav now creates. */
+.fds-sidenav:not([data-state='expanded'])
+  .fds-sidenav-menu-button[aria-expanded='true']:not(.fds-sidenav-menu-button--active) {
+  background: var(--background-gray-hover-light);
+}
+
+/* ---- Top bar: app launcher ----------------------------------------------
+ *
+ * fds ships no tile or grid primitive — ActionList is a one-per-row listbox —
+ * so the grid is authored here. Everything around it is fds: a Popover panel
+ * (portalled, focus-trapped) with an IconButton trigger.
+ *
+ * Scoped by the marker div inside `content`, like the rail flyout, because
+ * Popover exposes no className of its own and three of them now share the app.
+ */
+.ds-popover:has(.app-launcher) {
+  width: 320px;
+  max-width: 320px;
+  padding: var(--spacing-04);
+}
+
+/* No arrow, and no ✕ — the reference launcher has neither, and the grid fills
+   the panel edge to edge. Both are paired with `initialFocusRef`: the ✕ is
+   Popover's default focus target and cannot be focused once hidden. */
+.ds-popover:has(.app-launcher) .ds-popover__arrow,
+.ds-popover:has(.app-launcher) .ds-popover__close {
+  display: none;
+}
+
+/* The header names the dialog for assistive tech and is not drawn — the tiles
+   are self-describing. Clipped, not display:none, so it stays in the a11y
+   tree, and the ✕ that shares that row goes with it. */
+.ds-popover:has(.app-launcher) .ds-popover__header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.app-launcher__grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--spacing-02);
+}
+
+.app-launcher__tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-02);
+  padding: var(--spacing-04) var(--spacing-02);
+  border: none;
+  border-radius: var(--global-border-radius-medium);
+  background: transparent;
+  color: var(--text-gray-primary);
+  cursor: pointer;
+  transition: background-color var(--fds-duration-quick) var(--fds-easing-standard);
+}
+
+.app-launcher__tile:hover {
+  background: var(--background-gray-hover-light);
+}
+
+.app-launcher__tile:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring-shadow);
+}
+
+/* The current page. `aria-current` is the source of truth, so the wash is keyed
+   off it rather than a second class that could disagree with the route. */
+.app-launcher__tile[aria-current='page'] {
+  background: var(--background-gray-default);
+}
+
+.app-launcher__glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--background-gray-default);
+  color: var(--text-gray-primary);
+}
+
+.app-launcher__label {
+  font-size: var(--font-size-50);
+  line-height: var(--line-height-50);
+  text-align: center;
+  /* Two lines max, so a long name never pushes the grid out of square. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Top bar: notification quick view ----------------------------------- */
+
+.ds-popover:has(.notif-menu) {
+  width: 360px;
+  max-width: 360px;
+  padding: 0;
+  gap: 0;
+}
+
+/* The ✕ would sit on top of the "N new" counter in the heading row. */
+.ds-popover:has(.notif-menu) .ds-popover__arrow,
+.ds-popover:has(.notif-menu) .ds-popover__close {
+  display: none;
+}
+
+/* ---- Close the gap an absent arrow leaves behind -------------------------
+ *
+ * Popover positions with a flat `offset(16)`, and that 16 is not breathing
+ * room: it is ARROW_HEIGHT (12) + GAP (4). The arrow is drawn INTO the offset,
+ * so the visible gap is only ever the 4.
+ *
+ * These two panels hide the arrow — the notification one because the ✕ and the
+ * arrow collide with its own heading row, the launcher because an arrow reads
+ * wrong against a tile grid. Hiding it does not reclaim its 12px, so the menus
+ * floated a full 16px off the control that opened them and stopped reading as
+ * attached to it.
+ *
+ * Pull back by exactly ARROW_HEIGHT, leaving Popover's own GAP of 4. Done with
+ * `translate` rather than by touching the offset because the offset is applied
+ * by floating-ui to the positioner, and overriding that would fight the
+ * flip/shift middleware that keeps the panel on screen. Same technique the rail
+ * flyout already uses on its own hidden arrow. */
+.ds-popover:has(.notif-menu)[data-side='bottom'],
+.ds-popover:has(.app-launcher)[data-side='bottom'] {
+  translate: 0 calc(-1 * var(--spacing-04));
+}
+
+/* This panel draws its own heading row, so Popover's header is hidden the same
+   way — it is still what names the dialog. */
+.ds-popover:has(.notif-menu) .ds-popover__header {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.ds-popover:has(.notif-menu) .ds-popover__content {
+  gap: 0;
+}
+
+/* The footer is the "View more" hand-off. It keeps Popover's own separation
+   from the content but loses the card padding the list already supplies. */
+.ds-popover:has(.notif-menu) .ds-popover__footer {
+  justify-content: center;
+  padding: var(--spacing-02) var(--spacing-03) var(--spacing-03);
+  border-top: 1px solid var(--border-gray-muted);
+}
+
+.notif-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-03);
+  margin: 0;
+  padding: var(--spacing-04) var(--spacing-04) var(--spacing-02);
+  font-size: var(--font-size-200);
+  font-weight: var(--font-weight-600);
+  color: var(--text-gray-primary);
+}
+
+.notif-menu__unread {
+  font-size: var(--font-size-50);
+  font-weight: var(--font-weight-400);
+  color: var(--text-gray-tertiary);
+}
+
+/* A preview is for scanning: two lines a row, never a wall of text. */
+.ds-popover:has(.notif-menu) .ds-action-list-item__title,
+.ds-popover:has(.notif-menu) .ds-action-list-item__description {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---- Top bar, variant B: match the sheet's box --------------------------
+ *
+ * Above the sheet, the bar lives in AppShell's full-width column while the
+ * sheet carries `margin-right: 16px`. So the bar overhung it, and the two ends
+ * lined up against different things: the breadcrumb landed on the sheet's
+ * CONTENT (its own 16px padding ≈ the page's 16px gutter) while the actions
+ * landed on the sheet's EDGE. Giving the bar the sheet's margin makes both ends
+ * inset by the same 16px, so the trail and the actions sit over the page's own
+ * left and right gutters.
+ */
+/* No left padding when the bar leads with the toggle.
+ *
+ * By ruling: the padding band was unwanted, so the bar starts flush and the
+ * button's own 32px square provides the only inset.
+ *
+ * KNOWN TRADE-OFF, made deliberately. The glyph no longer aligns with the page
+ * content below it. An `isHighlighted` IconButton draws a 32px square around a
+ * 16px icon, so the mark the eye reads sits 8px inside its own box: with the
+ * bar flush the glyph lands ~9px LEFT of the content edge, where 8px of padding
+ * put it within 1px. Restoring the alignment is one value here.
+ *
+ * `:has()` scopes it to a bar that actually leads with the icon button, so a bar
+ * that ever leads with text keeps the SDK's own 16px. */
+.fds-topnav:has(.app-topbar__lead) {
+  padding-left: 0;
+  /* 8px to match the sheet's own right gutter (--app-sheet-inset), rather than
+     the SDK's 16px. Written as the spacing step, not as that variable: the two
+     are the same number for a reason but not the same measurement — one is the
+     bar's inner padding, the other the panel's outer margin — and tying them
+     would move this every time the shell's inset is retuned.
+
+     It also squares the bar up with itself. With padding-left at 0 the leading
+     glyph sits 8px inside the bar's left edge (the IconButton's own 32px square
+     around a 16px icon); 8px here puts the trailing avatar 8px inside the right
+     edge. Both controls now hold the same margin from the bar they sit in. */
+  padding-right: var(--spacing-03);
+}
+
+.fds-topnav {
+  /* The SDK sets `width: 100%`, so a margin alone would overflow rather than
+     narrow the box — the width has to come off too. Shares --app-sheet-inset
+     with <main>: the two align on one right edge. */
+  width: calc(100% - var(--app-sheet-inset));
+  margin-right: var(--app-sheet-inset);
+}
+
+/* ── breadcrumb: a crumb with no page behind it ────────────────────────────
+ *
+ * Workflows and Reports are sections, not pages, so their crumbs report
+ * position rather than offer a destination. AppTopBar draws them as a
+ * StaticCrumb (an <li> of ours inside fds's <ol>) because fds has no inert
+ * non-current crumb — see the note there.
+ *
+ * Same ink and the same 0.57 dim fds gives .ds-breadcrumb__link, so the trail
+ * keeps one rhythm: what is removed is the interaction, not the styling.
+ *
+ * KNOWN TRADE-OFF. fds crumb links carry no underline and no link colour —
+ * their only affordance is an ink shift on hover — so at rest this is
+ * pixel-identical to a link, and someone may click it once before noticing.
+ * `cursor: default` plus the absent hover shift is the correction. Dimming it
+ * further would read as DISABLED rather than contextual, and
+ * --text-neutral-subtle cannot do the job: fds already spends it as the link's
+ * HOVER colour, so it is not a weaker ink here. */
+.app-topbar__crumb-static {
+  color: var(--text-neutral-normal);
+  opacity: 0.57;
+  cursor: default;
+}
