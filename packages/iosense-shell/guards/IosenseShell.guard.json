@@ -24,7 +24,7 @@
   ],
   "defaults": {
     "isPinned": "Uncontrolled. The shell reads localStorage 'iosense:sidenav-pinned'; with nothing stored the default is width-aware — pinned at >= 1024px, collapsed below. Pass isPinned AND onPinnedChange together to drive it yourself.",
-    "preference": "Uncontrolled. The shell runs its own useAppTheme, which stamps data-theme on <html>. Pass preference AND onPreferenceChange together to drive it yourself.",
+    "preference": "'light', ALWAYS, on a first run — never 'system'. A fresh visitor gets light even when their operating system is set to dark. Verified with prefers-color-scheme forced to dark and localStorage empty: stored 'light', data-theme 'light', main background rgb(247,247,247). An explicit choice still wins and persists: setting 'dark' and reloading gives data-theme 'dark' and rgb(19,20,21).",
     "workspace": "Defaults to <WorkspaceLabel name={profile.org} />. Override only to render a switcher or a different identity row.",
     "actions": "Empty. The top bar shows the bell and the avatar and nothing else.",
     "navItems": "[] — an empty rail, and that is what the demo shows too. This package ships the chrome, not any product content. Nothing is exported to copy from and nothing in the repo renders rows; the behaviour is documented in STORY.md 1.4 and exercised in the Side nav stories.",
@@ -111,6 +111,16 @@
       "why": "The shell stamps data-theme on the document root and every SDK component reads it — a Card is rgb(255,255,255) in light and rgb(31,33,35) in dark on its own. A page never needs to branch on the theme. A hand-rolled surface does not follow it at all: background #fff is white in dark mode and color #101828 is black on black.",
       "bad": "<div style={{ background: \"#fff\", color: \"#101828\" }}>",
       "good": "<Card><CardBody>…</CardBody></Card>"
+    },
+    {
+      "rule": "The theme defaults to LIGHT. Do not default it to 'system', and do not seed it from prefers-color-scheme.",
+      "why": "'system' hands the product's appearance to a setting the product cannot see and did not choose, so the same install looks different on two machines and a screenshot in a bug report may not match what anyone else sees. Light is also the theme every surface is designed and reviewed against — brand is a light page with a navy rail, and dark is the variant. A first run should show the product as it was designed, and let the user change it.",
+      "bad": "useState(() => (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'))",
+      "good": "useState(() => (localStorage.getItem(KEY) as ThemePreference) ?? 'light')"
+    },
+    {
+      "rule": "An explicit choice outranks the default and persists.",
+      "why": "A default that cannot be changed is not a default, it is a constraint. The user picks a theme in the profile menu and it survives reloads; system is available as a CHOICE, it is simply not the starting point."
     }
   ],
   "composition": {
@@ -172,6 +182,11 @@
       "pattern": "Re-styling an SDK component from the page, to make it fit.",
       "why": "Same failure with an extra step. An overridden card is a fork of the card, and it silently stops tracking the original.",
       "instead": "Use the props the component offers — padding, size, validationState. If none of them fit, the component is probably the wrong one."
+    },
+    {
+      "pattern": "Defaulting the theme to 'system' so it 'respects the user'.",
+      "why": "It respects the OS, which is not the same thing, and it makes the product's first impression depend on a setting nobody involved chose. It also means two people looking at the same screen see different colours, which turns every visual bug report into a question about their machine.",
+      "instead": "Default to 'light'. Offer 'system' in the picker — it is one of the four — so anyone who wants it can say so."
     }
   ],
   "examples": [

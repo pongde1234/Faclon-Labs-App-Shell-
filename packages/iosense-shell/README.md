@@ -161,6 +161,22 @@ styling in `theme-overrides.css` keys off markup and attributes only
 Hand-assemble it and miss one, and you get a shell that looks nearly right and
 is not: no content inset, a native scrollbar, no rail offset.
 
+## The theme defaults to light
+
+Four choices — `light`, `dark`, `brand` (a light page with a navy rail) and
+`system`. **A first run gets `light`, never `system`, and never the OS setting.**
+
+`system` hands the product's appearance to something the product cannot see and
+nobody involved chose: the same install then looks different on two machines,
+and a screenshot in a bug report may not match what anyone else sees. Light is
+also what every surface is designed and reviewed against.
+
+Verified with `prefers-color-scheme` forced to dark and localStorage empty:
+stored `light`, `data-theme="light"`, main background `rgb(247, 247, 247)`.
+
+An explicit choice still wins and persists — a default that cannot be changed is
+not a default. `system` stays in the picker for anyone who wants it.
+
 ## The stylesheet contract
 
 Three sheets, in this order, and the order is the whole of it:

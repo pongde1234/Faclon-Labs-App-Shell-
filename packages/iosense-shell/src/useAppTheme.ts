@@ -4,6 +4,21 @@ import { useCallback, useEffect, useState } from 'react'
  * Light and dark come straight from the SDK's own token sets. 'brand' is the
  * classic Faclon theme: the SDK ships no brand tokens, so it is authored in
  * theme-overrides.css — a navy rail over the unchanged light page.
+ *
+ * THE DEFAULT IS 'light', ALWAYS, AND NEVER 'system'.
+ *
+ * 'system' is one of the four a user can PICK; it is not the starting point.
+ * Defaulting to it would hand the product's appearance to a setting the product
+ * cannot see and nobody involved chose — the same install would look different
+ * on two machines, and a screenshot in a bug report might not match what anyone
+ * else sees. Light is also the theme every surface is designed and reviewed
+ * against: brand is a light page with a navy rail, and dark is the variant.
+ *
+ * Verified with `prefers-color-scheme` forced to dark and localStorage empty:
+ * stored 'light', `data-theme` 'light', main background rgb(247,247,247). An
+ * explicit choice still wins and persists — picking dark and reloading gives
+ * `data-theme` 'dark' and rgb(19,20,21). A default that cannot be changed is
+ * not a default.
  */
 export type ThemePreference = 'light' | 'dark' | 'brand' | 'system'
 export type ResolvedTheme = 'light' | 'dark' | 'brand'

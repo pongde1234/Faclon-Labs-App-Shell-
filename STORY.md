@@ -505,6 +505,41 @@ mode by design.
 visible without opening anything — and a screen reader says "Theme, Light"
 rather than announcing nothing, which is what the check mark it replaced did.
 
+#### The default is LIGHT, always — never `system`
+
+There are four choices: **light**, **dark**, **brand** (a light page with a navy
+rail) and **system**. A first run gets **light**, and that is a rule rather than
+an accident:
+
+| | |
+|---|---|
+| Fresh install, OS set to **dark** | **light** |
+| Fresh install, OS set to light | light |
+| User picks dark | dark, and it persists |
+| User picks system | follows the OS, because they asked for that |
+
+**Why not `system`.** It hands the product's appearance to a setting the product
+cannot see and nobody involved chose. The same install then looks different on
+two machines, and a screenshot in a bug report may not match what anyone else
+sees. Light is also the theme every surface is designed and reviewed against —
+brand *is* a light page, and dark is the variant. A first run should show the
+product as it was designed, then let the user change it.
+
+**And it must remain changeable.** A default that cannot be overridden is not a
+default, it is a constraint. `system` stays in the picker for anyone who wants
+it; it simply is not the starting point.
+
+Measured, with `prefers-color-scheme` forced to dark and localStorage empty:
+
+```
+osPrefersDark      true
+storedPreference   light
+documentTheme      light
+mainBackground     rgb(247, 247, 247)
+```
+
+and after explicitly choosing dark and reloading: `dark` / `rgb(19, 20, 21)`.
+
 **The picker is a modal, and a sibling of the menu rather than a child.** Modal
 unmounts entirely while closed, so nesting it inside the overlay would tie its
 lifetime to the menu that opened it — which closes on the very click that opens
@@ -812,11 +847,11 @@ stories/
   SideNav.stories.tsx    §1   — 14 stories
   Rules.stories.tsx      §1.4 the guardrails — 8: sizes, states, collapsed/expanded
   TopNav.stories.tsx     §2   — 15: the toggle, every crumb case, the actions container
-  Menus.stories.tsx      §2.3 — 10 stories, the two panels OPEN
+  Menus.stories.tsx      §2.3 — 11 stories, the two panels OPEN
   Shell.stories.tsx      §3 + the whole shell — 7, including Scrolling
 ```
 
-54 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
+55 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
 because a bell and an avatar shown closed tell you nothing about what they do —
 and both are portalled, so those plays query `document.body` rather than the
 canvas.
@@ -840,7 +875,7 @@ If §4's component split happens, these files split with it.
 | §2.1 toggle | `ToggleWhenOpen`, `ToggleWhenCollapsed`, `ToggleOnMobile`, `ToggleOnMobileOpen` — the glyph and label flip to show what pressing it will *do* |
 | §2.2 breadcrumbs | `OneCrumb`, `TwoCrumbs` (first is inert text), `ThreeCrumbs` (text → LINK → current), `LongCrumb` |
 | §2.3 right edge | `RightEdge`, `WithActions`, `ActionsIsAContainer` (four things in the slot), `NoActions`, `NoUnread`, `ManyUnread`, `AvatarFallsBackToInitials` |
-| §2.3 profile menu | `Trigger`, `Open` (Settings / Theme / Log Out), `OpenWithInitials`, `OpenOnDarkTheme`, `AppearancePicker` |
+| §2.3 profile menu | `Trigger`, `Open` (Settings / Theme / Log Out), `OpenWithInitials`, `ThemeDefaultsToLight`, `OpenOnDarkTheme`, `AppearancePicker` |
 | §2.3 notifications | `NotificationsOpen`, `NotificationsEmpty`, `NotificationsOverflowing`, `NotificationsManyUnread`, `NotificationsNoUnread` |
 | §3 content | `ContentSpacing`, `DenserContentSpacing`, `Scrolling` (chrome stays put; a new page starts at the top) |
 | whole shell | `Default` (empty — what ships), `Branded`, `EveryRowType`, `DeepLinked` |

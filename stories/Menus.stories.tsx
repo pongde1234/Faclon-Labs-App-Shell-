@@ -89,6 +89,29 @@ export const OpenWithInitials: Story = {
 }
 
 /**
+ * THE DEFAULT, and the rule: `light`, always — never `system`, and never seeded
+ * from the operating system.
+ *
+ * There are four choices: light, dark, brand (a light page with a navy rail) and
+ * system. A first run gets LIGHT even on a machine set to dark.
+ *
+ * `system` would hand the product's appearance to a setting the product cannot
+ * see and nobody involved chose — the same install then looks different on two
+ * machines, and a screenshot in a bug report may not match what anyone else
+ * sees. Light is also what every surface is designed and reviewed against.
+ *
+ * Measured with `prefers-color-scheme` forced to dark and localStorage empty:
+ * stored `light`, `data-theme` `light`, main background `rgb(247,247,247)`.
+ *
+ * It stays changeable — a default that cannot be overridden is a constraint, not
+ * a default. `system` is right there in the picker for anyone who wants it.
+ */
+export const ThemeDefaultsToLight: Story = {
+  args: { preference: 'light' as ThemePreference },
+  play: openOnMount(/account menu/i),
+}
+
+/**
  * The theme row reflects a non-default choice. Click it and the appearance
  * modal opens — a sibling of the menu, not a child of it.
  *
