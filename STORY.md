@@ -25,7 +25,8 @@ also one Storybook story file, so this doc is the index for those.
 │ ├──────────┤ ├──────────────────────────────────────────────────────┤ │
 │ │          │ │                                                      │ │
 │ │ content  │ │  MAIN CONTENT CONTAINER                              │ │
-│ │          │ │  16px on all four sides                              │ │
+│ │          │ │  16px left / right / top, none at the bottom          │ │
+│ │          │ │  16px between blocks, by default                     │ │
 │ │          │ │                                                      │ │
 │ ├──────────┤ │                                                      │ │
 │ │  footer  │ │                                                      │ │
@@ -263,31 +264,79 @@ opens an assistant this package knows nothing about. Both go in `actions`.
 
 # 3. The main content container
 
-**16px on all four sides. This is the rule the whole export exists to protect.**
+**16px left, right and top. No padding on the bottom. 16px between blocks.**
+This is the rule the whole export exists to protect.
 
-The 16px is **split across two owners**, and that is why it is written down:
+```
+┌─────────────────────────────────────────┐
+│              ↕ 16px                     │
+│  ↔16px   ┌───────────────────┐   16px↔  │
+│          │      Card         │          │
+│          └───────────────────┘          │
+│              ↕ 16px  ← between blocks   │
+│          ┌───────────────────┐          │
+│          │      Card         │          │
+│          └───────────────────┘          │
+│                                         │
+│   … content continues, no bottom pad    │
+└─────────────────────────────────────────┘   ← scrolls past the edge
+```
 
-| Side | Owned by |
-|---|---|
-| left / right | `.app-main-scroll` → `padding-inline: 16px` |
-| top / bottom | the page root → `padding: 16px 0` |
+## 3.1 The three sides, and the one that is missing
 
-Change one and you must change the other, or the sheet goes lopsided.
+| Side | Value | Why |
+|---|---|---|
+| left / right | **16px** | the top bar's breadcrumb is inset 16px from the same column, so page content and the bar's first glyph share a left edge |
+| top | **16px** | separates the first block from the bar above it |
+| **bottom** | **none** | **the content is scrollable.** A scrolling column has no bottom to pad — it has a cut-off. Padding there either does nothing useful or invents a dead band the reader has to scroll through before the content ends |
 
-**16 rather than 12 is not a taste call.** The top bar's breadcrumb is inset 16px
-from the same column, so the page content and the bar's first glyph share a left
-edge. Pulling the sides to 12 would misalign them. Measured: 17px on every side —
-the 16 plus the sheet's own 1px border.
+**16 rather than 12 is not a taste call** — it is the breadcrumb alignment above.
+Pulling the sides in to 12 would misalign them.
 
-**Between rows**, spacing comes from `Stack` / `Grid` / `Card`, never from
-margins on the content itself. This matters more here than anywhere else in the
-shell: **this container takes generated dashboards**. A generator that has to
-remember margins will get it wrong at some depth. A container that supplies the
-rhythm cannot.
+## 3.2 Between blocks: 16px, as the default
+
+The gap between one card and the next is **16px**, and it is a **default, not a
+law**. The container supplies it so that content which says nothing about spacing
+still comes out right; a host who wants a denser or looser page changes it.
+
+That default matters more here than anywhere else in the shell, because **this
+container takes generated dashboards**. A generator that has to remember margins
+will get it wrong at some depth. A container that supplies the rhythm cannot.
+
+So the rule reads in that order:
+
+1. **The container gives 16px** — between blocks, and on three sides.
+2. **Content sets no outer margin of its own.** Spacing comes from
+   `Stack` / `Grid` / `Card`, never from a margin on the block itself.
+3. **The host may override the gap** when a page genuinely wants a different
+   density. Overriding is a decision; inheriting is the default.
 
 **The scrollbar is an overlay** drawn on top of the content, so it costs no
 layout width — the content does not shift when a page starts or stops
-overflowing.
+overflowing. That is also why the bottom needs no padding to keep clear of it.
+
+## 3.3 Where this differs from the code today
+
+Stated separately so this section is not read as a description of what already
+ships. **The code currently pads the bottom too.**
+
+| | Rule above | Code today |
+|---|---|---|
+| left / right | 16px | ✅ `.app-main-scroll` → `padding-inline: 16px` |
+| top | 16px | ✅ page root → `padding: 16px 0` |
+| bottom | **none** | ❌ same `padding: 16px 0` puts 16px there as well |
+| between blocks | 16px default | ⚠️ comes from `Stack`/`Grid`/`Card` per page, not from the container |
+
+Two changes make the code match:
+
+1. Move the block padding onto the container — `.app-main-scroll` becomes
+   `padding: 16px 16px 0` — so the page root stops owning it. That also removes
+   the split-across-two-owners trap this section used to warn about: one element
+   owns all three sides, and there is nothing left to keep in sync.
+2. Give the container a default `gap` for its direct children, which a host can
+   override.
+
+Neither is done yet — this document is the agreed rule, and the code follows it.
 
 ---
 
@@ -307,7 +356,7 @@ the rest of this is.
 | Accordion entity | `NestedNavItem`, internal | export it |
 | Section | `NavGroup`, internal | export it |
 | Top nav | `AppTopBar` | fine as is — already slot-based |
-| Content container | `IosenseShell` | fine as is |
+| Content container | `IosenseShell` | **two changes pending** — see 3.3: drop the bottom padding, and give the container a default 16px gap |
 
 **What changed.** The rail's 22 hardcoded rows moved out to `iosenseNav.tsx` as
 `IOSENSE_NAV` — an example to copy, not a default to inherit. `AppSideNav` now
@@ -329,8 +378,9 @@ first run.
 
 **Order of work from here:**
 
-1. Stories for each `##` above
-2. Export Entity / Accordion / Section if a host ever needs one loose
+1. The content container: bottom padding off, default gap on (3.3)
+2. Stories for each `##` above
+3. Export Entity / Accordion / Section if a host ever needs one loose
 
 ---
 
@@ -345,7 +395,7 @@ NavAccordion.stories.tsx     folded · unfolded · child active · collapsed-rai
 NavSection.stories.tsx       open · folded · forced open while collapsed
 SideNavFooter.stories.tsx    empty (default) · help · promotional banner
 TopNav.stories.tsx           toggle states · 1/2/3 crumbs · actions slot · bell counts
-ContentContainer.stories.tsx 16px proof · Stack/Grid/Card rhythm · overflow
+ContentContainer.stories.tsx 16/16/16/0 proof · default 16px gap · overridden gap · overflow
 IosenseShell.stories.tsx     the whole thing, pinned / collapsed / mobile
 ```
 

@@ -195,10 +195,16 @@ useAppTheme  useIsMobile  useProfile  useNotifications  themes
 
 ## The content container
 
+> **The agreed rule is 16px left, right and top, none at the bottom, and a
+> default 16px between blocks — see [STORY.md](STORY.md) §3.** The code below is
+> what ships *today*, which still pads the bottom. STORY.md §3.3 has the two
+> changes that close the gap.
+
 `IosenseShell` renders your `children` inside `.app-main-scroll`, which carries
 **`padding-inline: 16px`**. Page roots are expected to carry `padding: 16px 0`.
-That split is deliberate and is the whole of the 16px-on-all-four-sides rule —
-change one side and you must change the other, or the sheet goes lopsided.
+That split is why the bottom is still padded — one declaration owns top and
+bottom together — and it is what §3.3 replaces with `padding: 16px 16px 0` on the
+container alone.
 
 16px rather than 12 is not a taste call: the top bar's breadcrumb is inset 16px
 from the same column, so page content and the bar's first glyph share a left
