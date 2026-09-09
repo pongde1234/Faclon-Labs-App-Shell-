@@ -99,8 +99,7 @@ It holds three kinds of thing.
 - **states** — hover, active, focus. Active draws the pill.
 - **tooltip** — appears **only when the label is unreadable**: the 48px strip, or an expanded label cut off by an ellipsis. Never when the text is right there.
 
-**The trailing slot** is what you asked about — the thing at the end of the row.
-Legal contents:
+**The trailing slot** — the thing at the end of the row. Legal contents:
 
 | Put in | Use it for | Rendered as |
 |---|---|---|
@@ -135,7 +134,7 @@ A parent row that unfolds a nested list.
   **flyout** beside the strip instead. One at a time — two popovers do not share
   a floating tree, so nothing would close the first when a second opens
 
-Today: `Workflows` and `Reports`.
+See `Side nav/Rules > Collapsed` for both behaviours side by side.
 
 ### (c) Section — a labelled group that hides and unhides its entities
 
@@ -146,7 +145,8 @@ the whole set away.
 48px strip would be a hairline with no affordance to unfold it, and it would
 strand every icon inside it.
 
-Today: `Connect`.
+A section is never a breadcrumb ancestor — it groups rows visually; it is not
+above them.
 
 **What ships fixed.** The scroll behaviour, the tooltip rule, the collapse
 behaviour, the flyout, the persisted open state, the active pill, the badge/dot
@@ -224,6 +224,122 @@ the rail, and the row looks wrong next to the rest of the nav.
 
 Profile, notifications and the assistant are **not** here. They moved to the top
 bar.
+
+---
+
+## 1.4 The guardrails, in one place
+
+Everything above, as the rules you need when writing nav data. **No rows are
+shipped** — this section is the contract they have to satisfy.
+
+### Collapsed and expanded
+
+Two footprints, one component. `isPinned` picks between them.
+
+| | Expanded | Collapsed |
+|---|---|---|
+| Footprint | **240px** | **48px** |
+| Header | logo + org name | **logo only, and it does not move** |
+| Row | `[icon] Label [slot]` | `[icon]` centred |
+| Label | visible | hidden by the SDK |
+| Trailing slot | visible | **hidden** — a dot on the icon replaces it |
+| Accordion | unfolds **in place**, below its parent | opens a **flyout** beside the strip |
+| Section | label + rows, foldable | label hidden, rows **forced visible** |
+| Footer | icon + label | icon only |
+| Tooltip | only when the label is clipped | **always**, and it quotes the badge |
+
+Two rules there are load-bearing and easy to get wrong:
+
+- **The logo never shifts.** It sits in the 48px header in both states, so the
+  rail's top-left is a fixed point while everything under it changes.
+- **A section is forced open when collapsed.** Folded, it would be a hairline
+  with no affordance to unfold it, and every icon inside would be stranded.
+
+### The third state: hover-peek
+
+Not two states — three. **Peek is a hover, and it is not the same as pinned.**
+
+| | Pinned | Peeked | Collapsed |
+|---|---|---|---|
+| Panel drawn at | 240px | **240px** | 48px |
+| Footprint | 240px | **48px** | 48px |
+| Page content | offset | **does not move** | offset |
+| Set by | the top bar's toggle | hovering the rail | the toggle |
+
+A peek widens `.fds-sidenav__inner` as an **overlay** over a 48px footprint.
+Only pinning sets `data-sidenav-pinned`, and only that reflows the page.
+
+Open after **150ms**, close after **100ms** — crossing the rail on the way
+somewhere else does nothing, but a panel that lingers after you have left feels
+stuck rather than forgiving.
+
+> **Never key your own behaviour on `isPinned` meaning "open".** During a peek
+> the rail is expanded and not pinned, so anything that does is wrong for the
+> whole duration of the hover. That bug is why the peek is owned in React at
+> all: the SDK sets `data-hovered` inside its own DOM where React cannot see it,
+> so the component believed it was a 48px strip while the user looked at a 240px
+> panel — tooltips fired on rows whose labels were plainly readable, and the
+> organisation name stayed hidden.
+
+### Row states
+
+All of it is ours. A host supplies no colours.
+
+| State | What changes |
+|---|---|
+| default | transparent, secondary ink |
+| **hover** | `--background-gray-hover-light` |
+| **pressed** | `--background-gray-default` |
+| **active** | `--background-gray-default` + primary ink, **and the icon takes primary ink too** |
+| active + hover | `--background-gray-hover-dark` — so an active row still answers the pointer |
+| focus | the SDK's focus ring |
+
+**The active row keeps `font-weight: 400`.** The SDK bolds it; that is
+overridden, because the row is already marked by background and ink, and bolding
+reflows the label a pixel or two as you navigate.
+
+Transitions are `background-color` and `color` at `--fds-duration-quick`, and
+`width` at `--fds-duration-moderate` — never `all`.
+
+### The trailing slot — what you may put at the end of a row
+
+One field, `badge`, and it is a union rather than a node. You choose the
+**answer type**, not the look:
+
+| You want | Write | Renders | Collapsed |
+|---|---|---|---|
+| a quantity | `{ kind: 'count', value: 12, tone: 'info' }` | **Counter** | a dot |
+| a word | `{ kind: 'word', label: 'Beta', tone: 'label' }` | **Badge** | *nothing* |
+| an alert count | `{ kind: 'count', value: 7, tone: 'alert' }` | **Counter**, Negative | a red dot |
+
+**Tone drives the colour AND whether a collapsed dot is drawn.** A count or an
+alert is state worth surfacing in a 48px strip; `Beta` is not — it is a label,
+and a dot for it would be noise. The dot is 6px with a 2px ring in the rail's
+own surface, so it reads as lifted off the glyph in every theme.
+
+Counts are **capped at 99**. Counter has no default max, and an uncapped count
+stretches the row it sits in.
+
+**What you may NOT put there:**
+
+| | Why |
+|---|---|
+| A **Chip** | Chip renders a `<button>`, and the row is already a `<button>`. Nesting them is invalid HTML. Use a Badge for the look |
+| An arbitrary node | the slot is typed as the union above, so the collapsed dot can be derived. A node could not be |
+| A second action | a `<button>` inside the row's `<button>`, again. The row is the only interactive thing in it |
+| `tone: 'alert'` on anything routine | it only works as a signal while nothing else borrows it. Twelve accounts are furniture, not news |
+
+### The whole contract, as a type
+
+```ts
+{ id, label, icon }                      // a row
+{ id, label, icon, badge }               // …with a slot
+{ id, label, icon, children: [...] }     // an accordion
+{ kind: 'section', id, label, items }    // a section
+```
+
+Four shapes. `id` and `label` are strings, `icon` is a node drawn at
+`NAV_ICON_SIZE`, and everything else about how they look is the package's.
 
 ---
 
@@ -540,13 +656,13 @@ not one per section of this document, and the difference is worth explaining.
 stories/
   fixtures.tsx           small hand-written navs, a non-iosense logo, a frame
   SideNav.stories.tsx    §1   — 14 stories
-  Rules.stories.tsx      §1's fixed rules — 5, each fed deliberately wrong data
+  Rules.stories.tsx      §1.4 the guardrails — 8: sizes, states, collapsed/expanded
   TopNav.stories.tsx     §2   — 13 stories: the toggle, every crumb case, the right edge
   Menus.stories.tsx      §2.3 — 10 stories, the two panels OPEN
   Shell.stories.tsx      §3 + the whole shell — 6 stories
 ```
 
-48 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
+51 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
 because a bell and an avatar shown closed tell you nothing about what they do —
 and both are portalled, so those plays query `document.body` rather than the
 canvas.

@@ -153,6 +153,86 @@ export const TypeScaleIsFixed: Story = {
   args: { items: SCALE },
 }
 
+// ── row states ─────────────────────────────────────────────────────────────
+
+const STATES: NavItem[] = [
+  { id: 'default', label: 'Default — transparent, secondary ink', icon: icon(House) },
+  { id: 'hover-me', label: 'Hover me — gray-hover-light', icon: icon(Wallet) },
+  { id: 'press-me', label: 'Press me — gray-default', icon: icon(House) },
+  { id: 'active', label: 'Active — gray-default + primary ink', icon: icon(Wallet) },
+  { id: 'tab-me', label: 'Tab to me — the focus ring', icon: icon(House) },
+]
+
+/**
+ * ROW STATES. All of them are ours; a host supplies no colours.
+ *
+ *   default        transparent, secondary ink
+ *   hover          --background-gray-hover-light
+ *   pressed        --background-gray-default
+ *   active         --background-gray-default + primary ink, ICON included
+ *   active + hover --background-gray-hover-dark, so an active row still
+ *                  answers the pointer instead of going inert
+ *
+ * The active row keeps `font-weight: 400`. The SDK bolds it and that is
+ * overridden: the row is already marked by its background and its ink, and
+ * bolding reflows the label a pixel or two every time you navigate.
+ *
+ * Transitions are background-color and color at --fds-duration-quick, and width
+ * at --fds-duration-moderate. Never `all`.
+ *
+ * "Active" here is the fourth row — click any row to move it and watch the
+ * pill, not the text, do the moving.
+ */
+export const RowStates: Story = {
+  args: { items: STATES, activeId: 'active' },
+}
+
+// ── collapsed and expanded ─────────────────────────────────────────────────
+
+const BOTH: NavItem[] = [
+  { id: 'home', label: 'A plain row', icon: icon(House) },
+  { id: 'count', label: 'A count', icon: icon(Wallet), badge: { kind: 'count', value: 12, tone: 'info' } },
+  { id: 'word', label: 'A word', icon: icon(House), badge: { kind: 'word', label: 'Beta', tone: 'label' } },
+  {
+    kind: 'section',
+    id: 'group',
+    label: 'A section',
+    items: [{ id: 'inside', label: 'Inside the section', icon: icon(Wallet) }],
+  },
+]
+
+/**
+ * EXPANDED — 240px. Logo and org name, `[icon] Label [slot]`, section label
+ * visible and foldable.
+ *
+ * Compare with the next story: same data, same component, one prop.
+ */
+export const Expanded: Story = {
+  args: { items: BOTH, isPinned: true },
+}
+
+/**
+ * COLLAPSED — 48px. The same rail, and four things change at once:
+ *
+ *   the LOGO does not move          it is the rail's fixed point
+ *   labels disappear                the SDK hides them
+ *   the trailing slot disappears    and a DOT replaces a count or an alert —
+ *                                   but NOT a word, because "Beta" is a label
+ *                                   and not state worth surfacing in 48px
+ *   the section is FORCED OPEN      folded it would be a hairline with no
+ *                                   affordance to unfold it, stranding its rows
+ *
+ * Hover any row for its label — with the count appended, since the dot says
+ * THAT there is something but not what.
+ *
+ * Hover the rail itself and it PEEKS: the panel draws at 240px over a 48px
+ * footprint, so nothing to its right moves. That is a third state, not the
+ * expanded one — never key behaviour on `isPinned` meaning "open".
+ */
+export const Collapsed: Story = {
+  args: { items: BOTH, isPinned: false },
+}
+
 // ── what the host actually controls ────────────────────────────────────────
 
 /**
@@ -163,13 +243,15 @@ export const TypeScaleIsFixed: Story = {
  *   the footer      any node
  *
  * And what is not: the glyph's size, the label's type and line count, the row's
- * height, the 240/48 widths, the tooltip rule, the peek timings.
+ * height, its hover / pressed / active / focus colours, the 240 and 48 widths,
+ * the 150/100ms peek timings, the tooltip rule, and whether a collapsed dot is
+ * drawn.
  *
  * The split is not arbitrary. Everything on the first list is CONTENT, which
- * differs per product. Everything on the second is the rail's SHAPE, which is
- * the thing the package exists to keep consistent — if a consumer had to get
- * these right themselves, they would be reimplementing the rail rather than
- * using it.
+ * differs per product. Everything on the second is the rail's SHAPE and
+ * BEHAVIOUR, which is the thing the package exists to keep consistent — if a
+ * consumer had to get these right themselves, they would be reimplementing the
+ * rail rather than using it.
  */
 export const WhatYouControl: Story = {
   args: {

@@ -86,6 +86,12 @@
       "rule": "Do not restyle a nav row from outside.",
       "why": "The glyph size, the label type scale, the single line and the row height are the shape of the rail. A host stylesheet that changes one of them changes it for one product and not the next, which is the inconsistency the package exists to prevent.",
       "instead": "If a row needs to say something extra, that is what the badge slot is for."
+    },
+    {
+      "rule": "badge is a union, not a node.",
+      "why": "The collapsed dot is DERIVED from it — kind and tone decide whether a dot is drawn and what colour. A node could not be inspected for that, so the 48px strip would lose the signal entirely.",
+      "bad": "trailing: <MyCustomPill />",
+      "good": "badge: { kind: 'count', value: 12, tone: 'info' }"
     }
   ],
   "composition": {
@@ -154,5 +160,11 @@
     "label": "One line, white-space: nowrap with text-overflow: ellipsis. A wrapped label changes the row height, and rows of differing heights make the icon column look broken. The clipped case is exactly what the tooltip exists for.",
     "fontSize": "14px / weight 400 / --line-height-200 for a nav row; 12px for a section label, one step down so the hierarchy reads. The ACTIVE row keeps weight 400 — the SDK bolds it and that is overridden, because the row is already marked by background and ink and bolding reflows the text as you navigate.",
     "rowHeight": "32px, and it is a consequence of the above rather than a separate rule. Nothing a host passes may change it."
+  },
+  "variants": {
+    "expanded": "The 240px panel. Header shows logo + org name; a row is [icon] Label [trailing slot]; a section shows its label and can be folded; an accordion unfolds IN PLACE below its parent. Tooltips appear only when a label is clipped.",
+    "collapsed": "The 48px strip. The LOGO DOES NOT MOVE — it is the rail fixed point. Labels and the trailing slot are hidden; a 6px dot on the icon replaces a count or an alert but NOT a word, because a label like Beta is not state worth surfacing in 48px. An accordion opens a FLYOUT beside the strip instead of unfolding. A section is FORCED OPEN — folded it would be a hairline with no affordance to unfold it, stranding every row inside. Every row gets a tooltip, and it quotes the badge the dot stands in for.",
+    "peeked": "THE THIRD STATE, and the one most often missed. Hovering the collapsed rail draws the panel at 240px as an OVERLAY over a 48px footprint, so nothing to its right moves. Open after 150ms, close after 100ms. Only PINNING sets data-sidenav-pinned and reflows the page. Never key behaviour on isPinned meaning open: during a peek the rail is expanded and not pinned, and anything that assumes otherwise is wrong for the whole hover.",
+    "rowStates": "default transparent + secondary ink; hover --background-gray-hover-light; pressed --background-gray-default; active --background-gray-default + primary ink (the ICON takes primary ink too); active+hover --background-gray-hover-dark so an active row still answers the pointer. The active row keeps font-weight 400 — the SDK bolds it and that is overridden, because the row is already marked by background and ink and bolding reflows the label as you navigate. Transitions are background-color and color at --fds-duration-quick and width at --fds-duration-moderate, never all. All of this is the package: a host supplies no colours."
   }
 }
