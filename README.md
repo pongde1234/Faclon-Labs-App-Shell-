@@ -1,5 +1,8 @@
 # @faclon-labs/iosense-shell
 
+The iosense application chrome, extracted as a package. This repository is the
+package — there is nothing else in it.
+
 The iosense application chrome, as shipped in the product: the collapsible rail,
 the top bar, and the notification, profile and theme menus.
 
