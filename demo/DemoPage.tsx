@@ -74,7 +74,7 @@ export function DemoPage() {
           <span className={styles.logo} aria-hidden="true">
             ◆
           </span>
-          <span className={styles.org}>Northwind Ltd</span>
+          <span className={styles.org}>Faclon Labs</span>
         </>
       }
       topNavContent={<Breadcrumb trail={trail} />}
@@ -107,14 +107,14 @@ export function DemoPage() {
       }
       notifications={{
         items: NOTIFICATIONS,
-        onViewAll: () => navigate('/orders'),
-        onSelect: () => navigate('/txns'),
+        onViewAll: () => navigate('/devices'),
+        onSelect: () => navigate('/steamtrap'),
       }}
       profile={{
         user: USER,
         actions: [
-          { id: 'profile', label: 'Your profile', onSelect: () => navigate('/team') },
-          { id: 'billing', label: 'Billing', onSelect: () => navigate('/billing') },
+          { id: 'profile', label: 'Your profile', onSelect: () => navigate('/') },
+          { id: 'settings', label: 'Settings', onSelect: () => navigate('/tools') },
           { id: 'signout', label: 'Sign out', tone: 'danger', onSelect: () => {} },
         ],
       }}
@@ -126,10 +126,11 @@ export function DemoPage() {
       }
     >
       {/*
-        * Written the way generated content will be: nothing here sets a margin,
-        * and no wrapper invents a gap. Stack, Grid and Card carry the spacing,
-        * so the rhythm holds at every depth — which is the whole point of them
-        * existing. Deleting a card or nesting another Grid changes nothing.
+        * A page written the way generated content will be: nothing here sets a
+        * margin and no wrapper invents a gap. Stack, Grid and Card carry the
+        * spacing, so the rhythm holds at every depth — 16px between blocks,
+        * 8px inside a card. Deleting a tile or nesting another Grid changes
+        * nothing.
         */}
       <Stack>
         <Stack gap="spacing.1">
@@ -140,46 +141,37 @@ export function DemoPage() {
         </Stack>
 
         <Grid>
-          <Card title="Total tokens">
-            <p className={styles.metric}>6.9M</p>
-            <p className={styles.muted}>6.0M in · 933K out</p>
+          <Card title="Active devices">
+            <p className={styles.metric}>1,284</p>
+            <p className={styles.muted}>across 24 sites</p>
           </Card>
-          <Card title="Est. spend">
-            <p className={styles.metric}>$0.91</p>
-            <p className={styles.muted}>priced from live catalog</p>
+          <Card title="Energy today">
+            <p className={styles.metric}>84.2 MWh</p>
+            <p className={styles.muted}>+3.1% vs yesterday</p>
           </Card>
-          <Card title="Cache reads">
-            <p className={styles.metric}>3%</p>
-            <p className={styles.muted}>saved ~$0.19</p>
+          <Card title="Open alerts">
+            <p className={styles.metric}>7</p>
+            <p className={styles.muted}>2 critical</p>
           </Card>
-          <Card title="Messages">
-            <p className={styles.metric}>499</p>
-            <p className={styles.muted}>AI responses</p>
+          <Card title="Uptime">
+            <p className={styles.metric}>99.4%</p>
+            <p className={styles.muted}>rolling 30 days</p>
           </Card>
         </Grid>
 
-        <Card title="What this page is proving">
-          <ul className={styles.list}>
-            <li>Every gap on this page comes from Stack, Grid or Card — nothing sets a margin.</li>
-            <li>The Grid above reflows by item width, so it has no breakpoints to get wrong.</li>
-            <li>
-              Headings and paragraphs carry UA margins; the content area zeroes them, so
-              spacing does not change depending on which tag came first.
-            </li>
-            <li>Depth is derived from context; nothing here passes a level.</li>
-            <li>No router is imported — the link component is 15 lines of local code.</li>
-          </ul>
-        </Card>
-
         <Grid columns={2}>
-          {Array.from({ length: 6 }, (_, i) => (
-            <Card key={i} title={`Row ${i + 1}`}>
-              <p className={styles.muted}>
-                The top bar and the sidebar stay put while this column scrolls — the
-                content area owns the scrollbar, not the document.
-              </p>
-            </Card>
-          ))}
+          <Card title="Steam trap health">
+            <p className={styles.muted}>
+              Traps reporting above threshold in the last hour, by plant. Replace this
+              with a chart — the Card supplies the surface and the spacing, nothing else.
+            </p>
+          </Card>
+          <Card title="Recent runs">
+            <p className={styles.muted}>
+              The last workflow executions with their trigger and outcome. The content
+              area owns the scrollbar, so this column scrolls while the chrome stays put.
+            </p>
+          </Card>
         </Grid>
       </Stack>
     </AppShell>

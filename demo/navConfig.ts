@@ -1,93 +1,72 @@
 import type { Crumb, NavSection, ShellNotification, ShellUser } from '@faclon-labs/app-shell'
+
 /**
  * The demo's nav tree, as data.
  *
- * This file lives under `demo/` and NOTHING in the shell imports it — that is
- * the point. The shell renders no entities of its own; every row on screen
- * comes from this object being passed in as `navItems`. A consumer replaces
- * this wholesale.
+ * NOTHING in the package imports this file — that is the point. The shell
+ * renders no rows of its own; every row on screen comes from this object being
+ * passed in as `navItems`, and a consumer replaces it wholesale.
  *
- * It exercises all three depths, both parent shapes (a link that also expands,
- * and a pure group with no page of its own), descriptions at depth 2 and 3,
- * badges, tooltips and icon-less rows.
+ * This mirrors the iosense rail so the demo shows the shell doing the real job
+ * rather than a toy one: two nested groups, a record row, badges, and a long
+ * flat section that has to survive collapsing to a 48px strip.
  */
 export const NAV: NavSection[] = [
   {
-    id: 'payments',
-    label: 'Payments',
+    id: 'primary',
     items: [
-      { id: 'home', label: 'Home', href: '/', icon: '◧' },
+      { id: 'home', label: 'Home', href: '/', icon: '⌂' },
+      { id: 'finance', label: 'Finance', href: '/finance', icon: '◫', badge: 12 },
+      { id: 'opportunities', label: 'Opportunities', href: '/opportunities', icon: '◎', badge: 3 },
+      { id: 'agents-lab', label: 'Agents Lab', href: '/agents-lab', icon: '◇', badge: 'Beta' },
+      { id: 'voice', label: 'Voice', href: '/voice', icon: '◐' },
       {
-        // Depth 1 with a page of its own AND children: renders an <a> plus a
-        // separate expand <button>, because one control cannot do both.
-        id: 'txns',
-        label: 'Transactions',
-        href: '/txns',
-        icon: '⇄',
-        badge: 12,
+        // A group with a page of its own AND children: renders a link plus a
+        // separate expand button, because one control cannot do both.
+        id: 'workflows',
+        label: 'Workflows',
+        icon: '⚙',
         children: [
           {
-            id: 'txns-payments',
-            label: 'Payments',
-            href: '/txns/payments',
-            description: 'Captured and pending',
+            // A specific record rather than a list — it sits under the list it
+            // belongs to, which is the one place this tree goes three deep.
+            id: 'workflows-create',
+            label: 'Create company when a deal closes',
+            href: '/workflows/create',
+            description: 'Runs when a new opportunity has no matching company',
           },
-          {
-            id: 'txns-refunds',
-            label: 'Refunds',
-            href: '/txns/refunds',
-            description: 'Issued in the last 30 days',
-            badge: 3,
-            // Depth 3 — the deepest the sidebar allows.
-            children: [
-              {
-                id: 'txns-refunds-open',
-                label: 'Open',
-                href: '/txns/refunds/open',
-                description: 'Awaiting approval',
-              },
-              {
-                id: 'txns-refunds-done',
-                label: 'Completed',
-                href: '/txns/refunds/done',
-              },
-            ],
-          },
-          {
-            id: 'txns-settlements',
-            label: 'Settlements',
-            href: '/txns/settlements',
-            description: 'Daily payouts to your bank',
-          },
+          { id: 'workflows-all', label: 'All Workflows', href: '/workflows', description: 'Active and paused' },
+          { id: 'workflows-runs', label: 'Workflow runs', href: '/workflows/runs', description: 'Trigger, duration, outcome' },
+          { id: 'workflows-versions', label: 'Workflow versions', href: '/workflows/versions' },
         ],
       },
-      { id: 'orders', label: 'Orders', href: '/orders', icon: '▦' },
+      {
+        id: 'reports',
+        label: 'Reports',
+        icon: '▤',
+        children: [
+          { id: 'reports-scheduled', label: 'Scheduled reports', href: '/reports', description: 'Daily and weekly' },
+          { id: 'reports-templates', label: 'Report templates', href: '/reports/templates' },
+          { id: 'reports-archive', label: 'Report archive', href: '/reports/archive' },
+        ],
+      },
     ],
   },
   {
-    id: 'settings',
-    label: 'Settings',
+    id: 'connect',
+    label: 'Connect',
     items: [
-      {
-        // No href: a pure group. Renders as a <button> that only expands —
-        // there is nowhere for it to navigate to, so it is not a link.
-        id: 'workspace',
-        label: 'Workspace',
-        icon: '⚙',
-        children: [
-          { id: 'team', label: 'Team', href: '/team', description: 'People and roles' },
-          { id: 'billing', label: 'Billing', href: '/billing', description: 'Plan and invoices' },
-        ],
-      },
-      { id: 'api-keys', label: 'API Keys', href: '/api-keys', icon: '⚿' },
-      {
-        id: 'webhooks',
-        label: 'Webhooks',
-        href: '/webhooks',
-        icon: '⇗',
-        badge: 'New',
-        tooltip: 'Webhooks — endpoint delivery',
-      },
+      { id: 'devices', label: 'Devices', href: '/devices', icon: '▢' },
+      { id: 'zomato', label: 'Zomato', href: '/zomato', icon: '◨' },
+      { id: 'terminal', label: 'Terminal', href: '/terminal', icon: '◑' },
+      { id: 'fleet', label: 'Fleet', href: '/fleet', icon: '⬓' },
+      { id: 'warehouse', label: 'Warehouse', href: '/warehouse', icon: '▦' },
+      { id: 'maintenance', label: 'Maintenance', href: '/maintenance', icon: '✶' },
+      { id: 'models', label: 'Models', href: '/models', icon: '◈' },
+      { id: 'steamtrap', label: 'Steam Trap', href: '/steamtrap', icon: '◔' },
+      { id: 'tools', label: 'Tools', href: '/tools', icon: '✦' },
+      { id: 'memory', label: 'Memory', href: '/memory', icon: '▣' },
+      { id: 'database', label: 'Database', href: '/database', icon: '☰' },
     ],
   },
 ]
@@ -95,39 +74,49 @@ export const NAV: NavSection[] = [
 /**
  * The trail for a path.
  *
- * DELIBERATELY THE CONSUMER'S JOB, not the shell's. The shell owns how a crumb
- * is drawn; deciding what belongs in the trail — which ancestors are real pages,
- * which are just labels — is application knowledge.
+ * DELIBERATELY THE CONSUMER'S JOB. The shell owns how a crumb is drawn;
+ * deciding what belongs in the trail — which ancestors are real pages and which
+ * are only labels — is application knowledge.
  *
- * Note the "Settings" and "Workspace" crumbs carry no `href`. They are not
- * pages, so they render as inert text rather than as links that would either go
- * nowhere or shunt the user sideways into a sibling.
+ * Note the crumbs with no `href`. Those are sections with no page of their own,
+ * and an absent href is what makes them inert text rather than a link that
+ * would either go nowhere or shunt the reader sideways into a sibling.
  */
+const TRAILS: Record<string, Crumb[]> = {
+  '/': [{ label: 'Home' }],
+  '/finance': [{ label: 'Finance' }],
+  '/opportunities': [{ label: 'Opportunities' }],
+  '/agents-lab': [{ label: 'Agents Lab' }],
+  '/voice': [{ label: 'Voice' }],
+
+  '/workflows': [{ label: 'Workflows' }, { label: 'All Workflows' }],
+  '/workflows/create': [
+    { label: 'Workflows' },
+    { label: 'All Workflows', href: '/workflows' },
+    { label: 'Create company when a deal closes' },
+  ],
+  '/workflows/runs': [{ label: 'Workflows' }, { label: 'Workflow runs' }],
+  '/workflows/versions': [{ label: 'Workflows' }, { label: 'Workflow versions' }],
+
+  '/reports': [{ label: 'Reports' }, { label: 'Scheduled reports' }],
+  '/reports/templates': [{ label: 'Reports' }, { label: 'Report templates' }],
+  '/reports/archive': [{ label: 'Reports' }, { label: 'Report archive' }],
+
+  '/devices': [{ label: 'Connect' }, { label: 'Devices' }],
+  '/zomato': [{ label: 'Connect' }, { label: 'Zomato' }],
+  '/terminal': [{ label: 'Connect' }, { label: 'Terminal' }],
+  '/fleet': [{ label: 'Connect' }, { label: 'Fleet' }],
+  '/warehouse': [{ label: 'Connect' }, { label: 'Warehouse' }],
+  '/maintenance': [{ label: 'Connect' }, { label: 'Maintenance' }],
+  '/models': [{ label: 'Connect' }, { label: 'Models' }],
+  '/steamtrap': [{ label: 'Connect' }, { label: 'Steam Trap' }],
+  '/tools': [{ label: 'Connect' }, { label: 'Tools' }],
+  '/memory': [{ label: 'Connect' }, { label: 'Memory' }],
+  '/database': [{ label: 'Connect' }, { label: 'Database' }],
+}
+
 export function trailFor(path: string): Crumb[] {
-  const map: Record<string, Crumb[]> = {
-    '/': [{ label: 'Home' }],
-    '/txns': [{ label: 'Transactions' }],
-    '/txns/payments': [{ label: 'Transactions', href: '/txns' }, { label: 'Payments' }],
-    '/txns/refunds': [{ label: 'Transactions', href: '/txns' }, { label: 'Refunds' }],
-    '/txns/refunds/open': [
-      { label: 'Transactions', href: '/txns' },
-      { label: 'Refunds', href: '/txns/refunds' },
-      { label: 'Open' },
-    ],
-    '/txns/refunds/done': [
-      { label: 'Transactions', href: '/txns' },
-      { label: 'Refunds', href: '/txns/refunds' },
-      { label: 'Completed' },
-    ],
-    '/txns/settlements': [{ label: 'Transactions', href: '/txns' }, { label: 'Settlements' }],
-    '/orders': [{ label: 'Orders' }],
-    // No href on "Settings" or "Workspace" — neither is a page.
-    '/team': [{ label: 'Settings' }, { label: 'Workspace' }, { label: 'Team' }],
-    '/billing': [{ label: 'Settings' }, { label: 'Workspace' }, { label: 'Billing' }],
-    '/api-keys': [{ label: 'Settings' }, { label: 'API Keys' }],
-    '/webhooks': [{ label: 'Settings' }, { label: 'Webhooks' }],
-  }
-  return map[path] ?? [{ label: 'Not found' }]
+  return TRAILS[path] ?? [{ label: 'Not found' }]
 }
 
 export const USER: ShellUser = {
@@ -138,22 +127,22 @@ export const USER: ShellUser = {
 export const NOTIFICATIONS: ShellNotification[] = [
   {
     id: 'n1',
-    title: 'Settlement completed',
-    detail: '₹1,24,500 paid out to HDFC ••4471',
+    title: 'Steam trap 14 exceeded threshold',
+    detail: 'Pune plant · 132°C for 8 minutes',
     timestamp: '12 minutes ago',
     isUnread: true,
   },
   {
     id: 'n2',
-    title: 'Refund requires approval',
-    detail: 'Order #40219 · ₹2,300',
+    title: 'Scheduled report ready',
+    detail: 'Weekly energy summary · 24 sites',
     timestamp: '1 hour ago',
     isUnread: true,
   },
   {
     id: 'n3',
-    title: 'API key rotated',
-    detail: 'Production key regenerated by you',
+    title: 'Device back online',
+    detail: 'Warehouse gateway WH-07',
     timestamp: 'Yesterday',
   },
 ]
