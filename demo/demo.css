@@ -1,0 +1,117 @@
+/**
+ * The demo page's own styling. NOT part of either package.
+ *
+ * Deliberately thin, and deliberately free of outer margins: every gap you see
+ * between blocks on the page comes from the shell's content container, not from
+ * here. That is the property the demo is meant to demonstrate, so breaking it
+ * here would make the demo lie.
+ *
+ * Colours come from design-sdk tokens with literal fallbacks, so the page still
+ * reads if a token is missing rather than painting black on black.
+ */
+
+.demo-head {
+  /* No margin. The container's 16px top padding is the space above this. */
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.demo-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-neutral-default, #101828);
+}
+
+.demo-sub {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-neutral-subtle, #667085);
+}
+
+.demo-sub code,
+.demo-text code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.92em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--background-surface-subtle, #f2f4f7);
+}
+
+/* Four across, collapsing on narrow viewports. `auto-fit` rather than a fixed
+   count so the demo does not need its own breakpoints. */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.demo-card {
+  padding: 16px;
+  border: 1px solid var(--border-neutral-subtle, #e4e7ec);
+  border-radius: 8px;
+  background: var(--background-surface-default, #fff);
+}
+
+.demo-card-title {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-neutral-default, #101828);
+}
+
+.demo-text {
+  margin: 0 0 8px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-neutral-subtle, #475467);
+}
+
+.demo-text:last-child {
+  margin-bottom: 0;
+}
+
+.demo-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.9;
+  color: var(--text-neutral-subtle, #475467);
+}
+
+.demo-list kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.85em;
+  padding: 1px 5px;
+  border: 1px solid var(--border-neutral-subtle, #e4e7ec);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--background-surface-subtle, #f9fafb);
+}
+
+/* Tall enough to force the scroller, so the no-bottom-padding rule is visible
+   rather than merely documented. */
+.demo-tall {
+  min-height: 900px;
+}
+
+.demo-metric-label {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-neutral-subtle, #667085);
+}
+
+.demo-metric-value {
+  margin: 4px 0 0;
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--text-neutral-default, #101828);
+}
+
+.demo-metric-note {
+  margin: 2px 0 0;
+  font-size: 12px;
+  color: var(--text-neutral-subtle, #98a2b3);
+}

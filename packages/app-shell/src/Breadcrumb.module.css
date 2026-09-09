@@ -1,0 +1,81 @@
+/**
+ * The trail. Three crumb renders, and the visual difference between them is
+ * deliberately small: a trail is a secondary affordance that reports position,
+ * so it should not compete with the page.
+ */
+
+.breadcrumb {
+  min-width: 0;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  /* No collapsing anywhere in this component — a long trail wraps. */
+  flex-wrap: wrap;
+  gap: var(--shell-space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+}
+
+/* Ancestors are dimmed; the page you are on is not. That is the whole
+   hierarchy, and it is the reverse of the more common treatment because the
+   last crumb is the only one that names where you actually are. */
+.link {
+  composes: row from './interactive.module.css';
+  padding: var(--shell-space-1) var(--shell-space-2);
+  color: var(--shell-text-muted);
+  font-size: var(--shell-font-size);
+  line-height: var(--shell-line-height);
+  white-space: nowrap;
+}
+
+.link:hover {
+  color: var(--shell-text);
+}
+
+/**
+ * A crumb with no page behind it.
+ *
+ * A <span>, so it is not in the tab order and cannot be activated — the thing a
+ * hrefless <a> or a handler-less <button> gets wrong. It matches .link's ink
+ * exactly so the trail keeps one rhythm: what is removed is the interaction,
+ * not the styling.
+ *
+ * `cursor: default` and the absent hover shift are the only tells, and they are
+ * the standard ones. Dimming it further would read as DISABLED — as though the
+ * destination existed but was barred — rather than as context.
+ */
+.static {
+  padding: var(--shell-space-1) var(--shell-space-2);
+  color: var(--shell-text-muted);
+  font-size: var(--shell-font-size);
+  line-height: var(--shell-line-height);
+  white-space: nowrap;
+  cursor: default;
+}
+
+.current {
+  padding: var(--shell-space-1) var(--shell-space-2);
+  color: var(--shell-text);
+  font-size: var(--shell-font-size);
+  line-height: var(--shell-line-height);
+  font-weight: var(--shell-font-weight-medium);
+  white-space: nowrap;
+}
+
+.separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--shell-text-muted);
+  /* A copied trail should not carry stray slashes; the glyph is an SVG rather
+     than a text "/" so there is nothing in it to select in the first place. */
+  user-select: none;
+}

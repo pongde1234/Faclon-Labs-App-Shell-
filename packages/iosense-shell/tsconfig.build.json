@@ -1,0 +1,30 @@
+{
+  /* Self-contained rather than extending a root config: this file is what
+     `tsc -p` is pointed at from the repo root, and an `extends` pointing at a
+     sibling that moves breaks the declaration emit while the bundle still
+     builds — which looks like success until someone imports the package. */
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    /* design-sdk's own .d.ts files carry side-effect CSS imports; without this
+       every one of them is an error before our code is even reached. */
+    "allowArbitraryExtensions": true,
+    "types": ["vite/client", "node"],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    /* Without this tsc infers the common source dir and emits dist/src/*.d.ts,
+       which the exports map does not point at. */
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

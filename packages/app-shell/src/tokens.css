@@ -1,0 +1,176 @@
+/**
+ * Every value the shell draws with, declared once on the root class.
+ *
+ * A consumer themes this by setting these properties on `.appShell` (or on any
+ * ancestor — they inherit) and never by patching our CSS. That is the whole
+ * contract, and it only holds because no component stylesheet in this folder
+ * contains a raw hex or a raw px. Component CSS references `var(--shell-*)`
+ * exclusively.
+ *
+ * BREAKPOINTS ARE THE ONE EXCEPTION, and it is a CSS limitation rather than a
+ * choice: a media query condition cannot read a custom property, because media
+ * queries are evaluated before custom properties resolve. So the two
+ * breakpoints below are literal, and they are written out in exactly three
+ * places — AppShell.module.css, SideNav.module.css and SideNavLink.module.css.
+ * Change one, change all three.
+ *
+ *     mobile   < 768px    sidebar is an overlay drawer, content is full width
+ *     tablet  >= 768px    sidebar is in-flow chrome, content is offset
+ *     wide    >= 1440px   sidebar takes --shell-nav-width-xl
+ *
+ * This file is imported by AppShell.tsx, so it loads with the component and a
+ * consumer never has to remember a second import.
+ */
+
+.appShell {
+  /* ---------------------------------------------------------------- layout */
+  --shell-topnav-height: 56px;
+  --shell-nav-width: 240px;
+  --shell-nav-width-xl: 264px;
+  --shell-nav-width-collapsed: 56px;
+  --shell-nav-item-height: 40px;
+  /* The gutter <main> holds around page content. Set to 0 for a full-bleed
+     page — a map, or a table that runs to the edge — without patching CSS. */
+  --shell-content-padding: 16px;
+  /* The gap between blocks a consumer drops into <main>. Owned by the shell so
+     page content is evenly spaced without every page inventing its own margin
+     — which is how the demo ended up at 12px between cards. */
+  --shell-content-gap: 16px;
+  /* The narrowest a Grid tile may get before the grid drops a column. Chosen
+     rather than a column count because auto-fit reflows with no media query,
+     which is the one thing generated dashboards cannot get wrong. */
+  --shell-grid-min-item: 240px;
+  /* The rail is --shell-nav-width-collapsed wide and its icon box is square, so
+     the horizontal padding of a collapsed row is fixed by the geometry:
+     (56 - 24) / 2. Written as a calc so it cannot drift out of step. */
+  --shell-nav-icon-size: 24px;
+  /* Section headings animate to zero height on collapse, and `height: auto`
+     does not transition — so the expanded height has to be a real value. 20px
+     of line box plus the 4px padding the row carries above and below. */
+  --shell-nav-section-label-height: 28px;
+  --shell-nav-rail-pad: calc(
+    (var(--shell-nav-width-collapsed) - var(--shell-nav-icon-size)) / 2
+  );
+
+  /* ---------------------------------------------------------------- spacing */
+  --shell-space-1: 4px;
+  --shell-space-2: 8px;
+  --shell-space-3: 12px;
+  --shell-space-4: 16px;
+  --shell-space-5: 24px;
+
+  /* ------------------------------------------------------------------ radii */
+  --shell-radius-sm: 4px;
+  --shell-radius-md: 6px;
+  --shell-radius-lg: 8px;
+
+  /* ----------------------------------------------------------------- colour */
+  --shell-bg: #ffffff;
+  --shell-nav-bg: #f7f7f9;
+  --shell-topnav-bg: #ffffff;
+  --shell-border: #e4e4e7;
+  --shell-border-width: 1px;
+  --shell-text: #18181b;
+  --shell-text-muted: #6b6b76;
+  --shell-text-on-accent: #ffffff;
+  --shell-accent: #2563eb;
+  --shell-danger: #dc2626;
+
+  /* The three interaction states, in one place. interactive.module.css is the
+     only file that reads them, and every interactive row composes that. */
+  --shell-item-hover-bg: rgba(0, 0, 0, 0.045);
+  --shell-item-active-bg: rgba(37, 99, 235, 0.1);
+  --shell-item-active-text: var(--shell-accent);
+  --shell-focus-ring: 0 0 0 2px var(--shell-bg), 0 0 0 4px var(--shell-accent);
+
+  /* ------------------------------------------------------------------ scrim */
+  --shell-scrim-bg: rgba(0, 0, 0, 0.4);
+
+  /* ---------------------------------------------------------------- surface */
+  --shell-menu-bg: #ffffff;
+  --shell-menu-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 24px rgba(0, 0, 0, 0.12);
+  --shell-menu-width: 288px;
+
+  /* ------------------------------------------------------------------- type */
+  --shell-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica,
+    Arial, sans-serif;
+  --shell-font-size: 14px;
+  --shell-font-size-sm: 12px;
+  --shell-font-size-lg: 16px;
+  --shell-line-height: 20px;
+  --shell-font-weight-medium: 500;
+  --shell-font-weight-semibold: 600;
+
+  /* ------------------------------------------------------------------ motion */
+  /* Interaction states only — hover, active, focus ring. Deliberately NOT used
+     for the collapse, which needs its own pairing (below). */
+  --shell-transition: 150ms ease;
+
+  /* The rail collapse. `linear` is a decision, not an oversight: the panel and
+     the page content beside it are read as ONE moving object, and any easing
+     curve makes a sub-frame desync between the two obvious. Do not "improve"
+     this to ease-out. */
+  --shell-collapse-duration: 200ms;
+  --shell-collapse-ease: linear;
+
+  /* Labels, badges and headings fade rather than pop. ASYMMETRIC on purpose:
+     out fast with no delay, so they are gone before the narrowing panel
+     visibly squeezes them; in late, so text does not appear into a column too
+     narrow to hold it. Both fit inside the collapse envelope, so neither
+     lengthens the animation. */
+  --shell-fade-out-duration: 100ms;
+  --shell-fade-in-duration: 120ms;
+  --shell-fade-in-delay: 80ms;
+
+  /* THE VERTICAL REFLOW — deliberately much faster than the width, and with a
+     curve where the width uses linear.
+     Collapsing a 240px panel that has an open sub-tree removes ~470px of rows,
+     and running that over the full 200ms left a large empty gap slowly
+     squeezing shut while icons drifted up through it. That is the "fidgety"
+     part: two motions of very different magnitudes competing for the eye.
+     Front-loading it settles the vertical layout while the labels are still
+     fading, so the second half of the collapse is a pure horizontal narrow —
+     one motion at a time. ease-out because, unlike the width, this is not
+     paired with anything that could desync from it. */
+  --shell-reflow-duration: 120ms;
+  --shell-reflow-ease: ease-out;
+  /* The mobile drawer moves alone over a backdrop, so a curve is right here. */
+  --shell-drawer-duration: 200ms;
+  --shell-drawer-ease: ease-in-out;
+  /* Quicker on purpose, so the backdrop has settled before the panel lands. */
+  --shell-backdrop-duration: 100ms;
+
+  /* ------------------------------------------------------------------ layers */
+  --shell-z-topnav: 30;
+  --shell-z-scrim: 40;
+  --shell-z-drawer: 50;
+  --shell-z-menu: 60;
+  --shell-z-skiplink: 70;
+}
+
+/**
+ * Reduced motion.
+ *
+ * Overriding the TOKENS rather than restating every selector. The collapse
+ * motion now lives across three stylesheets, and a per-selector override in
+ * each would have to win a specificity fight with the rule it is overriding —
+ * which is exactly how the previous reduced-motion rule got silently ignored
+ * (measured: durations stayed at 200ms). Retuning the value at its source
+ * reaches every consumer with no specificity involved at all.
+ *
+ * Still 0.01ms and not zero: transitionend has to keep firing, or the label
+ * guard in useTransitionGuard falls back to its timer and reduced-motion users
+ * get the SLOWEST label switch rather than an instant one.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .appShell {
+    --shell-transition: 0.01ms;
+    --shell-collapse-duration: 0.01ms;
+    --shell-drawer-duration: 0.01ms;
+    --shell-backdrop-duration: 0.01ms;
+    --shell-fade-out-duration: 0.01ms;
+    --shell-fade-in-duration: 0.01ms;
+    --shell-fade-in-delay: 0ms;
+    --shell-reflow-duration: 0.01ms;
+  }
+}

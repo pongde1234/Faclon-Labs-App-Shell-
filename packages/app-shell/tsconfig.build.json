@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "es2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true,
+    "skipLibCheck": true,
+    "verbatimModuleSyntax": true,
+    "erasableSyntaxOnly": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "allowArbitraryExtensions": true,
+    "types": ["vite/client"],
+    "declaration": true,
+    "emitDeclarationOnly": true,
+    /* Without this tsc infers the common source dir and emits dist/src/*.d.ts,
+       which the exports map does not point at. */
+    "rootDir": "src",
+    "outDir": "dist"
+  },
+  "include": ["src"]
+}

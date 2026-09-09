@@ -1,0 +1,135 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "SideNavLink",
+  "import": "@faclon-labs/app-shell",
+  "purpose": "One row in the sidebar, and the sub-list beneath it. Rendered by AppShell from navItems — you almost never write this yourself.",
+  "useInstead": [
+    {
+      "when": "you are building a nav",
+      "use": "AppShell's navItems prop — does the tree need to be data, or is this genuinely one loose row?"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for nav row shape in this package. The rules below are about the NavItem you put in navItems, not about calling this component.",
+    "aliases": [
+      "nav row",
+      "menu item",
+      "sidebar link"
+    ],
+    "order": [
+      "shape",
+      "depth",
+      "annotation"
+    ],
+    "beforeTheRules": "Depth is NOT a prop and never will be. SideNavLink reads it from context and adds one for itself, which is what makes the 3-level cap enforceable — a prop would let a caller assert a level it does not occupy.",
+    "rules": [
+      {
+        "stage": "shape",
+        "if": "the row navigates somewhere",
+        "then": "give the NavItem an href",
+        "because": "it renders as a link; without one it becomes a pure expand toggle",
+        "certainty": "high"
+      },
+      {
+        "stage": "shape",
+        "if": "the row is a group with no page of its own",
+        "then": "give it children and NO href",
+        "because": "a group that pretends to be a link lands the user on a placeholder; with no href it renders as a <button> that only expands",
+        "certainty": "high"
+      },
+      {
+        "stage": "shape",
+        "if": "the row both has a page and contains children",
+        "then": "give it both — it renders an <a> plus a separate expand <button>",
+        "because": "one control cannot both navigate and expand; two real controls beat one that guesses from click coordinates",
+        "certainty": "high"
+      },
+      {
+        "stage": "depth",
+        "if": "you are about to nest a fourth level",
+        "then": "flatten the branch or promote it to its own section",
+        "because": "there is nowhere for a fourth level to indent to; the component throws a named error in development rather than rendering something broken",
+        "certainty": "high"
+      },
+      {
+        "stage": "annotation",
+        "if": "the row needs a secondary line",
+        "then": "set `description`, but only at depth 2 or 3",
+        "because": "depth 1 has to survive collapsing to a 56px rail, where a second line has nowhere to go; set at depth 1 it is ignored and dev builds warn",
+        "certainty": "high"
+      },
+      {
+        "stage": "annotation",
+        "if": "the row needs a count or a status word",
+        "then": "set `badge` to a number or a node",
+        "because": "it renders at the trailing edge and hides with the label when the rail collapses",
+        "certainty": "medium"
+      },
+      {
+        "stage": "annotation",
+        "if": "the label is long and the icon alone would be ambiguous",
+        "then": "set `tooltip`",
+        "because": "it shows only while the rail is a 48px strip, where the label is not visible",
+        "certainty": "medium"
+      }
+    ],
+    "constraints": [
+      "Active state is DERIVED from AppShell's currentPath. There is no isActive prop and adding one would let two rows claim the current page.",
+      "A parent is active when any descendant matches, which is also what decides which branches start expanded."
+    ],
+    "certainty": "high"
+  },
+  "accessibility": {
+    "keyboard": "Every row is reachable by Tab. Expand triggers are <button> and respond to Enter and Space; navigation rows are <a>.",
+    "aria": "The current row carries aria-current=\"page\". Expandable rows carry aria-expanded and an aria-controls pointing at their sub-list, which stays in the DOM (hidden) so the reference always resolves.",
+    "notes": "While the rail is collapsed the label is hidden with visibility, not display — it leaves the accessibility tree and the tab order either way, but visibility can be animated, so the label fades instead of popping."
+  },
+  "composition": {
+    "childrenContract": "None directly. SideNavLink is rendered by AppShell from a NavItem; its sub-list comes from that item's `children` array, and it renders itself recursively for each one.",
+    "notes": "The sub-list stays in the DOM when closed (hidden, or at zero height while the rail collapses) so the row's aria-controls always resolves to a real element. Do not unmount it to \"clean up\" — a dangling aria-controls is worse than none."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Adding a `level` or `depth` field to a NavItem",
+      "do": "Nest it in `children` and let depth be derived",
+      "why": "a depth prop can lie, and the 3-level cap would then be unenforceable"
+    },
+    {
+      "dont": "Adding an `isActive` flag to a NavItem",
+      "do": "Set AppShell's currentPath",
+      "why": "active state is computed from the tree so exactly one row can be current; a flag lets two claim it"
+    },
+    {
+      "dont": "Giving a group row an href that points at its first child",
+      "do": "Leave the href off",
+      "why": "a crumb or row that goes 'up' should not move the user sideways into a sibling; with no href it becomes a pure toggle"
+    },
+    {
+      "dont": "Setting `description` on a top-level row",
+      "do": "Put it on the depth 2 or 3 row it belongs to",
+      "why": "it is ignored at depth 1 because the collapsed rail cannot show it"
+    },
+    {
+      "dont": "Nesting four levels because the information architecture has four",
+      "do": "Promote the third level to its own NavSection",
+      "why": "the component throws rather than rendering an indent that does not exist"
+    }
+  ],
+  "examples": {
+    "canonical": "const nav: NavSection[] = [{\n  id: 'payments',\n  label: 'Payments',\n  items: [\n    { id: 'home', label: 'Home', href: '/', icon: <HomeIcon /> },\n    {\n      id: 'txns', label: 'Transactions', href: '/txns', badge: 12,\n      children: [\n        { id: 'refunds', label: 'Refunds', href: '/txns/refunds', description: 'Last 30 days' },\n      ],\n    },\n  ],\n}]",
+    "incorrect": [
+      {
+        "code": "{ id: 'txns', label: 'Transactions', level: 1, isActive: true }",
+        "why": "neither field exists — depth comes from nesting and active state from currentPath"
+      },
+      {
+        "code": "{ id: 'settings', label: 'Settings', href: '/settings/team', children: [...] }",
+        "why": "if Settings has no page of its own, omit the href; pointing it at a child moves the user sideways"
+      },
+      {
+        "code": "{ id: 'home', label: 'Home', href: '/', description: 'Your dashboard' }",
+        "why": "descriptions are ignored at depth 1, because the 56px rail has nowhere to render a second line"
+      }
+    ]
+  }
+}

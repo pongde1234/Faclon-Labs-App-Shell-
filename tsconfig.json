@@ -1,7 +1,10 @@
 {
   "compilerOptions": {
     "target": "es2023",
-    "lib": ["ES2023", "DOM"],
+    "lib": [
+      "ES2023",
+      "DOM"
+    ],
     "module": "esnext",
     "moduleResolution": "bundler",
     "jsx": "react-jsx",
@@ -13,7 +16,25 @@
     "noUnusedParameters": true,
     "allowArbitraryExtensions": true,
     "noEmit": true,
-    "types": ["vite/client"]
+    "types": [
+      "vite/client",
+      "node"
+    ],
+    "paths": {
+      "@faclon-labs/iosense-shell": [
+        "./packages/iosense-shell/src/index.ts"
+      ],
+      "@faclon-labs/app-shell": [
+        "./packages/app-shell/src/index.ts"
+      ]
+    }
   },
-  "include": ["src"]
+  "include": [
+    "packages/*/src",
+    "demo",
+    "stories",
+    ".storybook",
+    "vite.config.ts",
+    "packages/*/vite.config.ts"
+  ]
 }

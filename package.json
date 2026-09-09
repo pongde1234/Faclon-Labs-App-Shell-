@@ -1,51 +1,23 @@
 {
-  "name": "@faclon-labs/iosense-shell",
-  "version": "0.1.0",
-  "description": "The iosense application chrome — the collapsible rail, top bar and menus as shipped in the product. Built on @faclon-labs/design-sdk and @faclon-labs/fds.",
-  "license": "UNLICENSED",
+  "name": "faclon-labs-app-shell",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Two application shells and a demo. @faclon-labs/app-shell is react-only and portable; @faclon-labs/iosense-shell is the product chrome built on the SDK.",
   "type": "module",
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/pongde1234/Faclon-Labs-App-Shell-.git"
-  },
-  "files": [
-    "dist",
-    "src",
-    "guards"
-  ],
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./theme-overrides.css": "./src/theme-overrides.css",
-    "./package.json": "./package.json",
-    "./guards/index.json": "./guards/index.json",
-    "./guards/*": "./guards/*",
-    "./styles.css": "./dist/style.css"
-  },
   "scripts": {
-    "build": "vite build && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "peerDependencies": {
-    "@faclon-labs/design-sdk": "^0.7.29",
-    "@faclon-labs/fds": "^0.3.0",
-    "lucide-react": "^1.24.0",
-    "react": "^18.0.0 || ^19.0.0",
-    "react-dom": "^18.0.0 || ^19.0.0"
-  },
-  "publishConfig": {
-    "access": "restricted"
+    "dev": "vite",
+    "preview": "vite preview",
+    "build": "npm run build:app-shell && npm run build:iosense-shell",
+    "build:app-shell": "vite build --config packages/app-shell/vite.config.ts && tsc -p packages/app-shell/tsconfig.build.json",
+    "build:iosense-shell": "vite build --config packages/iosense-shell/vite.config.ts && tsc -p packages/iosense-shell/tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@faclon-labs/design-sdk": "^0.7.29",
     "@faclon-labs/fds": "^0.3.0",
+    "@storybook/react-vite": "^10.6.0",
     "@types/node": "^24.13.2",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
@@ -53,6 +25,7 @@
     "lucide-react": "^1.24.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "storybook": "^10.6.0",
     "typescript": "~6.0.2",
     "vite": "^8.1.1"
   }

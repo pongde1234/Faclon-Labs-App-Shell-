@@ -1,0 +1,212 @@
+import { useCallback, useMemo, useState } from 'react'
+import { CircleQuestionMark } from 'lucide-react'
+import type { Meta, StoryObj } from '@storybook/react-vite'
+
+import {
+  IosenseShell,
+  NavFooterRow,
+  NAV_ICON_SIZE,
+  IOSENSE_NAV,
+  IOSENSE_NOTIFICATIONS,
+  IOSENSE_PROFILE,
+  IOSENSE_RECORD_PARENT,
+  IOSENSE_SECTION_DEFAULT,
+  buildTrail,
+  resolveSection,
+  type NavItem,
+} from '@faclon-labs/iosense-shell'
+
+import { ACCORDION_ROWS, DEMO_PROFILE, DemoLogo } from './fixtures'
+
+const PAGE_TITLES: Record<string, string> = {
+  home: 'Overview Dashboard',
+  finance: 'Finance Overview',
+  memory: 'Store Level Dashboard',
+  devices: 'Devices',
+  workflows: 'Workflows',
+  'workflows-all': 'All Workflows',
+  'workflows-create': 'Create company when a deal closes',
+  'workflows-runs': 'Workflow runs',
+  reports: 'Reports',
+  'reports-scheduled': 'Scheduled reports',
+  'reports-archive': 'Report archive',
+}
+
+const card: React.CSSProperties = {
+  padding: 16,
+  border: '1px solid var(--border-neutral-subtle, #e4e7ec)',
+  borderRadius: 8,
+  background: 'var(--background-surface-default, #fff)',
+}
+
+/**
+ * STORY.md — the whole shell assembled.
+ *
+ * Mounting AppSideNav and AppTopBar by hand is NOT equivalent to this: the
+ * content area's styling keys off markup only IosenseShell renders
+ * (data-topbar, data-sidenav-pinned, .app-scroll-frame > .app-main-scroll).
+ * Hand-assemble it and you lose the 16px inset, the overlay scrollbar and the
+ * rail offset.
+ */
+function ShellHarness({
+  navItems,
+  logo,
+  footer,
+  initialId = 'home',
+  children,
+}: {
+  navItems?: NavItem[]
+  logo?: React.ReactNode
+  footer?: React.ReactNode
+  initialId?: string
+  children?: React.ReactNode
+}) {
+  const [activeId, setPage] = useState(initialId)
+  const navigate = useCallback(
+    (id: string) => setPage(resolveSection(id, IOSENSE_SECTION_DEFAULT)),
+    [],
+  )
+  const title = PAGE_TITLES[activeId] ?? activeId
+  const trail = useMemo(
+    () =>
+      buildTrail(activeId, title, {
+        items: navItems ?? [],
+        pageTitles: PAGE_TITLES,
+        recordParent: IOSENSE_RECORD_PARENT,
+      }),
+    [activeId, title, navItems],
+  )
+
+  return (
+    <IosenseShell
+      navItems={navItems}
+      logo={logo}
+      sideNavFooter={footer}
+      activeId={activeId}
+      onNavigate={navigate}
+      trail={trail}
+      profile={navItems === IOSENSE_NAV ? IOSENSE_PROFILE : DEMO_PROFILE}
+      notifications={IOSENSE_NOTIFICATIONS}
+      unreadCount={3}
+      onOpenNotifications={() => {}}
+    >
+      {children ?? (
+        <>
+          <h1 style={{ margin: 0, fontSize: 20 }}>{title}</h1>
+          <div style={card}>
+            Nothing on this page sets a margin. The 16px above, beside and between these
+            blocks belongs to the content container.
+          </div>
+          <div style={card}>A second block, 16px below the first.</div>
+        </>
+      )}
+    </IosenseShell>
+  )
+}
+
+/**
+ * The meta points at the HARNESS, not at IosenseShell itself. The shell needs a
+ * dozen required props and real state to be worth looking at, so every story
+ * renders the harness; typing the meta against the raw component would demand
+ * all twelve in `args` and then ignore them.
+ */
+const meta = {
+  title: 'Shell/IosenseShell',
+  component: ShellHarness,
+} satisfies Meta<typeof ShellHarness>
+
+export default meta
+type Story = StoryObj<typeof meta>
+
+/**
+ * WHAT THE PACKAGE SHIPS, with nothing passed in: an empty rail, no footer, and
+ * design-sdk's built-in mark in the header because no `logo` was set.
+ *
+ * The chrome is all there — toggle, breadcrumb, bell, avatar, the content
+ * container with its 16px. Only the *content* is missing, because the content
+ * is yours.
+ */
+export const Default: Story = {
+  render: () => <ShellHarness />,
+}
+
+/** The same shell with a nav, a logo and a footer — three props. */
+export const Branded: Story = {
+  render: () => (
+    <ShellHarness
+      navItems={ACCORDION_ROWS}
+      logo={<DemoLogo />}
+      footer={<NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label="Help" />}
+    />
+  ),
+}
+
+/**
+ * The iosense product's own configuration — IOSENSE_NAV, IOSENSE_PROFILE,
+ * IOSENSE_NOTIFICATIONS. This is what the live app looks like.
+ *
+ * These constants are examples to COPY. Importing them into a product that is
+ * not iosense ships our pages, and a real person's name and email, inside
+ * someone else's app.
+ */
+export const TheIosenseProduct: Story = {
+  render: () => (
+    <ShellHarness
+      navItems={IOSENSE_NAV}
+      initialId="memory"
+      footer={<NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label="Help" />}
+    />
+  ),
+}
+
+/**
+ * Deep-linked three levels in. The accordion opened itself, and the trail reads
+ * Workflows (inert) / All Workflows (link) / this record (current).
+ */
+export const DeepLinked: Story = {
+  render: () => (
+    <ShellHarness navItems={IOSENSE_NAV} initialId="workflows-create" logo={<DemoLogo />} />
+  ),
+}
+
+/**
+ * The content container's rule, made visible.
+ *
+ * 16px left, right and top. NONE at the bottom — scroll down and the last block
+ * runs to the cut-off, because a scrolling column has no bottom to pad. 16px
+ * between blocks, supplied by the container, so none of these divs sets a
+ * margin.
+ */
+export const ContentSpacing: Story = {
+  render: () => (
+    <ShellHarness navItems={ACCORDION_ROWS} logo={<DemoLogo />}>
+      <div style={card}>16px above this, from the container's padding-top.</div>
+      <div style={card}>16px between, from the container's gap.</div>
+      <div style={{ ...card, minHeight: 900 }}>
+        A tall block, to force the scroller. Scroll to the bottom: nothing sits below it.
+        <br />
+        <br />
+        Note it is not squashed to fit either — the gap is <code>&gt; * + *</code> with a
+        margin, not <code>display: flex; gap</code>, which would make every child a flex item
+        with <code>flex-shrink: 1</code>.
+      </div>
+    </ShellHarness>
+  ),
+}
+
+/**
+ * The gap is a DEFAULT, not a law. One custom property changes it, and the rule
+ * itself is not re-stated.
+ */
+export const DenserContentSpacing: Story = {
+  render: () => (
+    <div style={{ height: '100vh' }} className="sb-dense">
+      <style>{`.sb-dense .app-main-scroll { --shell-content-gap: 4px; }`}</style>
+      <ShellHarness navItems={ACCORDION_ROWS} logo={<DemoLogo />}>
+        <div style={card}>--shell-content-gap: 4px</div>
+        <div style={card}>Still 16px from the edges; only the gap changed.</div>
+        <div style={card}>Third block.</div>
+      </ShellHarness>
+    </div>
+  ),
+}

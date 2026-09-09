@@ -415,20 +415,43 @@ first run.
 
 ---
 
-# 5. Stories to write
+# 5. Stories
 
-One file per section of this document:
+`npm run storybook`. Three files, grouped by the component you actually mount —
+not one per section of this document, and the difference is worth explaining.
 
 ```
-SideNavHeader.stories.tsx    logo + name · collapsed · long name · custom node
-NavEntity.stories.tsx        plain · counter · badge · indicator dot · active · truncated
-NavAccordion.stories.tsx     folded · unfolded · child active · collapsed-rail flyout
-NavSection.stories.tsx       open · folded · forced open while collapsed
-SideNavFooter.stories.tsx    empty (default) · help · promotional banner
-TopNav.stories.tsx           toggle states · 1/2/3 crumbs · actions slot · bell counts
-ContentContainer.stories.tsx 16/16/16/0 proof · default 16px gap · overridden gap · overflow
-IosenseShell.stories.tsx     the whole thing, pinned / collapsed / mobile
+stories/
+  fixtures.tsx           small hand-written navs, a non-iosense logo, a frame
+  SideNav.stories.tsx    §1  — 14 stories
+  TopNav.stories.tsx     §2  —  8 stories
+  Shell.stories.tsx      §3 + the whole shell — 6 stories
 ```
 
-The breadcrumb stories matter most: the 2-layer and 3-layer cases are the rule
-that is easiest to get wrong and hardest to notice when it is wrong.
+**Why not one file per section.** §1.1, §1.2 and §1.3 describe the header, the
+rows and the footer, but those are not separately mountable components yet —
+see §4. They are `AppSideNav` with different props. A `SideNavHeader.stories.tsx`
+would have to mount the whole rail anyway and pretend it was showing you a
+header, which is a worse lie than grouping them honestly.
+
+If §4's component split happens, these files split with it.
+
+| Section | Stories |
+|---|---|
+| §1.1 header | `HeaderWithoutLogo` (falls through to design-sdk's iosense mark), `HeaderWithCustomWorkspace` |
+| §1.2(a) entity | `WithRows`, `Badges` (both badge kinds, a capped 1284, a truncated label), `Collapsed` (dots + tooltips) |
+| §1.2(b) accordion | `Accordions`, `AccordionOpensForActiveChild`, `CollapsedFlyout` |
+| §1.2(c) section | `Sections`, `CollapsedSectionStaysOpen` |
+| §1.3 footer | `Footer`, `FooterWithBanner` — and `Default`, which has none |
+| §2 top bar | `OneCrumb`, `TwoCrumbs`, `ThreeCrumbs`, `WithActions`, `NoUnread`, `ManyUnread`, `Mobile` |
+| §3 content | `ContentSpacing`, `DenserContentSpacing` |
+| whole shell | `Default` (empty — what ships), `Branded`, `TheIosenseProduct`, `DeepLinked` |
+
+**The breadcrumb stories matter most.** `TwoCrumbs` and `ThreeCrumbs` are the
+rule that is easiest to get wrong and hardest to notice when it is wrong — try
+tabbing to the first crumb in either; you cannot, and that is the point.
+
+**`Default` is the other one to read.** Both `Shell/Default` and
+`Side nav/Default` show what the package ships with nothing passed in: an empty
+rail, no footer, and design-sdk's own mark in the header. Everything in every
+other story is a prop.

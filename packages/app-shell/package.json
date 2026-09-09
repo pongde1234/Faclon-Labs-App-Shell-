@@ -1,0 +1,37 @@
+{
+  "name": "@faclon-labs/app-shell",
+  "version": "0.1.0",
+  "description": "An application shell — sticky top bar, collapsible sidebar, independently scrolling content — with no runtime dependency beyond React.",
+  "license": "UNLICENSED",
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist",
+    "guards"
+  ],
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./styles.css": "./dist/style.css",
+    "./package.json": "./package.json",
+    "./guards/index.json": "./guards/index.json",
+    "./guards/*": "./guards/*"
+  },
+  "scripts": {
+    "build": "vite build && tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.build.json --noEmit"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0"
+  },
+  "publishConfig": {
+    "access": "restricted"
+  }
+}

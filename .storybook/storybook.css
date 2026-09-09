@@ -1,0 +1,29 @@
+/* Storybook chrome only — never shipped, and never imported by a package.
+   The shell is full-bleed, so the canvas must not add a margin of its own or
+   every story would show the rail inset in a way it never is in an app. */
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+/* A story that renders one rail rather than a whole shell still needs a height
+   to fill — the rail is a flex column and collapses to nothing otherwise. */
+.sb-rail-frame {
+  display: flex;
+  height: 100vh;
+  background: var(--background-surface-subtle, #f9fafb);
+}
+
+.sb-note {
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-neutral-subtle, #475467);
+}
+
+.sb-note code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--background-surface-subtle, #f2f4f7);
+}
