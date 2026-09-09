@@ -42,24 +42,3 @@ export const KIND_COLOR: Record<NotificationKind, 'Information' | 'Negative' | '
   report: 'Positive',
   system: 'Neutral',
 }
-
-export function greeting(now = new Date()): string {
-  const h = now.getHours()
-  if (h < 12) return 'Good morning'
-  if (h < 18) return 'Good afternoon'
-  return 'Good evening'
-}
-
-/** "Today" / "Yesterday" / "Friday, July 17, 2026" — heading per day bucket. */
-export function dayLabel(iso: string, now = new Date()): string {
-  const d = new Date(iso)
-  const day = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime()
-  const diff = (day(now) - day(d)) / 86_400_000
-  if (diff === 0) return 'Today'
-  if (diff === 1) return 'Yesterday'
-  return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
-}
-
-export function timeLabel(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
-}

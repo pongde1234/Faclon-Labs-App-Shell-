@@ -2,11 +2,7 @@ import { useState } from 'react'
 import { Grid3x3, Sparkles } from 'lucide-react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
-import {
-  AppTopBar,
-  buildTrail,
-  type ThemePreference,
-} from '@faclon-labs/iosense-shell'
+import { AppTopBar, buildTrail, type ThemePreference } from '@faclon-labs/iosense-shell'
 
 import { ACCORDION_ROWS, DEMO_NOTIFICATIONS, DEMO_PROFILE } from './fixtures'
 
@@ -19,12 +15,13 @@ const PAGE_TITLES: Record<string, string> = {
 }
 
 /**
- * STORY.md §2 — the top bar.
+ * STORY.md §2 — the top bar. Three regions, and nothing else is in it.
  *
- * Left: the rail's collapse control, which lives HERE and not in the rail,
- * because a control that hides a panel cannot sit inside that panel.
- * Middle: the breadcrumbs.
- * Right: the `actions` slot, then notifications, then the avatar — fixed order.
+ *   LEFT    the toggle that opens and closes the rail, then the breadcrumbs
+ *   RIGHT   the `actions` slot, then notifications, then the avatar
+ *
+ * That is the whole bar. No search, no title, no tabs — anything else a product
+ * wants goes through `actions`, which is why the slot exists.
  */
 const meta = {
   title: 'Top nav/Bar',
@@ -55,17 +52,78 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-/** One crumb: the page is its own trail, and a lone crumb is the current page. */
-export const OneCrumb: Story = {}
+// ── the toggle, on the left ────────────────────────────────────────────────
 
 /**
- * TWO crumbs. The first is PLAIN TEXT, not a link — "Workflows" is an accordion
- * parent, not a page, so its crumb reports position rather than offering a
- * destination.
+ * THE COLLAPSE CONTROL LIVES HERE, NOT IN THE RAIL.
  *
- * Try to tab to it: you cannot, and that is deliberate. fds has no inert
- * variant — every non-current BreadcrumbItem there is a tabbable button — so
- * this is a StaticCrumb of ours.
+ * A control that hides a panel cannot sit inside that panel. Collapsed, the
+ * rail is 48px — which is why this used to exist twice, as a close button in
+ * the rail header AND a duplicate "Open sidebar" row in the list, so it stayed
+ * reachable. One button in fixed chrome replaces both, and it does not move
+ * when the thing it operates on does.
+ *
+ * Rail open: `PanelLeftClose`, labelled "Close sidebar (Ctrl+B)". Click it.
+ */
+export const ToggleWhenOpen: Story = {
+  args: { isPinned: true },
+}
+
+/**
+ * Rail collapsed: the glyph flips to `PanelLeftOpen` and the label becomes
+ * "Open sidebar". The button shows what pressing it will DO, not what the
+ * current state is — that is the difference between a toggle and a status light.
+ */
+export const ToggleWhenCollapsed: Story = {
+  args: { isPinned: false },
+}
+
+/**
+ * Below the breakpoint the SAME button opens the drawer instead of pinning —
+ * there is no rail to pin — and the label follows: "Open navigation" rather
+ * than "Open sidebar".
+ *
+ * One control, two jobs. A hamburger here would be a third idiom for the one
+ * control; `PanelLeft*` already says "the panel on the left", which is true in
+ * both modes.
+ */
+export const ToggleOnMobile: Story = {
+  args: { isMobile: true, isNavDrawerOpen: false },
+}
+
+/** Mobile, drawer open — the glyph and label flip the same way. */
+export const ToggleOnMobileOpen: Story = {
+  args: { isMobile: true, isNavDrawerOpen: true },
+}
+
+// ── the breadcrumbs, beside it ─────────────────────────────────────────────
+//
+// THREE RENDERS, ONE RULE:
+//   the last crumb   the current page, aria-current, not a link
+//   has an `id`      a link — clicking navigates
+//   has neither      plain, inert text, NOT tabbable
+//
+// The third case is ours. fds has no such variant — every non-current
+// BreadcrumbItem there is a tabbable button — so it is a StaticCrumb composed
+// into Breadcrumb's <ol>.
+
+/**
+ * ONE crumb. The page is its own trail, and a lone crumb is the current page.
+ * Every top-level row lands here.
+ */
+export const OneCrumb: Story = {
+  args: { trail: [{ label: 'Home' }] },
+}
+
+/**
+ * TWO crumbs. The first is PLAIN TEXT, not a link.
+ *
+ * "Workflows" is an accordion parent — a position, not a page — so its crumb
+ * reports where you are rather than offering somewhere to go. Try to tab to it:
+ * you cannot, and that is deliberate.
+ *
+ * Pointing it at the accordion's default child was tried and was worse: a crumb
+ * whose job is to go UP instead moved the reader SIDEWAYS into a sibling.
  */
 export const TwoCrumbs: Story = {
   args: {
@@ -77,11 +135,11 @@ export const TwoCrumbs: Story = {
 }
 
 /**
- * THREE crumbs. First inert text, SECOND a real link, third the current page.
+ * THREE crumbs — first inert text, SECOND a real link, third the current page.
  *
- * The middle one is a link because "All Workflows" IS a page. Pointing the
- * first at the accordion's default child was tried and was worse: a crumb whose
- * job is to go UP instead moved the reader SIDEWAYS into a sibling.
+ * The middle one is a link because "All Workflows" IS a page. This is the only
+ * shape in which a middle crumb appears, and it exists because a record sits
+ * inside the list it belongs to: one level the rail does not draw.
  */
 export const ThreeCrumbs: Story = {
   args: {
@@ -94,11 +152,39 @@ export const ThreeCrumbs: Story = {
 }
 
 /**
- * The `actions` slot — to the LEFT of the bell and the avatar.
+ * A long current page. The trail keeps its shape rather than wrapping the bar
+ * onto a second line — the bar is 48px and stays 48px.
+ */
+export const LongCrumb: Story = {
+  args: {
+    trail: buildTrail('workflows-create', 'Create company when a deal closes and notify the account team', {
+      items: ACCORDION_ROWS,
+      pageTitles: PAGE_TITLES,
+      recordParent: { 'workflows-create': 'workflows-all' },
+    }),
+  },
+}
+
+// ── the right edge ─────────────────────────────────────────────────────────
+
+/**
+ * The right edge, in its FIXED order: `actions`, then the bell, then the avatar.
  *
- * This is where an application launcher or an assistant button goes. Neither
- * ships: one lists applications only the host can enumerate, the other opens an
- * assistant the package knows nothing about.
+ * The two on the right are chrome and always in that order, so a user learns
+ * one place for "my account" and one for "what happened". Anything a product
+ * adds goes to their LEFT, where it cannot displace them.
+ *
+ * Open either one: `Top nav/Profile menu` has them with their panels showing.
+ */
+export const RightEdge: Story = {}
+
+/**
+ * The `actions` slot filled.
+ *
+ * This is where an application launcher or an assistant button goes. NEITHER
+ * SHIPS: one lists applications only the host can enumerate, the other opens an
+ * assistant this package knows nothing about. They were removed from the export
+ * on purpose, and this slot is what replaced them.
  */
 export const WithActions: Story = {
   args: {
@@ -111,7 +197,7 @@ export const WithActions: Story = {
   },
 }
 
-/** No unread notifications — the counter pill disappears entirely. */
+/** No unread — the pill disappears rather than rendering a zero. */
 export const NoUnread: Story = {
   args: { unreadCount: 0 },
 }
@@ -121,16 +207,7 @@ export const ManyUnread: Story = {
   args: { unreadCount: 1284 },
 }
 
-/**
- * Below the breakpoint the same button opens the DRAWER instead of pinning —
- * there is no rail to pin. One control, two jobs, and the label follows:
- * "Open navigation" rather than "Open sidebar".
- */
-export const Mobile: Story = {
-  args: { isMobile: true, isNavDrawerOpen: false },
-}
-
-/** An avatar with no image falls back to initials from the profile. */
+/** No avatar image: the trigger falls back to initials from the profile. */
 export const AvatarFallsBackToInitials: Story = {
   args: { profile: { ...DEMO_PROFILE, avatarUrl: '' } },
 }

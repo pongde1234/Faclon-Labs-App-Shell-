@@ -68,30 +68,3 @@ export function useAppTheme() {
 
   return { preference, setPreference: useCallback(setPreference, []), resolved }
 }
-
-export type LanguageCode = 'en' | 'hi' | 'mr' | 'bn'
-
-export const LANGUAGES: Array<{ code: LanguageCode; label: string; native: string }> = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'hi', label: 'Hindi', native: 'हिन्दी' },
-  { code: 'mr', label: 'Marathi', native: 'मराठी' },
-  { code: 'bn', label: 'Bengali', native: 'বাংলা' },
-]
-
-/**
- * Records the language preference and reflects it on `<html lang>`. The app has
- * no i18n layer, so this stores and exposes the choice — it does not translate
- * copy. Wiring real translation needs a message catalogue.
- */
-export function useAppLanguage() {
-  const [language, setLanguage] = useState<LanguageCode>(() => {
-    return (localStorage.getItem('iosense:lang') as LanguageCode | null) ?? 'en'
-  })
-
-  useEffect(() => {
-    document.documentElement.lang = language
-    localStorage.setItem('iosense:lang', language)
-  }, [language])
-
-  return { language, setLanguage }
-}

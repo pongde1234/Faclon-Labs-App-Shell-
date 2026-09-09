@@ -55,21 +55,26 @@ export { buildTrail, resolveSection } from './trail'
 export type { BuildTrailOptions } from './trail'
 
 // ── State the chrome's required props need ───────────────────────────────────
-export { useProfile, EMPTY_PROFILE, fullName, readFileAsDataUrl, GENDERS, LOCATIONS, MAX_AVATAR_BYTES } from './profile'
+//
+// ONLY what the chrome itself uses. This block used to carry GENDERS, LOCATIONS,
+// MAX_AVATAR_BYTES, readFileAsDataUrl, greeting, dayLabel and timeLabel — the
+// options, upload helpers and date formatters for the app's Profile and
+// Notifications PAGES. Those pages are not chrome, no component here touched any
+// of them, and exporting them told a consumer this package would help build
+// screens it knows nothing about.
+export { useProfile, EMPTY_PROFILE, fullName } from './profile'
 export type { Profile } from './profile'
 export { useNotifications } from './useNotifications'
-export {
-  KIND_LABEL,
-  KIND_COLOR,
-  greeting,
-  dayLabel,
-  timeLabel,
-} from './notifications'
+// KIND_LABEL and KIND_COLOR stay: they are the vocabulary of the notification
+// kinds you have to supply, and the menu renders from them.
+export { KIND_LABEL, KIND_COLOR } from './notifications'
 export type { AppNotification, NotificationKind, Remark } from './notifications'
 
 // ── Theme ────────────────────────────────────────────────────────────────────
-export { useAppTheme, railThemeFor, useAppLanguage, LANGUAGES } from './useAppTheme'
-export type { ThemePreference, ResolvedTheme, LanguageCode } from './useAppTheme'
+// The language picker went the same way as the page helpers above: nothing in
+// the chrome renders one, and the app had no i18n layer behind it either.
+export { useAppTheme, railThemeFor } from './useAppTheme'
+export type { ThemePreference, ResolvedTheme } from './useAppTheme'
 export { THEMES, themeLabel } from './themes'
 
 // ── Utilities ────────────────────────────────────────────────────────────────

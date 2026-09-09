@@ -291,14 +291,73 @@ Fixed order, right edge inward:
 | **notifications** | bell + unread count pill in the corner | the items and count are the client's; the menu is ours |
 | **profile** | avatar with initials or an image, opening the account menu | the profile object is the client's; the menu is ours |
 
-The unread pill is a Counter positioned in the bell's corner, with a 2px ring cut
-out against the bar so it separates from the glyph underneath. The avatar's hover
-is a box-shadow halo, not padding — a shadow costs no layout, so the avatar's
-right edge stays aligned with the content edge below it.
+The two on the right are chrome and always in that order, so a user learns one
+place for "my account" and one for "what happened". Anything a product adds goes
+to their **left**, where it cannot displace them.
 
 **Deliberately not exported:** the application launcher (the app grid) and the
 assistant button. One lists applications only the host can enumerate, the other
 opens an assistant this package knows nothing about. Both go in `actions`.
+
+### What the notifications bell opens
+
+```
+┌── Notifications ──────────────────┐
+│ ● Temperature above threshold     │   ← Indicator: Intense unread, Subtle read
+│   Alert · Site A · 2h             │   ← kind · source · when
+│ ● Weekly summary ready            │
+│   Report · Scheduled reports · 5h │
+│ ○ Firmware rollout finished       │
+│ …                        up to 5  │
+│              View more            │   ← hands off to your page
+└───────────────────────────────────┘
+```
+
+**Five is a preview, not a list.** A panel that scrolls is a page in a popover,
+and the honest version of that is a page — so "View more" calls
+`onOpenNotifications` and the rest is yours.
+
+The whole row navigates; there is no per-row action, because most of the time
+the title is the whole answer. Empty, it shows an fds `EmptyState` reading
+"You're all caught up" — a popover that opens onto nothing reads as broken.
+
+The unread pill is a Counter positioned in the bell's corner, with a 2px ring cut
+out against the bar so it separates from the glyph underneath. Placement is all
+that is ours: Counter owns its box, radius, fill, ink and type, and has no anchor
+mode by design.
+
+### What the avatar opens
+
+```
+┌───────────────────────────────────┐
+│ (AB)  Ada Byron    [Northwind Ltd]│   ← avatar or initials, name, org Badge
+├───────────────────────────────────┤
+│ ⚙  Settings                       │   → onOpenProfile
+│ 🎨 Theme                    Light │   → opens the appearance picker
+│ ⏻  Log Out                        │   → drawn intent="negative"
+└───────────────────────────────────┘
+```
+
+**The Theme row names the current theme in its trailing slot**, so the answer is
+visible without opening anything — and a screen reader says "Theme, Light"
+rather than announcing nothing, which is what the check mark it replaced did.
+
+**The picker is a modal, and a sibling of the menu rather than a child.** Modal
+unmounts entirely while closed, so nesting it inside the overlay would tie its
+lifetime to the menu that opened it — which closes on the very click that opens
+the modal. The menu also closes *first*: DropdownMenu and Modal each own a focus
+trap, and two on screen at once fight over focus.
+
+**Log Out is `negative` by product decision, against the fds guard.** The guard
+reserves negative for rows that *destroy* something; signing out destroys nothing
+and is the most reversible action there. The call is that ending a session should
+still read as weighty. What it costs, written down so it is not rediscovered:
+negative is now spent on a row present in every session, so a genuinely
+destructive row added later — Delete account, Revoke sessions — will not stand
+out, and this one should go neutral to make room.
+
+The avatar's hover is a box-shadow halo, not padding — a shadow costs no layout,
+so the avatar's right edge stays aligned with the content edge below it.
 
 ---
 
@@ -463,11 +522,17 @@ not one per section of this document, and the difference is worth explaining.
 ```
 stories/
   fixtures.tsx           small hand-written navs, a non-iosense logo, a frame
-  SideNav.stories.tsx    §1  — 14 stories
-  Rules.stories.tsx      §1's fixed rules — 5 stories, each fed wrong data
-  TopNav.stories.tsx     §2  —  8 stories
+  SideNav.stories.tsx    §1   — 14 stories
+  Rules.stories.tsx      §1's fixed rules — 5, each fed deliberately wrong data
+  TopNav.stories.tsx     §2   — 13 stories: the toggle, every crumb case, the right edge
+  Menus.stories.tsx      §2.3 — 10 stories, the two panels OPEN
   Shell.stories.tsx      §3 + the whole shell — 6 stories
 ```
+
+48 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
+because a bell and an avatar shown closed tell you nothing about what they do —
+and both are portalled, so those plays query `document.body` rather than the
+canvas.
 
 **Why not one file per section.** §1.1, §1.2 and §1.3 describe the header, the
 rows and the footer, but those are not separately mountable components yet —
@@ -485,7 +550,11 @@ If §4's component split happens, these files split with it.
 | §1.2(c) section | `Sections`, `CollapsedSectionStaysOpen` |
 | §1.3 footer | `Footer`, `FooterWithBanner` — and `Default`, which has none |
 | §1 fixed rules | `IconSizeIsFixed` (8/32/64px glyphs all clamp to 14), `LabelIsOneLine`, `TypeScaleIsFixed`, `WhatYouControl` |
-| §2 top bar | `OneCrumb`, `TwoCrumbs`, `ThreeCrumbs`, `WithActions`, `NoUnread`, `ManyUnread`, `Mobile` |
+| §2.1 toggle | `ToggleWhenOpen`, `ToggleWhenCollapsed`, `ToggleOnMobile`, `ToggleOnMobileOpen` — the glyph and label flip to show what pressing it will *do* |
+| §2.2 breadcrumbs | `OneCrumb`, `TwoCrumbs` (first is inert text), `ThreeCrumbs` (text → LINK → current), `LongCrumb` |
+| §2.3 right edge | `RightEdge`, `WithActions`, `NoUnread`, `ManyUnread`, `AvatarFallsBackToInitials` |
+| §2.3 profile menu | `Trigger`, `Open` (Settings / Theme / Log Out), `OpenWithInitials`, `OpenOnDarkTheme`, `AppearancePicker` |
+| §2.3 notifications | `NotificationsOpen`, `NotificationsEmpty`, `NotificationsOverflowing`, `NotificationsManyUnread`, `NotificationsNoUnread` |
 | §3 content | `ContentSpacing`, `DenserContentSpacing` |
 | whole shell | `Default` (empty — what ships), `Branded`, `EveryRowType`, `DeepLinked` |
 

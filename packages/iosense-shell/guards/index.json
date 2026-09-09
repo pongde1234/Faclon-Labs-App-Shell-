@@ -21,7 +21,9 @@
     "A breadcrumb crumb with no href is inert text. Sections that are not pages are exactly that case.",
     "Tooltips appear only when a label is unreadable — the 48px strip, or a truncated expanded label. Never when the text is legible.",
     "The application launcher and the assistant button are deliberately not exported. AppTopBar takes an actions slot instead.",
-    "Never put a ref on the direct child of an fds Tooltip or Popover — the clone spreads children.props after ref and the component silently never opens."
+    "Never put a ref on the direct child of an fds Tooltip or Popover — the clone spreads children.props after ref and the component silently never opens.",
+    "The package exports CHROME ONLY. It does not carry helpers for the app pages the chrome navigates to — the profile form options, the avatar upload helpers, the notification date formatters and the language picker were all removed, because no component here used any of them and exporting them implied this package would help build screens it knows nothing about.",
+    "The top bar is three regions and nothing else: the rail toggle and the breadcrumbs on the left, then the actions slot, the notifications bell and the avatar on the right, in that fixed order. There is no search, title or tab slot — anything else a product wants goes through actions, to the LEFT of the bell and avatar so it cannot displace them."
   ],
   "guards": [
     {

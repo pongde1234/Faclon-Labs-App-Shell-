@@ -15,8 +15,18 @@
   ],
   "decision": {
     "authority": "This guard is the authority for the iosense top-bar menus.",
-    "aliases": ["bell", "notifications", "avatar menu", "account menu", "user menu"],
-    "order": ["placement", "content", "theme"],
+    "aliases": [
+      "bell",
+      "notifications",
+      "avatar menu",
+      "account menu",
+      "user menu"
+    ],
+    "order": [
+      "placement",
+      "content",
+      "theme"
+    ],
     "beforeTheRules": "Both are mounted by AppTopBar and sit at the right edge in a fixed order — bell, then avatar. Anything else the host adds goes to their left, so these two never move.",
     "rules": [
       {
@@ -103,6 +113,7 @@
         "code": "<Tooltip content=\"Devices\"><button ref={myRef}>…</button></Tooltip>",
         "why": "the ref on the direct child clobbers the merged one and the tooltip never opens — with no error"
       }
-    ]
+    ],
+    "storybook": "npm run storybook -> Top nav/Profile menu. Each story opens its panel on mount,\nbecause a bell and an avatar shown closed tell you nothing about what they do.\n\n  Open                      the header (avatar, name, org Badge) + Settings / Theme / Log Out\n  OpenWithInitials          no avatar image, so the trigger and header fall back to initials\n  OpenOnDarkTheme           the Theme row names the CURRENT theme in its trailing slot\n  AppearancePicker          the modal the Theme row opens — a sibling of the menu, not a child\n  NotificationsOpen         a five-item preview, kind / source / when, then View more\n  NotificationsEmpty        an fds EmptyState, not a blank panel\n  NotificationsOverflowing  nine items, five shown\n  NotificationsManyUnread   the pill caps rather than stretching the bar"
   }
 }

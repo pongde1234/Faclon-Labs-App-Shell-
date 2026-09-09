@@ -35,23 +35,9 @@ export const EMPTY_PROFILE: Profile = {
   avatarUrl: '',
 }
 
-export const GENDERS = ['Male', 'Female', 'Others', 'Prefer not to say']
-
-export const LOCATIONS = [
-  'Mumbai, India',
-  'Delhi, India',
-  'Bangalore, India',
-  'Chennai, India',
-  'Kolkata, India',
-  'Remote',
-]
-
 export const fullName = (p: Profile) => `${p.firstName} ${p.lastName}`.trim()
 
 const STORAGE_KEY = 'iosense:profile'
-
-/** Max avatar payload. Data URLs land in localStorage, which caps out ~5MB. */
-export const MAX_AVATAR_BYTES = 1_000_000
 
 /** Earlier builds stored a single `name`; split it so saved profiles survive. */
 function migrate(raw: Record<string, unknown>): Partial<Profile> {
@@ -93,13 +79,4 @@ export function useProfile(seed: Profile = EMPTY_PROFILE) {
   const reset = useCallback(() => setProfile(seed), [seed])
 
   return { profile, save, reset }
-}
-
-export function readFileAsDataUrl(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(String(reader.result))
-    reader.onerror = () => reject(reader.error)
-    reader.readAsDataURL(file)
-  })
 }
