@@ -30,13 +30,16 @@ export type { IosenseShellProps } from './IosenseShell'
 export { isSection, isAccordion, navPageIds, navParents, NAV_ICON_SIZE } from './navItems'
 export type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge, NavTone } from './navItems'
 
-// NO SAMPLE NAV IS EXPORTED, deliberately. The rows we built are the iosense
-// product's pages — Zomato, Steam Trap, Memory B — and a package that exported
-// them would put them into every install that forgot to pass its own. They live
-// in `demo/iosenseNav.tsx`, where they are demo content and nothing else.
+// NO SAMPLE NAV IS EXPORTED, deliberately, and none exists to import. A shell
+// has no opinion about what a product's pages are — the rows this repo used to
+// carry were the iosense product's own, and a package that exported them would
+// put them into every install that forgot to pass its own.
 //
-// What ships is the model (above) and the behaviour. Copy the demo's file as a
-// starting point if you want one.
+// The demo has a six-row PLACEHOLDER in `demo/placeholderNav.tsx` whose only job
+// is to make the accordion, the section and the collapse clickable. Copy that if
+// you want a starting point.
+//
+// What ships is the model (above) and the behaviour.
 
 // ── The pieces, for hosts that assemble their own ────────────────────────────
 export { AppSideNav, NavFooterRow } from './AppSideNav'

@@ -27,7 +27,7 @@
     "preference": "Uncontrolled. The shell runs its own useAppTheme, which stamps data-theme on <html>. Pass preference AND onPreferenceChange together to drive it yourself.",
     "workspace": "Defaults to <WorkspaceLabel name={profile.org} />. Override only to render a switcher or a different identity row.",
     "actions": "Empty. The top bar shows the bell and the avatar and nothing else.",
-    "navItems": "[] — an empty rail. This package ships the chrome, not our content. IOSENSE_NAV is a worked example to COPY, not to import into a product that is not iosense.",
+    "navItems": "[] — an empty rail. This package ships the chrome, not any product content. Nothing is exported to copy from; the demo carries a six-row placeholder in demo/placeholderNav.tsx whose only job is to make the accordion, the section and the collapse clickable.",
     "logo": "Unset falls through to design-sdk built-in iosense mark. SET THIS, or an unbranded install silently ships our identity.",
     "sideNavFooter": "Empty. Help is what the iosense product puts there; it is not chrome. Build rows with NavFooterRow.",
     "children": "Optional. A shell with nothing in it is a legitimate state — it is what the package looks like before a host fills it, and what a route renders while it has nothing to show."

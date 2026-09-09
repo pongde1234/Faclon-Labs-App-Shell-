@@ -158,7 +158,7 @@ which of them are grouped, nested or sectioned.
 > **The entities are NOT exported.** `AppSideNav` takes `items: NavItem[]` and
 > renders **nothing** by default. The rows we built are the iosense product's
 > pages — Zomato, Steam Trap, Memory B — and they were only ever demo content,
-> so they live in `demo/iosenseNav.tsx` and the package does not export them.
+> so they live in `demo/placeholderNav.tsx` and the package does not export them.
 > Copy that file as a starting point. Same for the profile and the notifications:
 > `demo/sampleData.ts`, not the package.
 
@@ -771,8 +771,9 @@ the rest of this is.
 | Top nav | `AppTopBar` | fine as is — already slot-based |
 | **Content container** | ✅ 16/16/16/0 and a default 16px gap, one owner | — |
 
-**What changed.** The rail's 22 hardcoded rows moved out to `iosenseNav.tsx` as
-`IOSENSE_NAV` — an example to copy, not a default to inherit. `AppSideNav` now
+**What changed.** The rail's 22 hardcoded rows are gone. The demo carries a
+six-row placeholder whose only job is to make the accordion, the section and the
+collapse clickable; nothing is exported. `AppSideNav` now
 renders whatever `items` you give it and **renders nothing if you give it
 nothing**. That is the export: the behaviour, not our content.
 

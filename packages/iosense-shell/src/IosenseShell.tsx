@@ -20,8 +20,8 @@ export interface IosenseShellProps {
   /**
    * The rail's rows. **Empty by default** — this package ships the chrome's
    * behaviour, not its contents. See `navItems.ts` for the three shapes, and
-   * `demo/iosenseNav.tsx` for a complete worked example — it is not exported,
-   * because those rows are the iosense product's own pages.
+   * `demo/placeholderNav.tsx` for a placeholder that exercises all three row
+   * shapes. Nothing is exported: a shell has no opinion about pages.
    */
   navItems?: NavItem[]
   /** Current page id. Must match a nav id for the rail to mark it active. */

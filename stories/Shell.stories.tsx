@@ -149,7 +149,7 @@ export const Branded: Story = {
  *
  * This is a fixture, invented for the story. The iosense product's own nav is
  * NOT here and is not exported by the package — it lives in
- * `demo/iosenseNav.tsx`, because those rows are our pages and a package that
+ * `demo/placeholderNav.tsx`, because those rows are our pages and a package that
  * exported them would put Zomato and Steam Trap into every install.
  * `npm run dev` is where you look at the product.
  */

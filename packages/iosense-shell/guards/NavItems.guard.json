@@ -6,7 +6,7 @@
   "useInstead": [
     {
       "when": "You want a nav to start from.",
-      "use": "Copy demo/iosenseNav.tsx. It exercises every shape: both badge kinds, two accordions and a section. It is NOT exported — those rows are the iosense product pages."
+      "use": "Copy demo/placeholderNav.tsx. It is six rows that exist only to demonstrate the three shapes — two entities with the two badge kinds, one accordion, one section — and it is NOT exported. The product rows it replaced were our pages."
     },
     {
       "when": "You want the iosense product itself.",
@@ -100,7 +100,7 @@
   },
   "antiPatterns": [
     {
-      "pattern": "import { IOSENSE_NAV } and shipping it in a product that is not iosense.",
+      "pattern": "Looking for a sample nav to import.",
       "why": "Those are our pages — Zomato, Steam Trap, Memory B. A client installing this package and getting them is the exact failure the data model exists to prevent.",
       "instead": "Copy it into your own file and replace every row."
     },
@@ -126,8 +126,8 @@
     },
     {
       "pattern": "Importing a sample nav from the package.",
-      "why": "There is none. The rows we built are the iosense product pages and were only ever demo content, so they live in demo/iosenseNav.tsx and are not exported. A package that exported them would put Zomato and Steam Trap into every install that forgot to pass its own.",
-      "instead": "Copy demo/iosenseNav.tsx into your own file and replace every row."
+      "why": "There is none, and there will not be. A shell has no opinion about what a product pages are. The demo has a six-row placeholder in demo/placeholderNav.tsx that exists only to make the accordion, the section and the collapse clickable.",
+      "instead": "Write your own NavItem[]. Copy demo/placeholderNav.tsx for the shapes if it helps."
     },
     {
       "pattern": "Passing a differently-sized icon because a row needs emphasis.",

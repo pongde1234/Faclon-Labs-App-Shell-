@@ -29,10 +29,9 @@ export const NAV_ICON_SIZE = 14
  * dot when collapsed. None of that depends on WHICH rows are in it. So the rows
  * are data the host supplies, and the package ships the behaviour.
  *
- * No sample nav is exported, deliberately. The rows we built are the iosense
- * product's pages, and a package that exported them would put them into every
- * install that forgot to pass its own. The demo has a complete one in
- * `demo/iosenseNav.tsx` — copy that.
+ * No sample nav is exported, deliberately. A shell has no opinion about what a
+ * product's pages are. The demo has a six-row placeholder in
+ * `demo/placeholderNav.tsx` — copy that.
  */
 
 /**

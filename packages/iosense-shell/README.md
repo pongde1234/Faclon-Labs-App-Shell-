@@ -66,7 +66,7 @@ export default function App() {
     <IosenseShell
       navItems={NAV}
       logo={<YourLogo />}
-      sideNavFooter={<NavFooterRow icon={<CircleQuestionMark size={14} />} label="Help" />}
+      sideNavFooter={<NavFooterRow icon={<CircleQuestionMark size={14} />} label="Help" />}   {/* optional */}
       activeId={activeId}
       onNavigate={setActiveId}
       trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}
@@ -105,10 +105,10 @@ The trailing `badge` is either a **Counter** (a quantity — `{ kind: 'count', v
 or a **Badge** (a word — `{ kind: 'word', label: 'Beta', tone: 'label' }`). Not a
 Chip: Chip renders a `<button>` and the row is already a `<button>`.
 
-`IOSENSE_NAV` is a complete worked example — every row type, both badge kinds,
-two accordions and a section. **Copy it, don't import it**, unless you are
-iosense: it is our pages, and shipping them inside someone else's app is the
-mistake this export exists to prevent.
+**No sample nav is exported, and none exists to import.** A shell has no opinion
+about what your pages are. The demo has a six-row placeholder in
+`demo/placeholderNav.tsx` whose only job is to make the accordion, the section
+and the collapse clickable — copy it for the shapes if it helps, then replace it.
 
 `buildTrail` reads the **same array**, so the trail and the rail cannot drift
 apart — there is one definition of what contains what.
@@ -118,21 +118,22 @@ apart — there is one definition of what contains what.
 
 ## Everything else is empty too
 
-The nav is not the only place this applies. Every piece of iosense *content* is
-now a seed you pass, never a default you inherit:
+The nav is not the only place this applies. Every piece of content is a seed you
+pass, never a default you inherit:
 
-| Hook | Default | The iosense sample |
-|---|---|---|
-| `useProfile(seed?)` | `EMPTY_PROFILE` — blank | `IOSENSE_PROFILE` |
-| `useNotifications(seed?)` | `[]` | `IOSENSE_NOTIFICATIONS` |
-| `AppSideNav items` | `[]` | `IOSENSE_NAV` |
-| `AppSideNav footer` | nothing rendered | `NavFooterRow` with Help |
-| `AppSideNav logo` | design-sdk's iosense mark | — |
+| Slot / hook | Default |
+|---|---|
+| `AppSideNav items` | `[]` — an empty rail |
+| `AppSideNav footer` | nothing rendered, and no divider above it |
+| `AppSideNav logo` | design-sdk's built-in iosense mark — **set this** |
+| `AppTopBar actions` | empty; the bell and the avatar are all the bar shows |
+| `useProfile(seed?)` | `EMPTY_PROFILE` — blank |
+| `useNotifications(seed?)` | `[]` |
+| `IosenseShell children` | empty; the content container is yours to fill |
 
 `useProfile()` used to default to a real person — a name, a phone number and a
-working email address — which every install would then have carried. The
-`IOSENSE_*` constants exist so that shipping our content is something you have to
-*type*, rather than something that happens because you did not.
+working email address — which every install would then have carried. Nothing
+does now: shipping content is something you have to *type*.
 
 The hooks are a convenience for hosts with no account or notifications API of
 their own. If you have real data, skip them and pass it straight to
@@ -183,7 +184,7 @@ Fonts are the host's: the product uses Inter (`@fontsource/inter` 400/500/600/70
 IosenseShell.tsx    the assembly — rail + bar + drawer + content sheet
 AppSideNav.tsx      the rail — nested groups, flyouts, badges, hover peek
 navItems.ts         the nav DATA MODEL — entity / accordion / section
-iosenseNav.tsx      IOSENSE_NAV — a worked example, not a default
+(no sample nav ships — the demo has a placeholder one)
 AppTopBar.tsx       breadcrumbs, notifications, profile
 AppNavDrawer.tsx    the mobile drawer
 RailFlyout.tsx      the collapsed rail's sub-menu
