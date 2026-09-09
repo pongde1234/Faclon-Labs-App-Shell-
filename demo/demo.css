@@ -10,27 +10,21 @@
  * reads if a token is missing rather than painting black on black.
  */
 
-.demo-head {
-  /* No margin. The container's 16px top padding is the space above this. */
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
+/* WHAT IS LEFT IN HERE, and why none of it is a surface.
+ *
+ * The page's surfaces are all SDK Cards now — .demo-card and friends are gone.
+ * What remains is:
+ *
+ *   .demo-grid          LAYOUT. Arranging cards is the page author's job; the
+ *                       SDK ships no layout primitive for it.
+ *   .demo-text/-list    prose inside a CardBody.
+ *   .demo-metric-*      the type scale for a metric tile's three lines.
+ *   code, kbd           INLINE TEXT decorations, not surfaces. A rounded inline
+ *                       code span is typography; it is not a card, and reaching
+ *                       for a component here would be sillier than not.
+ *   .ai-icon/.svg-defs  the assistant glyph's gradient — see below.
+ */
 
-.demo-title {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: var(--text-neutral-default, #101828);
-}
-
-.demo-sub {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-neutral-subtle, #667085);
-}
-
-.demo-sub code,
 .demo-text code {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.92em;
@@ -45,20 +39,6 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
-}
-
-.demo-card {
-  padding: 16px;
-  border: 1px solid var(--border-neutral-subtle, #e4e7ec);
-  border-radius: 8px;
-  background: var(--background-surface-default, #fff);
-}
-
-.demo-card-title {
-  margin: 0 0 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-neutral-default, #101828);
 }
 
 .demo-text {
@@ -92,10 +72,6 @@
 
 /* Tall enough to force the scroller, so the no-bottom-padding rule is visible
    rather than merely documented. */
-.demo-tall {
-  min-height: 900px;
-}
-
 .demo-metric-label {
   margin: 0;
   font-size: 13px;
@@ -135,4 +111,10 @@
    lucide writes. */
 .ai-icon {
   stroke: url(#ai-gradient);
+}
+
+/* Tall filler, so the scroller is exercised without a magic min-height on a
+   Card — the Card keeps its own padding contract. */
+.demo-tall-filler {
+  min-height: 700px;
 }

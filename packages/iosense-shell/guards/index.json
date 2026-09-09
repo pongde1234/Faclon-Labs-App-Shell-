@@ -23,7 +23,8 @@
     "The application launcher and the assistant button are deliberately not exported. AppTopBar takes an actions slot instead.",
     "Never put a ref on the direct child of an fds Tooltip or Popover — the clone spreads children.props after ref and the component silently never opens.",
     "The package exports CHROME ONLY. It does not carry helpers for the app pages the chrome navigates to — the profile form options, the avatar upload helpers, the notification date formatters and the language picker were all removed, because no component here used any of them and exporting them implied this package would help build screens it knows nothing about.",
-    "The top bar is three regions and nothing else: the rail toggle and the breadcrumbs on the left, then the actions slot, the notifications bell and the avatar on the right, in that fixed order. There is no search, title or tab slot — anything else a product wants goes through actions, to the LEFT of the bell and avatar so it cannot displace them."
+    "The top bar is three regions and nothing else: the rail toggle and the breadcrumbs on the left, then the actions slot, the notifications bell and the avatar on the right, in that fixed order. There is no search, title or tab slot — anything else a product wants goes through actions, to the LEFT of the bell and avatar so it cannot displace them.",
+    "CONTENT RENDERED INTO THE MAIN CONTAINER COMES FROM THE SDK. Cards, tables, charts, buttons, inputs, badges, empty states and modals all exist in @faclon-labs/design-sdk and @faclon-labs/fds; a div styled to look like one will not follow the theme, will not match the next page, and will drift when the real component changes. LAYOUT is the exception — arranging those components is the page author job, because the SDK ships no layout primitive for it."
   ],
   "guards": [
     {

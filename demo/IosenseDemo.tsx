@@ -1,6 +1,15 @@
 import { useCallback, useMemo, useState } from 'react'
 import { CircleQuestionMark, Grid3x3, Sparkles } from 'lucide-react'
 import { IconButton } from '@faclon-labs/fds/button'
+// EVERY SURFACE ON THE PAGE COMES FROM THE SDK. See DemoPage below — this demo
+// obeys the rule it documents, or it would not be worth much as a reference.
+import {
+  Card,
+  CardBody,
+  CardHeader,
+  CardHeaderBadge,
+  CardHeaderLeading,
+} from '@faclon-labs/design-sdk/Card'
 
 import {
   IosenseShell,
@@ -164,24 +173,39 @@ export function IosenseDemo() {
 }
 
 /**
- * A page written the way generated content will be: NOTHING here sets an outer
- * margin and no wrapper invents a gap.
+ * A page written the way generated content is supposed to be written.
  *
- * The container supplies the whole rhythm — 16px left, right and top, none at
- * the bottom, and 16px between these blocks. Delete a card, add another row,
- * nest a grid: the spacing does not change, because nothing here owns it.
+ * TWO RULES, both visible here:
+ *
+ * 1. NOTHING SETS AN OUTER MARGIN. The container supplies the rhythm — 16px
+ *    left, right and top, none at the bottom, 16px between these blocks. Delete
+ *    a card, add another row, nest a grid: the spacing does not change, because
+ *    nothing on this page owns it.
+ *
+ * 2. EVERY SURFACE COMES FROM THE SDK. Card, CardHeader, CardBody, Badge,
+ *    Divider — not a hand-rolled <div> with a border and a radius. A div styled
+ *    to look like a card is a card that will not follow the theme, will not
+ *    match the next page, and will drift the moment the SDK's own card changes.
+ *
+ * The one exception is LAYOUT: the grid below is a plain div, because arranging
+ * cards is not a component the SDK ships. Layout is structure; surfaces,
+ * type and colour are not.
  */
 function DemoPage({ id, title }: { id: string; title: string }) {
   return (
     <>
-      <header className="demo-head">
-        <h1 className="demo-title">{title}</h1>
-        <p className="demo-sub">
-          Page id <code>{id}</code>
-          {KNOWN.has(id) ? '' : ' — not in the nav, so no row is marked active'}
-        </p>
-      </header>
+      <Card padding="spacing.5">
+        <CardHeader>
+          <CardHeaderLeading
+            title={title}
+            subtitle={
+              KNOWN.has(id) ? `Page id: ${id}` : `Page id: ${id} — not in the nav, so no row is active`
+            }
+          />
+        </CardHeader>
+      </Card>
 
+      {/* Layout is ours; every surface inside it is the SDK's. */}
       <div className="demo-grid">
         <Metric label="Active devices" value="1,284" note="across 24 sites" />
         <Metric label="Energy today" value="84.2 MWh" note="+3.1% vs yesterday" />
@@ -189,51 +213,79 @@ function DemoPage({ id, title }: { id: string; title: string }) {
         <Metric label="Uptime" value="99.4%" note="rolling 30 days" />
       </div>
 
-      <section className="demo-card">
-        <h2 className="demo-card-title">What you are looking at</h2>
-        <p className="demo-text">
-          Everything outside this content area is <code>@faclon-labs/iosense-shell</code>. The
-          rail, the top bar, the breadcrumb rule, the menus and the container this text sits in
-          all come from the package. Nothing on this page sets a margin — the 16px above, beside
-          and between these blocks is the container's.
-        </p>
-        <p className="demo-text">
-          The nav is data. These rows are <code>IOSENSE_NAV</code>, passed in as a prop; the
-          package's own default is an empty rail. Same for the profile, the notifications and the
-          footer.
-        </p>
-      </section>
+      <Card padding="spacing.5">
+        <CardHeader showDivider>
+          <CardHeaderLeading
+            title="What you are looking at"
+            suffix={<CardHeaderBadge label="Chrome" color="Information" />}
+          />
+        </CardHeader>
+        <CardBody>
+          <p className="demo-text">
+            Everything outside this content area is <code>@faclon-labs/iosense-shell</code>. The
+            rail, the top bar, the breadcrumb rule, the menus and the container this text sits in
+            all come from the package. Nothing on this page sets a margin — the 16px above, beside
+            and between these blocks is the container&apos;s.
+          </p>
+          <p className="demo-text">
+            The nav is data, passed in as a prop; the package&apos;s own default is an empty rail.
+            Same for the profile, the notifications and the footer.
+          </p>
+          <p className="demo-text">
+            These cards are the SDK&apos;s <code>Card</code>, not divs dressed up as cards. That is
+            the rule for anything rendered in here: surfaces, type and colour come from the SDK, so
+            a page inherits the theme instead of guessing at it.
+          </p>
+        </CardBody>
+      </Card>
 
-      <section className="demo-card">
-        <h2 className="demo-card-title">Things to try</h2>
-        <ul className="demo-list">
-          <li>Hover the collapsed rail — it peeks open without moving this content.</li>
-          <li>Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>B</kbd>, or the toggle in the top bar.</li>
-          <li>Open <strong>Workflows</strong>, then <strong>Create company when a deal closes</strong> — the trail becomes three crumbs, and the first one is inert text.</li>
-          <li>Collapse the rail, then click <strong>Workflows</strong> — the children fly out beside the strip.</li>
-          <li>Narrow the window past 768px — the rail becomes a drawer.</li>
-        </ul>
-      </section>
+      <Card padding="spacing.5">
+        <CardHeader>
+          <CardHeaderLeading title="Things to try" />
+        </CardHeader>
+        <CardBody>
+          <ul className="demo-list">
+            <li>Hover the collapsed rail — it peeks open without moving this content.</li>
+            <li>
+              Press <kbd>Ctrl</kbd>/<kbd>⌘</kbd> + <kbd>B</kbd>, or the toggle in the top bar.
+            </li>
+            <li>
+              Open <strong>Workflows</strong>, then <strong>Create company when a deal closes</strong>{' '}
+              — the trail becomes three crumbs, and the first one is inert text.
+            </li>
+            <li>Collapse the rail, then click <strong>Workflows</strong> — the children fly out.</li>
+            <li>Scroll down, then pick another row — the new page starts at the top.</li>
+            <li>Narrow the window past 768px — the rail becomes a drawer.</li>
+          </ul>
+        </CardBody>
+      </Card>
 
-      <section className="demo-card demo-tall">
-        <h2 className="demo-card-title">Scrolling</h2>
-        <p className="demo-text">
-          This block is deliberately tall. Scroll to the bottom: the content runs to the cut-off
-          with no padding beneath it, because a scrolling column has no bottom — only an edge.
-          The scrollbar is an overlay, so it costs no layout width and nothing shifts when a page
-          starts or stops overflowing.
-        </p>
-      </section>
+      <Card padding="spacing.5">
+        <CardHeader>
+          <CardHeaderLeading title="Scrolling" subtitle="This block is deliberately tall" />
+        </CardHeader>
+        <CardBody>
+          <p className="demo-text">
+            Scroll to the bottom: the content runs to the cut-off with no padding beneath it,
+            because a scrolling column has no bottom — only an edge. The scrollbar is an overlay,
+            so it costs no layout width and nothing shifts when a page starts or stops overflowing.
+          </p>
+          <div className="demo-tall-filler" />
+        </CardBody>
+      </Card>
     </>
   )
 }
 
+/** A metric tile — again a real Card, with the SDK's own type scale. */
 function Metric({ label, value, note }: { label: string; value: string; note: string }) {
   return (
-    <div className="demo-card">
-      <p className="demo-metric-label">{label}</p>
-      <p className="demo-metric-value">{value}</p>
-      <p className="demo-metric-note">{note}</p>
-    </div>
+    <Card padding="spacing.5">
+      <CardBody>
+        <p className="demo-metric-label">{label}</p>
+        <p className="demo-metric-value">{value}</p>
+        <p className="demo-metric-note">{note}</p>
+      </CardBody>
+    </Card>
   )
 }

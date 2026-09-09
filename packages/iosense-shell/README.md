@@ -222,6 +222,27 @@ decision:
 .dense-page .app-main-scroll { --shell-content-gap: 8px; }
 ```
 
+**Everything you render in here comes from the SDK** — `Card`, `Table`, `Chart`,
+`EmptyState`, `Alert`, `Button`, `TextInput`, `Badge` and the rest of
+`@faclon-labs/design-sdk` and `@faclon-labs/fds`. A div styled to look like a
+card will not follow a theme switch, will not track the real card when it
+changes, and will not match the page written next month.
+
+**Layout is the exception.** Arranging those components — a grid of cards, a
+two-column row — is yours, because the SDK ships no layout primitive for it and
+inventing one here would be a second opinion about spacing:
+
+```tsx
+<div className="cards-grid">   {/* layout: yours */}
+  <Card />                     {/* surface: the SDK's */}
+</div>
+```
+
+Do not re-style an SDK component to make it fit, either — an overridden card is
+a fork of the card and stops tracking the original. Use the props it offers; if
+none of them fit, it is probably the wrong component. Full rule in
+[STORY.md](../../STORY.md) §3.3.
+
 Content should not set its own outer margin. Let the rhythm come from the
 container and from `Stack`/`Grid`/`Card`, so it holds at every nesting depth.
 This matters most because **this container takes generated dashboards** — a

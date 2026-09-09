@@ -87,6 +87,17 @@
     {
       "rule": "Change activeId on every navigation.",
       "why": "Three things key off it: the rail active row, the breadcrumb trail, and the scroll reset. A router that navigates without changing it leaves all three stale."
+    },
+    {
+      "rule": "Everything rendered into children comes from the SDK. Do not hand-roll surfaces.",
+      "why": "A div styled to look like a card is a card that will not follow the theme, will not match the next page, and will drift the moment the SDK own card changes. Cards, tables, charts, buttons, inputs, badges, empty states and modals all exist in @faclon-labs/design-sdk and @faclon-labs/fds — reach for those, and if a surface seems to be missing it is far more likely to be named something else than to be absent.",
+      "bad": "<div style={{ padding: 16, border: \"1px solid #e4e7ec\", borderRadius: 8 }}>…</div>",
+      "good": "<Card padding=\"spacing.5\"><CardHeader><CardHeaderLeading title=\"…\" /></CardHeader><CardBody>…</CardBody></Card>"
+    },
+    {
+      "rule": "LAYOUT is the one exception. Arranging SDK components is yours.",
+      "why": "A grid or a flex row that positions cards is structure, not a surface — the SDK ships no layout primitive for it and inventing one here would be a second opinion about spacing. Surfaces, type, colour, elevation and interaction states come from the SDK; where the boxes sit does not.",
+      "good": "<div className=\"cards-grid\"><Card/><Card/></div>   // layout yours, cards theirs"
     }
   ],
   "composition": {
@@ -138,6 +149,16 @@
       "pattern": "Setting display:flex with a gap on .app-main-scroll to space the blocks.",
       "why": "Every child becomes a flex item with flex-shrink: 1, so a tall page is squashed to fit instead of overflowing — the one thing a scroll container must not do.",
       "instead": "The shipped rule is `> * + *` with margin-block-start, which adds spacing without touching layout. Retune it with --shell-content-gap."
+    },
+    {
+      "pattern": "Building page content out of raw divs with borders, radii and hand-picked colours.",
+      "why": "It looks right on the day it is written and wrong on every day after: it will not follow a theme switch, it will not track the SDK card when that changes, and two pages written a month apart will not match. It also defeats the reason the content container supplies its own rhythm — consistent spacing around inconsistent surfaces is not consistency.",
+      "instead": "Card, Table, Chart, EmptyState, Alert, Badge, Button, TextInput and the rest, from @faclon-labs/design-sdk or @faclon-labs/fds. The demo page in demo/IosenseDemo.tsx is written this way on purpose."
+    },
+    {
+      "pattern": "Re-styling an SDK component from the page, to make it fit.",
+      "why": "Same failure with an extra step. An overridden card is a fork of the card, and it silently stops tracking the original.",
+      "instead": "Use the props the component offers — padding, size, validationState. If none of them fit, the component is probably the wrong one."
     }
   ],
   "examples": [

@@ -573,7 +573,59 @@ So the rule reads in that order:
 layout width — the content does not shift when a page starts or stops
 overflowing. That is also why the bottom needs no padding to keep clear of it.
 
-## 3.3 Scrolling
+## 3.3 What may go in it
+
+**Everything rendered into the content container comes from the SDK.**
+
+That is a rule, not a preference. The container supplies the spacing; the SDK
+supplies the surfaces. A page that hand-rolls its own is consistent on the day
+it is written and wrong on every day after — it will not follow a theme switch,
+it will not track the SDK's card when that changes, and two pages written a
+month apart will not match.
+
+| Want | Use | Not |
+|---|---|---|
+| a surface | `Card`, `CardHeader`, `CardBody` | a div with a border and a radius |
+| a table | `Table` | `<table>` with your own CSS |
+| a chart | `Chart`, `LineChart`, `PieChart`, `Gauge` | an SVG you drew |
+| nothing to show | `EmptyState` | a centred paragraph |
+| an action | `Button`, `IconButton`, `LinkButton` | a styled `<button>` |
+| a field | `TextInput`, `SelectInput`, `SearchInput` | a bare `<input>` |
+| an annotation | `Badge`, `Tag`, `Chip`, `Counter`, `Indicator` | a styled span |
+| a message | `Alert`, `Toast` | a coloured div |
+
+Both packages are peers you already have: `@faclon-labs/design-sdk` and
+`@faclon-labs/fds`. If a surface seems to be missing, it is far more likely to be
+named something else than to be absent — the SDK ships ~100 subpaths.
+
+**Do not re-style an SDK component to make it fit either.** An overridden card
+is a fork of the card, and it silently stops tracking the original. Use the props
+it offers — `padding`, `size`, `validationState`; if none of them fit, it is
+probably the wrong component.
+
+### The one exception: layout
+
+**Arranging those components is yours.** A grid or a flex row that positions
+cards is *structure*, not a surface — the SDK ships no layout primitive for it,
+and inventing one here would be a second opinion about spacing.
+
+```tsx
+<div className="cards-grid">   {/* layout: yours */}
+  <Card />                     {/* surface: the SDK's */}
+  <Card />
+</div>
+```
+
+Surfaces, type, colour, elevation and interaction states come from the SDK.
+Where the boxes sit does not.
+
+> **The demo obeys this.** `demo/IosenseDemo.tsx` is written entirely out of
+> `Card` / `CardHeader` / `CardHeaderLeading` / `CardHeaderBadge` / `CardBody`,
+> and `demo.css` is down to a grid, three type helpers and the assistant's
+> gradient. It used to hand-roll `.demo-card` — which made the reference page
+> contradict the rule it was supposed to demonstrate.
+
+## 3.4 Scrolling
 
 **The content area is the only thing that scrolls. The chrome never moves.**
 
@@ -617,7 +669,7 @@ been replaced, so animating to the top would scroll content nobody asked to see.
 add its own inner scrollers, or virtualise. One scroll container, all the way
 down.
 
-## 3.4 How the code implements it
+## 3.5 How the code implements it
 
 **One owner.** `.app-main-scroll` carries the whole rule:
 
