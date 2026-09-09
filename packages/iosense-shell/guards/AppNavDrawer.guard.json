@@ -1,0 +1,87 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "AppNavDrawer",
+  "import": "@faclon-labs/iosense-shell",
+  "purpose": "The rail on small screens — the same AppSideNav, rendered inside an fds Drawer that slides over the page.",
+  "useInstead": [
+    {
+      "when": "the viewport is 768px or wider",
+      "use": "AppSideNav directly — the drawer exists only below the breakpoint"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for the mobile nav drawer.",
+    "aliases": ["mobile nav", "hamburger menu", "off-canvas nav", "nav drawer"],
+    "order": ["when", "state"],
+    "beforeTheRules": "This exists because the SDK's own mobile mode could not be used. SideNavBar renders its own MobileNav below 768px, but that drawer's open state lives inside the provider with no controlled prop — so the top bar, which is outside the provider, could never open it. The SDK's mobile breakpoint is disabled (`mobileBreakpoint={0}`) and this component replaces it.",
+    "rules": [
+      {
+        "stage": "when",
+        "if": "the viewport is below 768px",
+        "then": "render this instead of AppSideNav, and render only one of the two",
+        "because": "both mounted at once puts two copies of every nav row in the tab order",
+        "certainty": "high"
+      },
+      {
+        "stage": "state",
+        "if": "you are passing the rail into the drawer",
+        "then": "pass `isPinned` so it renders fully expanded",
+        "because": "a collapsed rail inside a drawer is an icon strip nobody asked for — the drawer already has room for labels",
+        "certainty": "high"
+      },
+      {
+        "stage": "state",
+        "if": "the viewport crosses back above the breakpoint while the drawer is open",
+        "then": "close it in the host",
+        "because": "otherwise a scroll lock is stranded on <body> with no visible control left to release it",
+        "certainty": "high"
+      },
+      {
+        "stage": "state",
+        "if": "the reader follows a nav link inside the drawer",
+        "then": "close it",
+        "because": "they land on the new page with the drawer still covering it",
+        "certainty": "high"
+      }
+    ],
+    "constraints": [
+      "The drawer needs an explicit height on its content: the SDK warns '[SideNavBarProvider] has zero height' otherwise, and the rail renders invisible."
+    ],
+    "certainty": "high"
+  },
+  "accessibility": {
+    "keyboard": "Focus is trapped inside while open, returns to the trigger on close, and Escape closes it.",
+    "aria": "The drawer is a dialog; the rail inside keeps its own <nav aria-label=\"Main\"> and aria-current.",
+    "notes": "The scrim is a mouse convenience and is aria-hidden — Escape and the close button are the accessible ways out."
+  },
+  "composition": {
+    "childrenContract": "None. It wraps AppSideNav itself.",
+    "notes": "DrawerBody is rendered with padding off, so the rail sits flush to the drawer's edges as it does on desktop."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Rendering AppSideNav and AppNavDrawer at the same time",
+      "do": "Switch on the breakpoint and render one",
+      "why": "every nav row ends up twice in the tab order, and screen readers announce two Main landmarks"
+    },
+    {
+      "dont": "Passing a collapsed rail into the drawer",
+      "do": "Pass isPinned",
+      "why": "the drawer has room for labels; an icon strip inside it is a rail nobody chose"
+    },
+    {
+      "dont": "Leaving the drawer open across a resize to desktop",
+      "do": "Close it when isMobile goes false",
+      "why": "the body scroll lock survives and there is no longer a control on screen to release it"
+    }
+  ],
+  "examples": {
+    "canonical": "const isMobile = useIsMobile()\n\n{isMobile\n  ? <AppNavDrawer isOpen={open} onClose={close} activeId={activeId} onNavigate={go} />\n  : <AppSideNav isPinned={isPinned} activeId={activeId} onNavigate={go} railTheme=\"Dark\" />}",
+    "incorrect": [
+      {
+        "code": "<AppSideNav … />\n<AppNavDrawer … />   /* both, always */",
+        "why": "one or the other — two mounted rails means two of every row in the tab order"
+      }
+    ]
+  }
+}

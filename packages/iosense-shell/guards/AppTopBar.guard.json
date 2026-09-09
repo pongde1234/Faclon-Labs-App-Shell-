@@ -1,0 +1,109 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "AppTopBar",
+  "import": "@faclon-labs/iosense-shell",
+  "purpose": "The product's top bar: the rail's collapse control, the breadcrumb trail, and the notification and profile menus. Built on the SDK's TopNav.",
+  "useInstead": [
+    {
+      "when": "you want a bar with no design-system dependency",
+      "use": "@faclon-labs/app-shell's TopNav"
+    },
+    {
+      "when": "you need a toolbar scoped to one page's content",
+      "use": "your own — this bar is application chrome and sits above every page"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for the iosense top bar.",
+    "aliases": ["top nav", "header", "app bar", "masthead"],
+    "order": ["ownership", "trail", "actions"],
+    "beforeTheRules": "This bar owns the control that collapses the RAIL. That is deliberate: a control which hides a panel cannot live inside that panel, because collapsed there are 48px and nowhere to put it.",
+    "rules": [
+      {
+        "stage": "ownership",
+        "if": "you are wiring the collapse toggle",
+        "then": "pass `isPinned` and `onTogglePin` from the same state the rail reads",
+        "because": "one piece of state drives both; duplicating it is how the bar and the rail end up disagreeing about whether the panel is open",
+        "certainty": "high"
+      },
+      {
+        "stage": "ownership",
+        "if": "the viewport is below the mobile breakpoint",
+        "then": "pass `isMobile` and `isNavDrawerOpen` as well",
+        "because": "the same button changes job — it opens the drawer rather than pinning the rail — and its label and glyph have to describe whichever it currently does",
+        "certainty": "high"
+      },
+      {
+        "stage": "trail",
+        "if": "an ancestor in the trail is a SECTION with no page of its own",
+        "then": "omit its href so the crumb renders as inert text",
+        "because": "the alternatives are both worse: a crumb with no handler is a tabbable control that does nothing, and pointing it at the section's first child moves the reader SIDEWAYS into a sibling when the crumb's whole job is to go up",
+        "certainty": "high"
+      },
+      {
+        "stage": "trail",
+        "if": "you are building the trail",
+        "then": "put the current page last and give it no href",
+        "because": "the last crumb is rendered as the current page and is the only one carrying aria-current",
+        "certainty": "high"
+      },
+      {
+        "stage": "actions",
+        "if": "you need a control in the top bar",
+        "then": "pass it in `actions`",
+        "because": "it renders to the LEFT of the bell and the avatar, so adding one never shifts the two fixed ones",
+        "certainty": "high"
+      }
+    ],
+    "constraints": [
+      "The application launcher and the assistant button are NOT part of this package — see antiPatterns.",
+      "`isSticky` is left at the SDK default, which is what pins the bar.",
+      "The bar's left padding is zeroed by theme-overrides.css so the leading glyph sits 8px inside the bar, matching the avatar's inset on the right."
+    ],
+    "certainty": "high"
+  },
+  "accessibility": {
+    "keyboard": "The collapse toggle is the first control in the bar. Both menus open on click, close on Escape and on outside click, and return focus to their trigger.",
+    "aria": "<header> landmark. The toggle carries aria-expanded and an aria-controls pointing at the rail. The trail is a labelled Breadcrumb landmark with exactly one aria-current=\"page\".",
+    "notes": "Crumbs without an href are rendered as text, not as disabled buttons — a disabled control still announces itself as a control that could have worked."
+  },
+  "composition": {
+    "childrenContract": "None. Content arrives through `trail`, `actions`, and the notification/profile props.",
+    "notes": "Rendered in the SDK AppShell's own `topNav` slot, above the content sheet."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Re-adding the application launcher or the assistant button",
+      "do": "Pass your own control through `actions`",
+      "why": "both are product surfaces rather than chrome — one opens an assistant this package knows nothing about, the other lists applications only the host can enumerate. They were removed from the export on purpose"
+    },
+    {
+      "dont": "Giving a section crumb the href of its first child",
+      "do": "Omit the href",
+      "why": "a crumb goes UP; sending the reader to a sibling is a different action wearing the same clothes"
+    },
+    {
+      "dont": "Putting the rail's collapse button inside the rail",
+      "do": "Leave it here",
+      "why": "collapsed the rail is 48px wide, so the button would have to be duplicated somewhere reachable"
+    },
+    {
+      "dont": "Holding a second copy of the pinned state in the bar",
+      "do": "Pass `isPinned` down from the host",
+      "why": "two copies drift, and the bar then describes a state the rail is not in"
+    }
+  ],
+  "examples": {
+    "canonical": "<AppTopBar\n  trail={[{ label: 'Workflows' }, { label: 'All Workflows', href: '/workflows' }, { label: 'Workflow runs' }]}\n  onNavigate={setActiveId}\n  profile={profile}\n  preference={preference}\n  onPreferenceChange={setPreference}\n  notifications={notifications}\n  unreadCount={unread}\n  onOpenNotifications={() => setActiveId('notifications')}\n  isPinned={isPinned}\n  onTogglePin={togglePin}\n  isMobile={isMobile}\n  isNavDrawerOpen={drawerOpen}\n/>",
+    "incorrect": [
+      {
+        "code": "trail={[{ label: 'Workflows', href: '/workflows/all' }, { label: 'Workflow runs' }]}",
+        "why": "Workflows is a section with no page; pointing it at All Workflows moves the reader sideways instead of up"
+      },
+      {
+        "code": "<AppTopBar actions={<AppLauncher />} />",
+        "why": "the launcher was deliberately removed from this package; if the host has one, it supplies it — but it is not chrome"
+      }
+    ]
+  }
+}

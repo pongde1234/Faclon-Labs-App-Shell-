@@ -1,0 +1,36 @@
+{
+  "$schema": "./guard.schema.json",
+  "package": "@faclon-labs/iosense-shell",
+  "version": "0.1.0",
+  "description": "Machine-readable usage contracts for the iosense application chrome. Each guard states what the component is for, how an AI should choose its props, which combinations are illegal, and the anti-patterns that keep recurring.",
+  "readFirst": "AppSideNav.guard.json — the rail carries most of the behaviour, and its three-state model (pinned / peeked / collapsed) is the thing most likely to be got wrong.",
+  "invariants": [
+    "This package is NOT dependency-free. It is built on @faclon-labs/design-sdk and @faclon-labs/fds and inherits their tokens. Use @faclon-labs/app-shell if you need a portable shell.",
+    "theme-overrides.css must be imported AFTER the SDK stylesheets. design-sdk injects component CSS when its modules load, so overrides imported earlier lose the cascade.",
+    "The rail has THREE states, not two: pinned (a click, moves the page), peeked (a hover, floats over it) and collapsed. Never key behaviour on isPinned to mean \"open\".",
+    "The hover peek is owned in React, not by the SDK. Both state objects strip the SDK data-hovered attribute, because React cannot see it and the component has to know it is expanded.",
+    "The collapse control lives in the top bar, never in the rail: a control that hides a panel cannot sit inside it.",
+    "A breadcrumb crumb with no href is inert text. Sections that are not pages are exactly that case.",
+    "Tooltips appear only when a label is unreadable — the 48px strip, or a truncated expanded label. Never when the text is legible.",
+    "The application launcher and the assistant button are deliberately not exported. AppTopBar takes an actions slot instead.",
+    "Never put a ref on the direct child of an fds Tooltip or Popover — the clone spreads children.props after ref and the component silently never opens."
+  ],
+  "guards": [
+    {
+      "component": "AppNavDrawer",
+      "path": "./guards/AppNavDrawer.guard.json"
+    },
+    {
+      "component": "AppSideNav",
+      "path": "./guards/AppSideNav.guard.json"
+    },
+    {
+      "component": "AppTopBar",
+      "path": "./guards/AppTopBar.guard.json"
+    },
+    {
+      "component": "Menus",
+      "path": "./guards/Menus.guard.json"
+    }
+  ]
+}

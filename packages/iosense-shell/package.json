@@ -13,7 +13,8 @@
   },
   "files": [
     "dist",
-    "src"
+    "src",
+    "guards"
   ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -23,7 +24,9 @@
       "import": "./dist/index.js"
     },
     "./theme-overrides.css": "./src/theme-overrides.css",
-    "./package.json": "./package.json"
+    "./package.json": "./package.json",
+    "./guards/index.json": "./guards/index.json",
+    "./guards/*": "./guards/*"
   },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json --noEmit"

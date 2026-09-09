@@ -1,0 +1,124 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "AppSideNav",
+  "import": "@faclon-labs/iosense-shell",
+  "purpose": "The product's navigation rail: a 240px panel that collapses to a 48px icon strip, peeks open on hover, and carries nested groups, flyouts and badges. Built on the SDK's SideNavBar.",
+  "useInstead": [
+    {
+      "when": "you want a shell with no design-system dependency",
+      "use": "@faclon-labs/app-shell — do you want a shell, or do you want THIS shell?"
+    },
+    {
+      "when": "you are below the mobile breakpoint",
+      "use": "AppNavDrawer, which wraps this one — it renders the same rail inside a Drawer"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for the iosense rail. Where it is silent, say so rather than borrowing a rule from the SDK's own SideNavBar guard — this component deliberately overrides several of its behaviours.",
+    "aliases": ["rail", "sidebar", "side nav", "left nav", "icon strip"],
+    "order": ["state", "hover", "content", "mobile"],
+    "beforeTheRules": "There are THREE states, not two: pinned open, peeked open, and collapsed. Pinned is a click and moves the page; peeked is a hover and floats over it. Conflating them is the mistake this component was rewritten to avoid.",
+    "rules": [
+      {
+        "stage": "state",
+        "if": "you are wiring the collapse",
+        "then": "own `isPinned` in the host and pass it down; the rail never stores it",
+        "because": "the top bar owns the toggle, and a control that hides a panel cannot live inside that panel — collapsed there are 48px and nowhere to put it",
+        "certainty": "high"
+      },
+      {
+        "stage": "hover",
+        "if": "you are tempted to let the SDK handle the hover peek",
+        "then": "do not — this component strips the SDK's `data-hovered` in BOTH states and drives the peek itself",
+        "because": "the SDK sets that attribute inside its own DOM, where React cannot see it. During an SDK-driven peek the component still believed it was a 48px strip while the user looked at a 240px panel: tooltips fired on readable labels, nested groups opened flyouts beside an already-wide panel, and the organisation name stayed hidden",
+        "certainty": "high"
+      },
+      {
+        "stage": "hover",
+        "if": "you need a rule that applies while the rail is visually open",
+        "then": "key it on `data-state=\"expanded\"`, never on `isPinned`",
+        "because": "a peek reports as expanded precisely so every existing expanded rule applies unchanged; `isPinned` is false during a peek and any rule using it will be wrong",
+        "certainty": "high"
+      },
+      {
+        "stage": "content",
+        "if": "a row has children",
+        "then": "expect a flyout when collapsed and an inline sub-list when open",
+        "because": "a 48px strip has no room for a nested list, so the collapsed rail hands off to a Popover — and only one flyout is open at a time, because fds Popovers do not join a floating tree and nothing else would close the previous one",
+        "certainty": "high"
+      },
+      {
+        "stage": "content",
+        "if": "you want a count or a status word on a row",
+        "then": "use `badge: { kind: 'count', value, tone }` for numbers and `{ kind: 'word', label, tone }` for text",
+        "because": "the two render as different components — a Counter and a Badge — and the split is what keeps a number from being styled as a status",
+        "certainty": "medium"
+      },
+      {
+        "stage": "mobile",
+        "if": "the viewport is below 768px",
+        "then": "render AppNavDrawer instead and pass `isPinned` so the rail is always expanded inside it",
+        "because": "the SDK's own mobile mode was disabled here (`mobileBreakpoint={0}`) — its drawer state lives in the provider with no controlled prop, so the top bar outside could never open it",
+        "certainty": "high"
+      }
+    ],
+    "constraints": [
+      "The collapse control is NOT in this component. It lives in the top bar.",
+      "`theme-overrides.css` must be loaded, and loaded AFTER the SDK's stylesheets. The rail's footprint, its pinned width and its hover shadow all live there.",
+      "The rail's own motion is retuned to 360ms by overriding --fds-duration-moderate on `.app-sidenav-theme`. Footprint, panel and menu-button width all animate on that one token, so overriding a single rule instead would desync them."
+    ],
+    "certainty": "high"
+  },
+  "defaults": {
+    "railTheme": "'Dark' in this app; 'Light' is the SDK default (the Classic theme)"
+  },
+  "accessibility": {
+    "keyboard": "Tab reaches every row. Expand triggers are buttons; navigation rows are links. Focus entering a collapsed rail peeks it open so the labels are readable — without that, a keyboard user gets sixteen unlabelled glyphs.",
+    "aria": "The current row carries aria-current=\"page\". Expandable rows carry aria-expanded and an aria-controls that resolves. Collapsed, the parent row stands in for whichever child is current, or the strip would mark nothing at all.",
+    "notes": "Tooltips appear ONLY when a label is unreadable — the 48px strip, or an expanded label truncated by an ellipsis. Never when the text is right there. Since hovering a collapsed row now peeks the rail open, the collapsed-rail tooltip is in practice reserved for truncation."
+  },
+  "composition": {
+    "childrenContract": "None. The nav tree is defined inside this component. `workspace` is the only content slot — the organisation row in the header.",
+    "notes": "The nav rows are currently hardcoded here rather than passed as data. That is a known difference from @faclon-labs/app-shell and is the first thing to change if this needs to serve more than one product."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Keying behaviour on `isPinned` to mean 'the rail is open'",
+      "do": "Key it on the derived open state, or on data-state=\"expanded\" in CSS",
+      "why": "isPinned is false during a hover peek, so every such rule is wrong for exactly the case the peek exists to serve"
+    },
+    {
+      "dont": "Letting the SDK's own hover expand the rail",
+      "do": "Keep `data-hovered` stripped and drive the peek in React",
+      "why": "React cannot see the SDK's attribute, so the component and the screen disagree — and the open/close delays become decorative"
+    },
+    {
+      "dont": "Putting a collapse button inside the rail",
+      "do": "Keep it in the top bar",
+      "why": "collapsed there are 48px; the button had to be duplicated as a row to stay reachable, and two controls for one state is worse than one in fixed chrome"
+    },
+    {
+      "dont": "Shipping without theme-overrides.css, or loading it before the SDK",
+      "do": "Import it last",
+      "why": "the SDK injects component CSS at load; loaded earlier, the overrides lose and the rail's footprint and pinned width are wrong"
+    },
+    {
+      "dont": "Showing a tooltip on every rail row",
+      "do": "Let the component decide — it shows one only when the label is hidden or clipped",
+      "why": "a tooltip repeating a label the user can already read is noise, and several can end up stacked at once"
+    }
+  ],
+  "examples": {
+    "canonical": "const [isPinned, setIsPinned] = useState(true)\nconst isMobile = useIsMobile()\n\n{!isMobile && (\n  <AppSideNav\n    activeId={activeId}\n    onNavigate={setActiveId}\n    isPinned={isPinned}\n    railTheme=\"Dark\"\n    workspace={<WorkspaceLabel name={profile.org} />}\n  />\n)}\n{isMobile && <AppNavDrawer isOpen={open} onClose={close} … />}",
+    "incorrect": [
+      {
+        "code": "<AppSideNav isPinned={isPinned} />\n// …and elsewhere: if (!isPinned) showTooltip()",
+        "why": "isPinned is false during a hover peek, when the label is plainly visible — ask the component, not the pin state"
+      },
+      {
+        "code": "<SideNavBar data-hovered={hovered}>  /* letting the SDK peek */",
+        "why": "the peek must be owned in React; the SDK's attribute is invisible to the component that has to react to it"
+      }
+    ]
+  }
+}

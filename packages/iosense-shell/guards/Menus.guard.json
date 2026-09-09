@@ -1,0 +1,108 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "Menus",
+  "import": "@faclon-labs/iosense-shell",
+  "purpose": "The two menus the top bar mounts — NotificationMenu (the bell) and ProfileMenu (the avatar, which also carries theme selection). Both are fds DropdownMenus.",
+  "useInstead": [
+    {
+      "when": "you need a general-purpose menu",
+      "use": "fds DropdownMenu directly — these two carry product behaviour, not just a panel"
+    },
+    {
+      "when": "the panel is a full page of notifications",
+      "use": "a route — the bell previews the top few and links onward"
+    }
+  ],
+  "decision": {
+    "authority": "This guard is the authority for the iosense top-bar menus.",
+    "aliases": ["bell", "notifications", "avatar menu", "account menu", "user menu"],
+    "order": ["placement", "content", "theme"],
+    "beforeTheRules": "Both are mounted by AppTopBar and sit at the right edge in a fixed order — bell, then avatar. Anything else the host adds goes to their left, so these two never move.",
+    "rules": [
+      {
+        "stage": "placement",
+        "if": "you are adding a control near them",
+        "then": "pass it through AppTopBar's `actions`",
+        "because": "it lands to their left and the two fixed positions hold",
+        "certainty": "high"
+      },
+      {
+        "stage": "content",
+        "if": "you are passing notifications",
+        "then": "pass the full list newest-first plus `unreadCount`",
+        "because": "the bell previews only the top few, so the count has to come from the source rather than from the previewed slice",
+        "certainty": "high"
+      },
+      {
+        "stage": "content",
+        "if": "a menu row navigates",
+        "then": "close the menu as part of the handler",
+        "because": "a menu left open over the page the reader just moved to is the commonest complaint about menus like these",
+        "certainty": "high"
+      },
+      {
+        "stage": "theme",
+        "if": "you are exposing theme selection",
+        "then": "pass `preference` and `onPreferenceChange` and let ProfileMenu render the tiles",
+        "because": "the three choices are light, dark and system, and system is a real third option rather than the absence of a choice — a two-way toggle cannot express it",
+        "certainty": "high"
+      },
+      {
+        "stage": "theme",
+        "if": "you need the resolved theme for your own UI",
+        "then": "read it from useAppTheme, not from the preference",
+        "because": "'system' is not a theme; it is an instruction to follow the OS, and only the hook knows what that currently resolves to",
+        "certainty": "high"
+      }
+    ],
+    "constraints": [
+      "Sign out is the one destructive row in the profile menu and is the only one styled with negative intent.",
+      "fds Tooltip and Popover clone their child with `getReferenceProps({ ref, ...children.props })` — props land AFTER ref, so a child carrying its own ref silently overwrites the merged one and the tooltip never opens. Never put a ref on the direct child of either."
+    ],
+    "certainty": "high"
+  },
+  "accessibility": {
+    "keyboard": "Both open on click, close on Escape and on outside click, and return focus to their trigger.",
+    "aria": "Triggers carry aria-haspopup and aria-expanded. The unread count is part of the bell's accessible name rather than a separate announcement, so it is not read twice.",
+    "notes": "The avatar's image is alt=\"\" because the trigger's label already names the user."
+  },
+  "composition": {
+    "childrenContract": "None. Both take data — notifications as an array, the profile as an object.",
+    "notes": "ProfileMenu owns the appearance modal and the theme tiles; there is no separate theme control to mount."
+  },
+  "antiPatterns": [
+    {
+      "dont": "Deriving the unread count from the previewed slice",
+      "do": "Pass unreadCount from the source",
+      "why": "the bell shows only the top few, so a derived count under-reports as soon as there are more"
+    },
+    {
+      "dont": "Leaving the menu open after a row navigates",
+      "do": "Close it in the handler",
+      "why": "the panel then covers the page the reader just asked for"
+    },
+    {
+      "dont": "Reducing the theme choice to a light/dark toggle",
+      "do": "Keep the three tiles",
+      "why": "'system' is a distinct instruction, not the absence of a preference, and a toggle cannot represent it"
+    },
+    {
+      "dont": "Putting a ref on the direct child of an fds Tooltip or Popover",
+      "do": "Address it another way — a data attribute, or a ref on a wrapper",
+      "why": "the clone spreads children.props after ref, so yours wins and the component silently never opens"
+    }
+  ],
+  "examples": {
+    "canonical": "<AppTopBar\n  notifications={items}\n  unreadCount={unread}\n  onOpenNotifications={() => go('notifications')}\n  profile={profile}\n  preference={preference}\n  onPreferenceChange={setPreference}\n  …\n/>",
+    "incorrect": [
+      {
+        "code": "unreadCount={items.slice(0, 5).filter(n => n.isUnread).length}",
+        "why": "counts only the preview; pass the real total"
+      },
+      {
+        "code": "<Tooltip content=\"Devices\"><button ref={myRef}>…</button></Tooltip>",
+        "why": "the ref on the direct child clobbers the merged one and the tooltip never opens — with no error"
+      }
+    ]
+  }
+}
