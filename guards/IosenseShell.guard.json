@@ -26,7 +26,10 @@
     "isPinned": "Uncontrolled. The shell reads localStorage 'iosense:sidenav-pinned'; with nothing stored the default is width-aware — pinned at >= 1024px, collapsed below. Pass isPinned AND onPinnedChange together to drive it yourself.",
     "preference": "Uncontrolled. The shell runs its own useAppTheme, which stamps data-theme on <html>. Pass preference AND onPreferenceChange together to drive it yourself.",
     "workspace": "Defaults to <WorkspaceLabel name={profile.org} />. Override only to render a switcher or a different identity row.",
-    "actions": "Empty. The top bar shows the bell and the avatar and nothing else."
+    "actions": "Empty. The top bar shows the bell and the avatar and nothing else.",
+    "navItems": "[] — an empty rail. This package ships the chrome, not our content. IOSENSE_NAV is a worked example to COPY, not to import into a product that is not iosense.",
+    "logo": "Unset falls through to design-sdk built-in iosense mark. SET THIS, or an unbranded install silently ships our identity.",
+    "sideNavFooter": "Empty. Help is what the iosense product puts there; it is not chrome. Build rows with NavFooterRow."
   },
   "sizing": {
     "rail": "240px pinned, 48px collapsed. A hover peek widens the inner panel over the page while the 48px footprint stays put, so the content does not move.",
@@ -41,16 +44,22 @@
   ],
   "propRules": [
     {
+      "rule": "navItems and the items passed to buildTrail must be the SAME array.",
+      "why": "buildTrail derives the breadcrumb hierarchy from it. Two different arrays is how a trail starts claiming a page sits somewhere the rail does not put it.",
+      "bad": "trail={buildTrail(id, title, { items: OTHER, pageTitles })} navItems={NAV}",
+      "good": "trail={buildTrail(id, title, { items: NAV, pageTitles })} navItems={NAV}"
+    },
+    {
       "rule": "activeId must be an id the rail knows, and section ids are not pages.",
       "why": "Landing on 'workflows' or 'reports' shows an empty page — sections have no content of their own. Run every incoming id through resolveSection() so a hand-typed route cannot reach one.",
       "bad": "setActiveId('workflows')",
-      "good": "setActiveId(resolveSection('workflows')) // -> 'workflows-all'"
+      "good": "setActiveId(resolveSection('workflows', SECTION_DEFAULTS)) // -> 'workflows-all'"
     },
     {
       "rule": "Build trail with buildTrail(), not by hand.",
       "why": "buildTrail is what decides which crumb has NO id, and an id-less crumb is what AppTopBar draws as plain text. Hand-built trails give sections an id, which turns a crumb that should go UP into one that moves the reader SIDEWAYS into a sibling.",
       "bad": "trail={[{ label: 'Workflows', id: 'workflows' }, { label: title }]}",
-      "good": "trail={buildTrail(activeId, title, { pageTitles: PAGE_TITLES })}"
+      "good": "trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}"
     },
     {
       "rule": "isPinned and onPinnedChange are a pair. Same for preference and onPreferenceChange.",
@@ -77,6 +86,11 @@
     "provides": "The markup the content-area CSS targets. This is why assembling the pieces by hand is not equivalent."
   },
   "antiPatterns": [
+    {
+      "pattern": "Shipping without navItems and expecting a nav.",
+      "why": "The rail renders nothing by default, on purpose — the package is the behaviour, not the rows.",
+      "instead": "Pass your own NavItem[]. See NavItems.guard.json."
+    },
     {
       "pattern": "Mounting AppSideNav and AppTopBar into your own layout and expecting the product's look.",
       "why": "theme-overrides.css styles the content area through .fds-app-shell[data-topbar='column'], [data-sidenav-pinned='true'] and .app-scroll-frame > .app-main-scroll. None of those components render any of it. The result is a shell that looks nearly right: no content inset, a native scrollbar, no rail offset.",
@@ -111,7 +125,7 @@
   "examples": [
     {
       "title": "The whole chrome, uncontrolled",
-      "code": "const [activeId, setActiveId] = useState('home')\nconst { profile } = useProfile()\nconst notifications = useNotifications()\nconst title = PAGE_TITLES[activeId] ?? ''\n\nreturn (\n  <IosenseShell\n    activeId={activeId}\n    onNavigate={(id) => setActiveId(resolveSection(id))}\n    trail={buildTrail(activeId, title, { pageTitles: PAGE_TITLES })}\n    profile={profile}\n    notifications={notifications.items}\n    unreadCount={notifications.unreadCount}\n    onOpenNotifications={() => setActiveId('notifications')}\n  >\n    <div style={{ padding: '16px 0' }}>\n      <YourPage />\n    </div>\n  </IosenseShell>\n)"
+      "code": "const [activeId, setActiveId] = useState('home')\nconst { profile } = useProfile()\nconst notifications = useNotifications()\nconst title = PAGE_TITLES[activeId] ?? ''\n\nreturn (\n  <IosenseShell\n    activeId={activeId}\n    onNavigate={(id) => setActiveId(resolveSection(id, SECTION_DEFAULTS))}\n    trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}\n    profile={profile}\n    notifications={notifications.items}\n    unreadCount={notifications.unreadCount}\n    onOpenNotifications={() => setActiveId('notifications')}\n  >\n    <div style={{ padding: '16px 0' }}>\n      <YourPage />\n    </div>\n  </IosenseShell>\n)"
     },
     {
       "title": "With extra top-bar controls",
@@ -123,7 +137,7 @@
     },
     {
       "title": "The breadcrumb rule, which buildTrail encodes",
-      "code": "// one crumb   -> the page itself, marked aria-current\n// two crumbs  -> Workflows [plain text, NOT a link] / This page [current]\n// three       -> Workflows [text] / All Workflows [LINK] / This record [current]\n//\n// The section crumb has no id, which is what makes it inert. Verified in a\n// browser: the two-layer trail renders the first crumb as text and the\n// three-layer trail renders the middle crumb as a button.\nbuildTrail('workflows-create', 'Create company when a deal closes', { pageTitles: PAGE_TITLES })"
+      "code": "// one crumb   -> the page itself, marked aria-current\n// two crumbs  -> Workflows [plain text, NOT a link] / This page [current]\n// three       -> Workflows [text] / All Workflows [LINK] / This record [current]\n//\n// The section crumb has no id, which is what makes it inert. Verified in a\n// browser: the two-layer trail renders the first crumb as text and the\n// three-layer trail renders the middle crumb as a button.\nbuildTrail('workflows-create', 'Create company when a deal closes', { items: NAV, pageTitles: PAGE_TITLES, recordParent: IOSENSE_RECORD_PARENT })"
     }
   ]
 }

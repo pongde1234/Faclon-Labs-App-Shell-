@@ -12,10 +12,17 @@ import { useIsMobile } from './useIsMobile'
 import { railThemeFor, useAppTheme, type ThemePreference } from './useAppTheme'
 import type { Profile } from './profile'
 import type { AppNotification } from './notifications'
+import type { NavItem } from './navItems'
 
 const PINNED_KEY = 'iosense:sidenav-pinned'
 
 export interface IosenseShellProps {
+  /**
+   * The rail's rows. **Empty by default** — this package ships the chrome's
+   * behaviour, not its contents. See `navItems.ts` for the three shapes, and
+   * `IOSENSE_NAV` for a complete worked example.
+   */
+  navItems?: NavItem[]
   /** Current page id. Must match a nav id for the rail to mark it active. */
   activeId: string
   onNavigate: (id: string) => void
@@ -36,8 +43,22 @@ export interface IosenseShellProps {
    */
   actions?: ReactNode
 
+  /**
+   * The brand mark in the rail header. **Set this.** Left unset, design-sdk
+   * renders its own built-in iosense mark, so an unbranded install silently
+   * ships someone else's logo.
+   */
+  logo?: ReactNode
+
   /** Organisation row in the rail header. Defaults to the profile's `org`. */
   workspace?: ReactNode
+
+  /**
+   * The rail's footer. **Empty by default** — Help is what the iosense product
+   * puts here, not something every host wants. Build rows with `NavFooterRow`
+   * so their labels fade with the rail like every other row.
+   */
+  sideNavFooter?: ReactNode
 
   /**
    * Rail pin state. Omit and the shell owns it — including the width-aware
@@ -77,6 +98,7 @@ export interface IosenseShellProps {
  * titles, or any page content — `children` is rendered verbatim.
  */
 export function IosenseShell({
+  navItems,
   activeId,
   onNavigate,
   trail,
@@ -85,7 +107,9 @@ export function IosenseShell({
   unreadCount,
   onOpenNotifications,
   actions,
+  logo,
   workspace,
+  sideNavFooter,
   isPinned: pinnedProp,
   onPinnedChange,
   preference: preferenceProp,
@@ -205,6 +229,9 @@ export function IosenseShell({
       sideNav={
         isMobile ? undefined : (
           <AppSideNav
+            items={navItems}
+            logo={logo}
+            footer={sideNavFooter}
             activeId={activeId}
             onNavigate={onNavigate}
             isPinned={isPinned}
@@ -219,6 +246,9 @@ export function IosenseShell({
           open-groups state. */}
       {isMobile && (
         <AppNavDrawer
+          items={navItems}
+          logo={logo}
+          footer={sideNavFooter}
           isOpen={isNavDrawerOpen}
           onClose={() => setIsNavDrawerOpen(false)}
           activeId={activeId}

@@ -22,16 +22,37 @@ Pick the first if you want a shell. Pick this one if you want *this* shell.
 ```tsx
 import {
   IosenseShell,
+  NavFooterRow,
   buildTrail,
   useProfile,
   useNotifications,
+  type NavItem,
 } from '@faclon-labs/iosense-shell'
+import { House, HardDrive, FileText, CircleQuestionMark } from 'lucide-react'
 
 // The three stylesheets, in THIS order. See "The stylesheet contract" below —
 // getting it wrong does not throw, it just degrades.
 import '@faclon-labs/design-sdk/styles.css'
 import '@faclon-labs/fds/styles.css'
 import '@faclon-labs/iosense-shell/theme-overrides.css'
+
+// YOUR nav. The rail renders nothing until you give it rows — see "The nav is
+// yours" below.
+const NAV: NavItem[] = [
+  { id: 'home', label: 'Home', icon: <House size={14} /> },
+  {
+    id: 'reports',
+    label: 'Reports',
+    icon: <FileText size={14} />,
+    children: [{ id: 'reports-scheduled', label: 'Scheduled', icon: <FileText size={14} /> }],
+  },
+  {
+    kind: 'section',
+    id: 'connect',
+    label: 'Connect',
+    items: [{ id: 'devices', label: 'Devices', icon: <HardDrive size={14} /> }],
+  },
+]
 
 const PAGE_TITLES: Record<string, string> = { home: 'Overview', devices: 'Devices' /* … */ }
 
@@ -43,9 +64,12 @@ export default function App() {
 
   return (
     <IosenseShell
+      navItems={NAV}
+      logo={<YourLogo />}
+      sideNavFooter={<NavFooterRow icon={<CircleQuestionMark size={14} />} label="Help" />}
       activeId={activeId}
       onNavigate={setActiveId}
-      trail={buildTrail(activeId, title, { pageTitles: PAGE_TITLES })}
+      trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}
       profile={profile}
       notifications={notifications.items}
       unreadCount={notifications.unreadCount}
@@ -56,6 +80,67 @@ export default function App() {
   )
 }
 ```
+
+## The nav is yours
+
+**The rail ships empty.** This package is the chrome's *behaviour*, not its
+contents — and none of that behaviour depends on which rows are in it:
+
+- hover peek at 150/100ms that widens the panel **without moving the page**
+- a tooltip only when a label is genuinely unreadable — the 48px strip, or an ellipsis
+- an accordion that opens itself when a child becomes active, so a deep link never lands hidden
+- a flyout beside the strip when there is nowhere to unfold into
+- a badge that becomes a dot on the icon when the rail collapses
+- a section that force-expands while collapsed, because a folded one there is a hairline that strands its icons
+
+Three row shapes:
+
+| Shape | Written as | Notes |
+|---|---|---|
+| **Entity** | `{ id, label, icon, badge? }` | the plain row |
+| **Accordion** | `{ id, label, icon, children: [] }` | the parent row *is* the toggle; only accordions appear in the breadcrumb trail |
+| **Section** | `{ kind: 'section', id, label, items: [] }` | a labelled group that folds; **never** a breadcrumb ancestor |
+
+The trailing `badge` is either a **Counter** (a quantity — `{ kind: 'count', value: 12, tone: 'info' }`)
+or a **Badge** (a word — `{ kind: 'word', label: 'Beta', tone: 'label' }`). Not a
+Chip: Chip renders a `<button>` and the row is already a `<button>`.
+
+`IOSENSE_NAV` is a complete worked example — every row type, both badge kinds,
+two accordions and a section. **Copy it, don't import it**, unless you are
+iosense: it is our pages, and shipping them inside someone else's app is the
+mistake this export exists to prevent.
+
+`buildTrail` reads the **same array**, so the trail and the rail cannot drift
+apart — there is one definition of what contains what.
+
+> **Set `logo`.** Left unset, design-sdk falls through to its own built-in
+> iosense mark, so an unbranded install silently ships our identity.
+
+## Everything else is empty too
+
+The nav is not the only place this applies. Every piece of iosense *content* is
+now a seed you pass, never a default you inherit:
+
+| Hook | Default | The iosense sample |
+|---|---|---|
+| `useProfile(seed?)` | `EMPTY_PROFILE` — blank | `IOSENSE_PROFILE` |
+| `useNotifications(seed?)` | `[]` | `IOSENSE_NOTIFICATIONS` |
+| `AppSideNav items` | `[]` | `IOSENSE_NAV` |
+| `AppSideNav footer` | nothing rendered | `NavFooterRow` with Help |
+| `AppSideNav logo` | design-sdk's iosense mark | — |
+
+`useProfile()` used to default to a real person — a name, a phone number and a
+working email address — which every install would then have carried. The
+`IOSENSE_*` constants exist so that shipping our content is something you have to
+*type*, rather than something that happens because you did not.
+
+The hooks are a convenience for hosts with no account or notifications API of
+their own. If you have real data, skip them and pass it straight to
+`IosenseShell`.
+
+> Local storage keys are still namespaced `iosense:` — the rail's pinned state,
+> its open groups, the profile and the theme. Harmless, but they are ours, and
+> worth renaming if this package is ever published outside Faclon.
 
 `IosenseShell` is the whole chrome assembled. **Mounting `AppSideNav` and
 `AppTopBar` yourself is supported but is not equivalent** — the content area's
@@ -97,6 +182,8 @@ Fonts are the host's: the product uses Inter (`@fontsource/inter` 400/500/600/70
 ```
 IosenseShell.tsx    the assembly — rail + bar + drawer + content sheet
 AppSideNav.tsx      the rail — nested groups, flyouts, badges, hover peek
+navItems.ts         the nav DATA MODEL — entity / accordion / section
+iosenseNav.tsx      IOSENSE_NAV — a worked example, not a default
 AppTopBar.tsx       breadcrumbs, notifications, profile
 AppNavDrawer.tsx    the mobile drawer
 RailFlyout.tsx      the collapsed rail's sub-menu

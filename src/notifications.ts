@@ -43,7 +43,13 @@ export const KIND_COLOR: Record<NotificationKind, 'Information' | 'Negative' | '
   system: 'Neutral',
 }
 
-export const NOTIFICATIONS: AppNotification[] = [
+/**
+ * The iosense product sample data — an EXAMPLE, the way IOSENSE_NAV is.
+ *
+ * Real alerts about real floors in a real building. Look at it to see the
+ * shape; do not ship it as anyone else's notifications.
+ */
+export const IOSENSE_NOTIFICATIONS: AppNotification[] = [
   { id: 'n1', kind: 'activity', title: 'Report FDAC_1 completed successfully', source: 'System Generated', at: '2026-07-17T15:57:00', isRead: false, isPinned: false, action: 'Open report', note: 'Generated from the Store Level Dashboard — 240 rows exported.', remarks: [] },
   { id: 'n2', kind: 'alert', title: 'High temperature in Zone A', source: 'Zomato · 5th Floor', at: '2026-07-17T15:50:00', isRead: false, isPinned: true, action: 'Acknowledge', note: 'Zone A hit 23.6 °C against a 22.0 °C threshold.', remarks: [{ id: 'r1', text: 'Raised with facilities — AHU damper stuck. Ticket FM-2291.', author: 'Siddharth', at: '2026-07-17T16:05:00' }] },
   { id: 'n3', kind: 'activity', title: 'Report FLDD_R1 completed successfully', source: 'System Generated', at: '2026-07-17T15:44:00', isRead: false, isPinned: false, action: 'Open report', remarks: [] },

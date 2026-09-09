@@ -1,6 +1,7 @@
 import { Drawer, DrawerBody } from '@faclon-labs/fds/drawer'
 
 import { AppSideNav } from './AppSideNav'
+import type { NavItem } from './navItems'
 
 /**
  * The navigation, as a drawer, below the mobile breakpoint.
@@ -25,19 +26,26 @@ import { AppSideNav } from './AppSideNav'
  * build twenty nav rows it may never show.
  */
 export function AppNavDrawer({
+  items,
   isOpen,
   onClose,
   activeId,
   onNavigate,
   railTheme,
+  logo,
   workspace,
+  footer,
 }: {
+  /** The same rows the rail gets — one nav, two presentations. */
+  items?: NavItem[]
   isOpen: boolean
   onClose: () => void
   activeId: string
   onNavigate: (id: string) => void
   railTheme: 'Light' | 'Dark'
+  logo?: React.ReactNode
   workspace?: React.ReactNode
+  footer?: React.ReactNode
 }) {
   return (
     <Drawer isOpen={isOpen} onDismiss={onClose} side="left" isLazy>
@@ -45,6 +53,9 @@ export function AppNavDrawer({
           push the 240px list past the panel. */}
       <DrawerBody isPadded={false}>
         <AppSideNav
+          items={items}
+          logo={logo}
+          footer={footer}
           activeId={activeId}
           // Navigating closes the drawer — on a phone the panel covers the page
           // it just took you to, so leaving it open hides the result.

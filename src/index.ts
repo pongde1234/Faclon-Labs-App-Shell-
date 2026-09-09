@@ -21,8 +21,27 @@
 export { IosenseShell } from './IosenseShell'
 export type { IosenseShellProps } from './IosenseShell'
 
+// ── The nav, as data ─────────────────────────────────────────────────────────
+// The rail renders whatever you give it and renders NOTHING by default. This
+// package ships the rail's BEHAVIOUR — hover peek, the tooltip that only fires
+// on an unreadable label, the accordion that opens on a deep link, the flyout
+// in the 48px strip, the badge that becomes a dot — none of which depends on
+// which rows are in it.
+export { isSection, isAccordion, navPageIds, navParents } from './navItems'
+export type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge, NavTone } from './navItems'
+
+// One complete, realistic nav — every row type, both badge kinds, two
+// accordions and a section. COPY IT; do not import it into a product that is
+// not iosense, or you ship our pages in someone else's app.
+export {
+  IOSENSE_NAV,
+  IOSENSE_SECTION_DEFAULT,
+  IOSENSE_RECORD_PARENT,
+  NAV_ICON_SIZE,
+} from './iosenseNav'
+
 // ── The pieces, for hosts that assemble their own ────────────────────────────
-export { AppSideNav, WORKFLOW_PAGE_IDS, REPORT_PAGE_IDS } from './AppSideNav'
+export { AppSideNav, NavFooterRow } from './AppSideNav'
 export type { AppSideNavProps } from './AppSideNav'
 export { AppTopBar } from './AppTopBar'
 export type { Crumb, AppTopBarProps } from './AppTopBar'
@@ -34,15 +53,15 @@ export { WorkspaceLabel } from './WorkspaceSwitcher'
 // ── Breadcrumbs ──────────────────────────────────────────────────────────────
 // The RULE, not just the renderer: `buildTrail` is what decides which crumb has
 // no id, and an id-less crumb is what AppTopBar draws as plain text.
-export { buildTrail, resolveSection, RECORD_PARENT, SECTION_DEFAULT } from './trail'
+export { buildTrail, resolveSection } from './trail'
 export type { BuildTrailOptions } from './trail'
 
 // ── State the chrome's required props need ───────────────────────────────────
-export { useProfile, DEFAULT_PROFILE, fullName, readFileAsDataUrl, GENDERS, LOCATIONS, MAX_AVATAR_BYTES } from './profile'
+export { useProfile, EMPTY_PROFILE, IOSENSE_PROFILE, fullName, readFileAsDataUrl, GENDERS, LOCATIONS, MAX_AVATAR_BYTES } from './profile'
 export type { Profile } from './profile'
 export { useNotifications } from './useNotifications'
 export {
-  NOTIFICATIONS,
+  IOSENSE_NOTIFICATIONS,
   KIND_LABEL,
   KIND_COLOR,
   greeting,

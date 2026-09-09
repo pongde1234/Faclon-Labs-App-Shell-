@@ -1,35 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
 import {
-  Archive,
-  Bot,
-  CalendarClock,
-  ChevronDown,
-  Database,
-  Gauge,
-  House,
-  Link2,
-  Mic,
-  Cpu,
-  Building2,
-  GitBranch,
-  FileText,
-  HardDrive,
-  LayoutTemplate,
-  ListChecks,
-  Play,
-  Workflow,
-  Rocket,
-  Thermometer,
-  Truck,
-  Warehouse,
-  Wallet,
-  Wrench,
-  Zap,
-  Boxes,
-  Beaker,
-  CircleQuestionMark,
-  Target,
-} from 'lucide-react'
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from 'react'
+import { ChevronDown } from 'lucide-react'
 import { Badge } from '@faclon-labs/fds/badge'
 import { Counter } from '@faclon-labs/fds/counter'
 import { MaybeTooltip } from './MaybeTooltip'
@@ -50,9 +28,15 @@ import {
   SideNavBarProvider,
 } from '@faclon-labs/design-sdk/SideNavBar'
 
-/* Rail glyph size. The SDK's icon slot stays 16px — this is the drawn size
-   inside it, so the icons read lighter without moving the icon column. */
-const ICON = 14
+import {
+  isAccordion,
+  isSection,
+  type NavAccordion,
+  type NavBadge,
+  type NavEntity,
+  type NavItem,
+  type NavSection,
+} from './navItems'
 
 /**
  * Attribute overrides spread onto <SideNavBar> AFTER its own props (see usage
@@ -98,25 +82,66 @@ const PEEK_OPEN_MS = 150
 const PEEK_CLOSE_MS = 100
 
 /**
- * A rail annotation, in the two shapes fds actually splits it into: a QUANTITY
- * is a Counter ("how many?") and a WORD is a Badge ("what is this?"). They
- * share the same pill, the same six colours and the same sizes — the axis is
- * the answer type, not the look, and a Counter never holds a word.
+ * A run of rows that share one <menu>, or a single section.
  *
- * The union is explicit rather than sniffed from the string, so "12" can never
- * silently take the wrong branch.
- *
- * `tone` drives the pill's colour AND whether a collapsed dot is drawn: a count
- * or an alert is state worth surfacing in the 48px strip, a label like "Beta"
- * is not.
+ * The SDK's menu owns row-to-row spacing, so consecutive rows have to be
+ * batched into one — a menu per row would put a gap between every pair.
  */
-type RailTone = 'info' | 'alert' | 'label'
-type RailBadge =
-  | { kind: 'count'; value: number; tone: RailTone }
-  | { kind: 'word'; label: string; tone: RailTone }
+type NavBlock =
+  | { kind: 'menu'; key: string; items: Array<NavEntity | NavAccordion> }
+  | { kind: 'section'; section: NavSection }
+
+function groupIntoBlocks(items: NavItem[]): NavBlock[] {
+  const blocks: NavBlock[] = []
+  for (const item of items) {
+    if (isSection(item)) {
+      blocks.push({ kind: 'section', section: item })
+      continue
+    }
+    const last = blocks[blocks.length - 1]
+    if (last?.kind === 'menu') last.items.push(item)
+    // Keyed by the first row in the run: stable as long as the data is, and
+    // an index would re-key every later block when one row moves.
+    else blocks.push({ kind: 'menu', key: item.id, items: [item] })
+  }
+  return blocks
+}
+
+/**
+ * Whether the rail is currently a 48px strip, for footer content.
+ *
+ * A context rather than a prop because the footer is a NODE the host passes in
+ * — the rail cannot reach into it to tell each row what state to draw, and
+ * making the host thread `isCollapsed` down by hand would leak an internal.
+ */
+const FooterCollapseContext = createContext(false)
+
+/**
+ * A footer row that behaves like every other labelled row in the rail: the
+ * label fades in when the rail opens, drops to the icon alone in the 48px
+ * strip, and takes a tooltip there.
+ *
+ *     footer={<NavFooterRow icon={<HelpIcon size={14} />} label="Help" onClick={openHelp} />}
+ *
+ * Nothing forces you to use it — the footer takes any node — but a bare
+ * IconButton will not fade its label with the rail, and the row will look
+ * wrong next to the rest of the nav.
+ */
+export function NavFooterRow(props: {
+  icon: ReactNode
+  label: string
+  onClick?: () => void
+}) {
+  const isCollapsed = useContext(FooterCollapseContext)
+  return (
+    <SideNavBarMenu>
+      <NavRow {...props} isCollapsed={isCollapsed} />
+    </SideNavBarMenu>
+  )
+}
 
 /** What the annotation reads as — the collapsed tooltip quotes this. */
-const badgeText = (badge: RailBadge) =>
+const badgeText = (badge: NavBadge) =>
   badge.kind === 'count' ? String(badge.value) : badge.label
 
 /**
@@ -142,7 +167,7 @@ const BADGE_EMPHASIS = { info: 'Subtle', alert: 'Intense', label: 'Subtle' } as 
  * `max` is set on every Counter because it has NO default — an uncapped count
  * renders in full and stretches the row it sits in.
  */
-function badgeSlot(badge: RailBadge) {
+function badgeSlot(badge: NavBadge) {
   return (
     <SideNavBarMenuBadge>
       {badge.kind === 'count' ? (
@@ -165,96 +190,61 @@ function badgeSlot(badge: RailBadge) {
   )
 }
 
-const PRIMARY_ITEMS: Array<{
-  id: string
-  label: string
-  icon: React.ReactNode
-  badge?: RailBadge
-}> = [
-  { id: 'home', label: 'Home', icon: <House size={ICON} /> },
-  { id: 'finance', label: 'Finance', icon: <Wallet size={ICON} />, badge: { kind: 'count', value: 12, tone: 'info' } },
-  {
-    id: 'opportunities',
-    label: 'Opportunities',
-    icon: <Target size={ICON} />,
-    // `info`, not `alert`: Opportunities is the sales pipeline, so three deals
-    // are the thing you WANT. Red here reads as "3 problems".
-    badge: { kind: 'count', value: 3, tone: 'info' },
-  },
-  { id: 'agents-lab', label: 'Agents Lab', icon: <Bot size={ICON} />, badge: { kind: 'word', label: 'Beta', tone: 'label' } },
-  { id: 'voice', label: 'Voice', icon: <Mic size={ICON} /> },
-]
-
-/** A parent item with a nested sub-list (see NestedNavItem). */
-const WORKFLOWS = {
-  id: 'workflows',
-  label: 'Workflows',
-  icon: <Workflow size={ICON} />,
-  children: [
-    {
-      // A specific workflow record, but it still takes an icon from the same
-      // lucide outline family as every other rail row — never a letter. Zap is
-      // the trigger glyph the app already uses for "when X happens" (see
-      // Overview's Trigger Activity).
-      id: 'workflows-create',
-      label: 'Create company when a deal closes',
-      icon: <Zap size={ICON} />,
-      isRecord: true,
-    },
-    { id: 'workflows-all', label: 'All Workflows', icon: <ListChecks size={ICON} /> },
-    { id: 'workflows-runs', label: 'Workflow runs', icon: <Play size={ICON} /> },
-    { id: 'workflows-versions', label: 'Workflow versions', icon: <GitBranch size={ICON} /> },
-  ],
-}
-
-const CONNECT_ITEMS = [
-  { id: 'devices', label: 'Devices', icon: <HardDrive size={ICON} /> },
-  { id: 'zomato', label: 'Zomato', icon: <Building2 size={ICON} /> },
-  { id: 'terminal', label: 'Terminal', icon: <Thermometer size={ICON} /> },
-  { id: 'fleet', label: 'Fleet', icon: <Truck size={ICON} /> },
-  { id: 'warehouse', label: 'Warehouse', icon: <Warehouse size={ICON} /> },
-  { id: 'maintenance', label: 'Maintenance', icon: <Wrench size={ICON} /> },
-  { id: 'models', label: 'Models', icon: <Boxes size={ICON} /> },
-  { id: 'steamtrap', label: 'Steam Trap', icon: <Gauge size={ICON} /> },
-  { id: 'tools', label: 'Tools', icon: <Rocket size={ICON} /> },
-  { id: 'memory', label: 'Memory', icon: <Cpu size={ICON} /> },
-  // A/B testbed: same page as Memory, forked so UI changes can be compared
-  // side by side without touching the original.
-  { id: 'memory-b', label: 'Memory B', icon: <Beaker size={ICON} /> },
-  { id: 'connect', label: 'Connect', icon: <Link2 size={ICON} /> },
-  { id: 'database', label: 'Database', icon: <Database size={ICON} /> },
-]
-
-/** A second nested group. Same shape as WORKFLOWS. */
-const REPORTS = {
-  id: 'reports',
-  label: 'Reports',
-  icon: <FileText size={ICON} />,
-  children: [
-    { id: 'reports-scheduled', label: 'Scheduled reports', icon: <CalendarClock size={ICON} /> },
-    { id: 'reports-templates', label: 'Report templates', icon: <LayoutTemplate size={ICON} /> },
-    { id: 'reports-archive', label: 'Report archive', icon: <Archive size={ICON} /> },
-  ],
-}
-
-/** The nested groups' children — the top bar reads these to build its trail, so
-    the trail and the rail can never disagree about the hierarchy. */
-export const WORKFLOW_PAGE_IDS = new Set(WORKFLOWS.children.map((c) => c.id))
-export const REPORT_PAGE_IDS = new Set(REPORTS.children.map((c) => c.id))
-
 export interface AppSideNavProps {
+  /**
+   * The rows. **Empty by default** — this package ships the rail's behaviour,
+   * not its contents.
+   *
+   * Three shapes, all in `navItems.ts`: a plain entity, an accordion (a row
+   * with `children`), and a section (`kind: 'section'`, a labelled group that
+   * folds). `IOSENSE_NAV` is a complete worked example; copy it rather than
+   * importing it into a product that is not iosense.
+   */
+  items?: NavItem[]
   activeId: string
   onNavigate: (id: string) => void
   isPinned: boolean
 
   /** 'Light' is the SDK default (the Classic theme); 'Dark' is this app's default rail. */
   railTheme: 'Light' | 'Dark'
-  /** Organisation row for the header (name, plan, switcher). Built by App. */
-  workspace?: React.ReactNode
+
+  /**
+   * The brand mark in the header. It stays put in the 48px header, collapsed
+   * AND expanded — it never shifts.
+   *
+   * **Set this.** Left unset, design-sdk renders its own built-in iosense mark,
+   * so an unbranded install silently ships someone else's logo.
+   */
+  logo?: ReactNode
+
+  /** Organisation row in the header — a name, a plan, a workspace switcher. */
+  workspace?: ReactNode
+
+  /**
+   * The footer. **Empty by default**, deliberately: Help is what the iosense
+   * product puts here, not something every host wants. A promotional banner, a
+   * plan row or nothing at all are equally valid.
+   *
+   * Build rows with `NavFooterRow` so the label fades in and out with the rail
+   * the same way every other labelled row does.
+   */
+  footer?: ReactNode
+
+  /**
+   * Which accordions and sections are unfolded on a FIRST visit, before the
+   * user has expressed a preference. Afterwards their choice is remembered and
+   * this is ignored.
+   *
+   * Defaults to every **section** id and no accordion. A folded section in a
+   * fresh install is a hairline label with no affordance to unfold it and it
+   * strands every row inside it; a folded accordion still shows its parent row,
+   * so it costs nothing.
+   */
+  defaultOpenGroups?: string[]
 }
 
 interface NestedNavItemProps {
-  item: typeof WORKFLOWS | typeof REPORTS
+  item: NavAccordion
   activeId: string
   onNavigate: (id: string) => void
   isCollapsed: boolean
@@ -272,8 +262,15 @@ interface NestedNavItemProps {
 
 const OPEN_GROUPS_KEY = 'iosense:sidenav-open-groups'
 
-/** Unfolded on a first visit — an accordion's `defaultValue`, for the rail. */
-const DEFAULT_OPEN_GROUPS = ['workflows', 'connect']
+/**
+ * Unfolded on a first visit — an accordion's `defaultValue`, for the rail.
+ *
+ * Every SECTION and no accordion, unless the host says otherwise. A folded
+ * section in a fresh install is a hairline with no affordance to unfold it and
+ * it strands every row inside; a folded accordion still shows its parent row.
+ */
+const defaultOpenFor = (items: NavItem[]) =>
+  items.filter(isSection).map((section) => section.id)
 
 /**
  * Which collapsible sections are unfolded, remembered across reloads.
@@ -282,14 +279,17 @@ const DEFAULT_OPEN_GROUPS = ['workflows', 'connect']
  * of these are open" and it serialises as-is. Sections are independent — opening
  * one never closes another, the accordion's `multiple` mode.
  */
-function useOpenGroups() {
+function useOpenGroups(fallback: string[]) {
+  // Read once, on mount. `fallback` is only the FIRST-VISIT answer, so it is
+  // deliberately not a dependency — recomputing it when the items array
+  // identity changes would re-open sections the user had just folded.
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem(OPEN_GROUPS_KEY)
-      return new Set<string>(stored ? (JSON.parse(stored) as string[]) : DEFAULT_OPEN_GROUPS)
+      return new Set<string>(stored ? (JSON.parse(stored) as string[]) : fallback)
     } catch {
       // A hand-edited or stale entry must not take the whole rail down with it.
-      return new Set(DEFAULT_OPEN_GROUPS)
+      return new Set(fallback)
     }
   })
 
@@ -441,7 +441,7 @@ function NavRow({
   /** Badge / counter. The SDK hides this whenever the rail collapses. */
   trailing?: React.ReactNode
   /** Draws a dot on the icon while collapsed, since the badge is hidden then. */
-  badge?: RailBadge
+  badge?: NavBadge
 } & React.LiHTMLAttributes<HTMLLIElement>) {
   const { ref, isTruncated } = useLabelTruncated()
   // Collapsed, the dot says THAT there is something but not what — so the
@@ -656,15 +656,27 @@ function NavGroup({
 }
 
 export function AppSideNav({
+  items = [],
   activeId,
   onNavigate,
   isPinned,
 
   railTheme,
+  logo,
   workspace,
+  footer,
+  defaultOpenGroups,
 }: AppSideNavProps) {
   const setActiveId = onNavigate
-  const { openGroups, toggle: toggleGroup, open: openGroup } = useOpenGroups()
+  const { openGroups, toggle: toggleGroup, open: openGroup } = useOpenGroups(
+    defaultOpenGroups ?? defaultOpenFor(items),
+  )
+
+  // Group the flat item list into render blocks: runs of plain rows and
+  // accordions share one <menu>, and each section stands alone. Done here
+  // rather than inline so the JSX below reads as "for each block", and so the
+  // batching rule lives in one place.
+  const blocks = groupIntoBlocks(items)
   // Which nested group's flyout is showing, if any. One at a time: fds's
   // Popovers do not join a floating tree, so nothing would close the previous
   // panel when a second opens.
@@ -758,6 +770,11 @@ export function AppSideNav({
             button had to be duplicated as a row in the list to stay reachable.
             One control in fixed chrome replaces both. */}
         <SideNavBarHeader
+          // Undefined falls through to design-sdk's built-in mark, which is the
+          // iosense logo — fine here, wrong in anyone else's product. The prop
+          // doc says to set it; this is the line that makes not setting it
+          // silently ship our identity.
+          brand={logo}
           trailing={
             /* Always mounted and faded, the way the SDK treats its own
                `__text` slot — mounting it on toggle made the org name blink in
@@ -777,77 +794,81 @@ export function AppSideNav({
             className="app-sidenav__scroll"
             viewportClassName="app-sidenav__viewport"
           >
-            <SideNavBarMenu>
-              {PRIMARY_ITEMS.map((item) => (
-                <NavRow
-                  key={item.id}
-                  icon={item.icon}
-                  label={item.label}
-                  isActive={activeId === item.id}
-                  isCollapsed={!isOpen}
-                  trailing={item.badge ? badgeSlot(item.badge) : undefined}
-                  badge={item.badge}
-                  onClick={() => setActiveId(item.id)}
-                />
-              ))}
-              <NestedNavItem
-                item={WORKFLOWS}
-                activeId={activeId}
-                onNavigate={setActiveId}
-                isCollapsed={!isOpen}
-                isOpen={openGroups.has(WORKFLOWS.id)}
-                onToggle={toggleGroup}
-                onOpen={openGroup}
-                isFlyoutOpen={openFlyout === WORKFLOWS.id}
-                onFlyoutOpenChange={(next) => setOpenFlyout(next ? WORKFLOWS.id : null)}
-              />
-              <NestedNavItem
-                item={REPORTS}
-                activeId={activeId}
-                onNavigate={setActiveId}
-                isCollapsed={!isOpen}
-                isOpen={openGroups.has(REPORTS.id)}
-                onToggle={toggleGroup}
-                onOpen={openGroup}
-                isFlyoutOpen={openFlyout === REPORTS.id}
-                onFlyoutOpenChange={(next) => setOpenFlyout(next ? REPORTS.id : null)}
-              />
-            </SideNavBarMenu>
-
-            <NavGroup
-              label="Connect"
-              isOpen={openGroups.has('connect')}
-              onToggle={() => toggleGroup('connect')}
-              isRailCollapsed={!isPinned}
-            >
-              {CONNECT_ITEMS.map((item) => (
-                <NavRow
-                  key={item.id}
-                  icon={item.icon}
-                  label={item.label}
-                  isActive={activeId === item.id}
-                  isCollapsed={!isOpen}
-                  onClick={() => setActiveId(item.id)}
-                />
-              ))}
-            </NavGroup>
+            {/* Consecutive rows share one <menu>; each section gets its own
+                group. Batched rather than one <menu> per row because the SDK's
+                menu owns the row-to-row spacing — a menu per item would put a
+                gap between every pair of rows. */}
+            {blocks.map((block) =>
+              block.kind === 'section' ? (
+                <NavGroup
+                  key={block.section.id}
+                  label={block.section.label}
+                  isOpen={openGroups.has(block.section.id)}
+                  onToggle={() => toggleGroup(block.section.id)}
+                  isRailCollapsed={!isPinned}
+                >
+                  {block.section.items.map((item) => (
+                    <NavRow
+                      key={item.id}
+                      icon={item.icon}
+                      label={item.label}
+                      isActive={activeId === item.id}
+                      isCollapsed={!isOpen}
+                      trailing={item.badge ? badgeSlot(item.badge) : undefined}
+                      badge={item.badge}
+                      onClick={() => setActiveId(item.id)}
+                    />
+                  ))}
+                </NavGroup>
+              ) : (
+                <SideNavBarMenu key={block.key}>
+                  {block.items.map((item) =>
+                    isAccordion(item) ? (
+                      <NestedNavItem
+                        key={item.id}
+                        item={item}
+                        activeId={activeId}
+                        onNavigate={setActiveId}
+                        isCollapsed={!isOpen}
+                        isOpen={openGroups.has(item.id)}
+                        onToggle={toggleGroup}
+                        onOpen={openGroup}
+                        isFlyoutOpen={openFlyout === item.id}
+                        onFlyoutOpenChange={(next) => setOpenFlyout(next ? item.id : null)}
+                      />
+                    ) : (
+                      <NavRow
+                        key={item.id}
+                        icon={item.icon}
+                        label={item.label}
+                        isActive={activeId === item.id}
+                        isCollapsed={!isOpen}
+                        trailing={item.badge ? badgeSlot(item.badge) : undefined}
+                        badge={item.badge}
+                        onClick={() => setActiveId(item.id)}
+                      />
+                    ),
+                  )}
+                </SideNavBarMenu>
+              ),
+            )}
           </ScrollArea>
         </SideNavBarContent>
 
-        {/* Footer: help. Profile, notifications and the assistant moved to the
-            top bar. Built as a NavRow like every other item rather than a bare
-            IconButton, so the SDK fades the "Help" label in when the rail opens
-            and drops back to the icon alone in the 48px strip — one mechanism
-            for every labelled row in the rail. */}
-        <SideNavBarFooter>
-          <SideNavBarMenu>
-            <NavRow
-              icon={<CircleQuestionMark size={ICON} />}
-              label="Help"
-              isCollapsed={!isOpen}
-            />
-          </SideNavBarMenu>
-        </SideNavBarFooter>
+        {/* Footer: the host's, and EMPTY by default. Help is what the iosense
+            product puts here; it is not chrome. Profile, notifications and the
+            assistant are not here either — they moved to the top bar.
+
+            Not rendered at all when there is nothing to put in it, so an unused
+            footer costs no height. Use NavFooterRow to build rows that fade
+            their label in and out with the rail like every other labelled row. */}
+        {footer && (
+          <SideNavBarFooter>
+            <FooterCollapseContext.Provider value={!isOpen}>
+              {footer}
+            </FooterCollapseContext.Provider>
+          </SideNavBarFooter>
+        )}
       </SideNavBar>
     </SideNavBarProvider>
   )

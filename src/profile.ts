@@ -15,8 +15,33 @@ export interface Profile {
   avatarUrl: string
 }
 
-/** Dummy seed data — stands in for whatever the account API would return. */
-export const DEFAULT_PROFILE: Profile = {
+/**
+ * A blank profile — what `useProfile()` starts from when you give it no seed.
+ *
+ * The default is EMPTY rather than a person on purpose: this package is the
+ * chrome, and a chrome that ships someone's name and email address as its
+ * default state puts that person into every install.
+ */
+export const EMPTY_PROFILE: Profile = {
+  firstName: '',
+  lastName: '',
+  gender: '',
+  org: '',
+  email: '',
+  phone: '',
+  jobTitle: '',
+  location: '',
+  bio: '',
+  avatarUrl: '',
+}
+
+/**
+ * The iosense product's own seed data — an EXAMPLE, the way IOSENSE_NAV is.
+ * Stands in for whatever the account API would return.
+ *
+ * Do not pass this in a product that is not iosense: it is a real person.
+ */
+export const IOSENSE_PROFILE: Profile = {
   firstName: 'Siddharth',
   lastName: 'Jain',
   gender: 'Prefer not to say',
@@ -56,13 +81,20 @@ function migrate(raw: Record<string, unknown>): Partial<Profile> {
   return raw as Partial<Profile>
 }
 
-export function useProfile() {
+/**
+ * Local, persisted profile state, for hosts without an account API of their own.
+ *
+ * `seed` is what a first run starts from, and it is BLANK by default — see
+ * EMPTY_PROFILE. If you have a real user, pass them: the hook only owns
+ * persistence and the edit form's state, not identity.
+ */
+export function useProfile(seed: Profile = EMPTY_PROFILE) {
   const [profile, setProfile] = useState<Profile>(() => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
-      return stored ? { ...DEFAULT_PROFILE, ...migrate(JSON.parse(stored)) } : DEFAULT_PROFILE
+      return stored ? { ...seed, ...migrate(JSON.parse(stored)) } : seed
     } catch {
-      return DEFAULT_PROFILE
+      return seed
     }
   })
 
@@ -75,7 +107,9 @@ export function useProfile() {
   }, [profile])
 
   const save = useCallback((next: Profile) => setProfile(next), [])
-  const reset = useCallback(() => setProfile(DEFAULT_PROFILE), [])
+  // Back to the SEED, not to a package constant — "reset" means "undo my edits",
+  // and resetting to someone else's identity would be a strange thing to do.
+  const reset = useCallback(() => setProfile(seed), [seed])
 
   return { profile, save, reset }
 }

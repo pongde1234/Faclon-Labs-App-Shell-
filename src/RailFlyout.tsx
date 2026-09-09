@@ -1,4 +1,4 @@
-import { useCallback, useRef, type ReactElement } from 'react'
+import { useCallback, useRef, type ReactElement, type ReactNode } from 'react'
 import { Popover } from '@faclon-labs/fds/popover'
 import { ActionList, ActionListItem, ActionListSection } from '@faclon-labs/fds/actionlist'
 
@@ -6,7 +6,10 @@ import { ActionList, ActionListItem, ActionListSection } from '@faclon-labs/fds/
 export interface RailDestination {
   id: string
   label: string
-  icon: ReactElement
+  /** A slot, not a component: it is handed straight to the item's `leading`.
+     ReactNode rather than ReactElement so the public NavEntity model (which
+     also allows a string or nothing) flows through without a cast. */
+  icon: ReactNode
 }
 
 /**

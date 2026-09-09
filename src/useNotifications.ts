@@ -1,13 +1,20 @@
 import { useCallback, useMemo, useState } from 'react'
 
-import { NOTIFICATIONS, type AppNotification } from './notifications'
+import { type AppNotification } from './notifications'
 
 /**
- * Owned by App: the bell badge and the page render the same list, so the state
- * cannot live inside either one or they would drift apart.
+ * Local notification state, for hosts without a notifications API of their own.
+ *
+ * The bell badge and the notifications page render the SAME list, so the state
+ * cannot live inside either one or they would drift apart — hence one hook the
+ * host owns and passes down.
+ *
+ * `seed` is EMPTY by default. `IOSENSE_NOTIFICATIONS` is our sample data — real
+ * alerts about real floors in a real building — and is an example to look at,
+ * not a default to inherit.
  */
-export function useNotifications() {
-  const [items, setItems] = useState<AppNotification[]>(NOTIFICATIONS)
+export function useNotifications(seed: AppNotification[] = []) {
+  const [items, setItems] = useState<AppNotification[]>(seed)
 
   const unreadCount = useMemo(() => items.filter((n) => !n.isRead).length, [items])
 

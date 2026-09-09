@@ -15,8 +15,19 @@
   ],
   "decision": {
     "authority": "This guard is the authority for the iosense rail. Where it is silent, say so rather than borrowing a rule from the SDK's own SideNavBar guard — this component deliberately overrides several of its behaviours.",
-    "aliases": ["rail", "sidebar", "side nav", "left nav", "icon strip"],
-    "order": ["state", "hover", "content", "mobile"],
+    "aliases": [
+      "rail",
+      "sidebar",
+      "side nav",
+      "left nav",
+      "icon strip"
+    ],
+    "order": [
+      "state",
+      "hover",
+      "content",
+      "mobile"
+    ],
     "beforeTheRules": "There are THREE states, not two: pinned open, peeked open, and collapsed. Pinned is a click and moves the page; peeked is a hover and floats over it. Conflating them is the mistake this component was rewritten to avoid.",
     "rules": [
       {
@@ -70,6 +81,9 @@
     "certainty": "high"
   },
   "defaults": {
+    "items": "[] — empty. The rail is behaviour; the rows are yours.",
+    "logo": "Unset renders design-sdk built-in iosense mark. Set it.",
+    "footer": "Empty, and not rendered at all when omitted, so an unused footer costs no height.",
     "railTheme": "'Dark' in this app; 'Light' is the SDK default (the Classic theme)"
   },
   "accessibility": {

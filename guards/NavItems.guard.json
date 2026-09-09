@@ -1,0 +1,119 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "NavItems",
+  "import": "import type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge } from '@faclon-labs/iosense-shell'",
+  "purpose": "The rail's data model. This package ships the rail's BEHAVIOUR — hover peek, the tooltip that only fires on an unreadable label, the accordion that opens itself on a deep link, the flyout in the 48px strip, the badge that becomes a dot when collapsed. None of it depends on which rows are in the rail, so the rows are data the host supplies and the rail renders NOTHING by default.",
+  "useInstead": [
+    {
+      "when": "You want the iosense product's own rail.",
+      "use": "IOSENSE_NAV — but only if you ARE iosense. Otherwise copy it and edit it."
+    },
+    {
+      "when": "You want a starting point for your own nav.",
+      "use": "Copy IOSENSE_NAV and replace the rows. It exercises every shape: both badge kinds, two accordions and a section."
+    }
+  ],
+  "decision": [
+    "A plain destination? -> NavEntity: { id, label, icon }.",
+    "A destination with sub-pages under it? -> NavAccordion: add `children`. The parent becomes a disclosure control and is NOT navigable.",
+    "A visual grouping of sibling destinations, with a heading? -> NavSection: { kind: 'section', id, label, items }. It is NOT an ancestor and never appears in a breadcrumb.",
+    "An annotation on a row? -> `badge`. A number -> kind 'count'. A word -> kind 'word'."
+  ],
+  "defaults": {
+    "items": "[] — an empty rail. That is the export: the chrome, not our content.",
+    "tone": "'info' for a plain quantity (Neutral). 'alert' only when the number ITSELF is the bad news (Negative + Intense). 'label' for a word like Beta (Notice, and no collapsed dot).",
+    "defaultOpenGroups": "Every section id, no accordion. A folded section in a fresh install is a hairline with no affordance to unfold it and it strands every row inside; a folded accordion still shows its parent row.",
+    "icon size": "NAV_ICON_SIZE (14). The SDK's icon slot stays 16px; 14 is the drawn size inside it. Mixing 14 and 16 in one rail makes the icon column look ragged."
+  },
+  "propRules": [
+    {
+      "rule": "ids must be unique across the WHOLE tree, including accordion children and section items.",
+      "why": "activeId is matched against them, and React keys off them. Two rows with one id means both light up as active."
+    },
+    {
+      "rule": "An accordion's parent id is not a page.",
+      "why": "It has no content of its own — landing on it shows an empty page. Map it to a real child and run every incoming id through resolveSection().",
+      "bad": "onNavigate('workflows')",
+      "good": "onNavigate(resolveSection('workflows', { workflows: 'workflows-all' }))"
+    },
+    {
+      "rule": "Write the section-default map out; never use children[0].",
+      "why": "In the iosense nav, Workflows' first child is a specific RECORD — 'Create company when a deal closes' — which is a nonsense landing page. Reports' first child happens to be right, which is exactly what would make an implicit first-child rule look correct until Workflows proved it wrong."
+    },
+    {
+      "rule": "badge is a Counter or a Badge, never a Chip.",
+      "why": "Chip renders a <button> and the nav row is already a <button>. Nesting them is invalid HTML.",
+      "bad": "trailing={<Chip label=\"Beta\" />}",
+      "good": "badge: { kind: 'word', label: 'Beta', tone: 'label' }"
+    },
+    {
+      "rule": "A count goes in `kind: 'count'`, a word in `kind: 'word'`. Never a number as a string.",
+      "why": "The axis is the answer type, not the look. The union is explicit rather than sniffed from the string precisely so \"12\" cannot silently take the Badge branch.",
+      "bad": "{ kind: 'word', label: '12', tone: 'info' }",
+      "good": "{ kind: 'count', value: 12, tone: 'info' }"
+    },
+    {
+      "rule": "Counts are capped at 99 by the rail.",
+      "why": "Counter has NO default max — an uncapped count renders in full and stretches the row it sits in."
+    },
+    {
+      "rule": "isRecord only means something inside an accordion.",
+      "why": "It marks a row as one INSTANCE rather than a page, which draws its tree branch differently. On a top-level row it does nothing."
+    },
+    {
+      "rule": "Sections do not nest, and accordions do not nest inside accordions.",
+      "why": "The rail is two levels deep by design. A third level has nowhere to go in the 48px strip, where the flyout is already the escape hatch for level two."
+    },
+    {
+      "rule": "Pass the SAME array to AppSideNav/IosenseShell and to buildTrail.",
+      "why": "buildTrail derives the hierarchy from it. Two different arrays is how a trail starts claiming a page sits somewhere the rail does not put it.",
+      "bad": "trail={buildTrail(id, title, { items: SOME_OTHER_LIST, pageTitles })}",
+      "good": "trail={buildTrail(id, title, { items: NAV, pageTitles })}"
+    }
+  ],
+  "composition": {
+    "renders": "Consumed by AppSideNav (and AppNavDrawer, which gets the same array — one nav, two presentations) and read by buildTrail.",
+    "provides": "navPageIds(items) for every navigable id, navParents(items) for the page-to-accordion map, and isSection / isAccordion as the type guards."
+  },
+  "antiPatterns": [
+    {
+      "pattern": "import { IOSENSE_NAV } and shipping it in a product that is not iosense.",
+      "why": "Those are our pages — Zomato, Steam Trap, Memory B. A client installing this package and getting them is the exact failure the data model exists to prevent.",
+      "instead": "Copy it into your own file and replace every row."
+    },
+    {
+      "pattern": "Leaving `logo` unset.",
+      "why": "design-sdk's header falls through to its own built-in iosense mark, so the install silently ships our identity next to their nav.",
+      "instead": "Pass your own node. It stays put in the 48px header, collapsed and expanded."
+    },
+    {
+      "pattern": "Putting a section in the breadcrumb trail.",
+      "why": "A section groups rows visually; it is not an ancestor. Devices sits under Connect in the rail and its trail is just 'Devices' — you cannot navigate to Connect.",
+      "instead": "Let buildTrail decide. It only walks accordions."
+    },
+    {
+      "pattern": "Giving the accordion crumb an id so it is clickable.",
+      "why": "It is not a page. Pointing it at the accordion's first child makes a crumb whose job is to go UP move the reader SIDEWAYS into a sibling instead.",
+      "instead": "Leave it id-less. AppTopBar draws it as inert text."
+    },
+    {
+      "pattern": "Reaching for tone 'alert' for any count you want noticed.",
+      "why": "It only works as a signal while nothing else borrows it. Twelve accounts and three deals are not news, they are furniture — and red on a sales pipeline reads as '3 problems'.",
+      "instead": "'info'. Reach for 'alert' only when the number itself is the bad news."
+    }
+  ],
+  "examples": [
+    {
+      "title": "All three shapes",
+      "code": "const NAV: NavItem[] = [\n  { id: 'home', label: 'Home', icon: <House size={NAV_ICON_SIZE} /> },\n  {\n    id: 'finance',\n    label: 'Finance',\n    icon: <Wallet size={NAV_ICON_SIZE} />,\n    badge: { kind: 'count', value: 12, tone: 'info' },\n  },\n  {\n    id: 'reports',\n    label: 'Reports',\n    icon: <FileText size={NAV_ICON_SIZE} />,\n    children: [\n      { id: 'reports-scheduled', label: 'Scheduled reports', icon: <CalendarClock size={NAV_ICON_SIZE} /> },\n      { id: 'reports-archive', label: 'Report archive', icon: <Archive size={NAV_ICON_SIZE} /> },\n    ],\n  },\n  {\n    kind: 'section',\n    id: 'connect',\n    label: 'Connect',\n    items: [\n      { id: 'devices', label: 'Devices', icon: <HardDrive size={NAV_ICON_SIZE} /> },\n    ],\n  },\n]"
+    },
+    {
+      "title": "Wiring it up, with the section defaults",
+      "code": "const SECTION_DEFAULTS = { reports: 'reports-scheduled' }\n\n<IosenseShell\n  navItems={NAV}\n  logo={<YourLogo />}\n  activeId={activeId}\n  onNavigate={(id) => setActiveId(resolveSection(id, SECTION_DEFAULTS))}\n  trail={buildTrail(activeId, title, { items: NAV, pageTitles: PAGE_TITLES })}\n  {...rest}\n>\n  <YourPage />\n</IosenseShell>"
+    },
+    {
+      "title": "A footer, which is empty unless you fill it",
+      "code": "// NavFooterRow, not a bare IconButton: the label then fades in when the rail\n// opens and drops to the icon alone in the 48px strip, like every other row.\n<IosenseShell\n  sideNavFooter={\n    <NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label=\"Help\" onClick={openHelp} />\n  }\n  {...rest}\n/>"
+    }
+  ]
+}
