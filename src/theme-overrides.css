@@ -236,39 +236,68 @@ body {
 }
 
 /**
- * Equal spacing on all four sides of the content sheet — 16px, everywhere.
+ * THE CONTENT CONTAINER'S SPACING. 16px left, right and top. None at the
+ * bottom. 16px between blocks. See STORY.md §3 — this block is that rule.
  *
- * Split across two owners, which is why it is worth writing down: the sides
- * come from `.app-main-scroll`'s `padding-inline` below, and the top and bottom
- * from `padding: var(--spacing-05) 0` on each page root. Change one and you
- * must change the other, or the sheet goes lopsided again.
+ * ONE OWNER, and that is the change worth noting. The inset used to be split:
+ * the sides here, the top and bottom on every page root's `padding: 16px 0`.
+ * Two owners meant changing one without the other made the sheet lopsided, and
+ * it meant the rule could not be stated in a single place. Page roots now add
+ * NOTHING; this element owns all three sides.
  *
- * 16px rather than 12 is not a taste call: the top bar's breadcrumb is inset
- * 16px from the same column, so the page content and the bar's first glyph
- * share a left edge. Pulling the sides in to 12 would misalign them.
+ * WHY NO BOTTOM. This is the scroll container. A scrolling column has no bottom
+ * to pad — it has a cut-off. Padding there either does nothing useful or
+ * invents a dead band the reader scrolls through before the content ends.
  *
- * Measured: 17px on every side — the 16 plus the sheet's own 1px border.
+ * WHY 16 AND NOT 12. Not a taste call: the top bar's breadcrumb is inset 16px
+ * from the same column, so the page content and the bar's first glyph share a
+ * left edge. Pulling the sides in to 12 would misalign them.
+ *
+ * Both values are custom properties so a host can retune them per instance
+ * without re-declaring the rule.
  */
-
-
 .app-main-scroll {
+  /* The literal fallbacks are load-bearing, not belt-and-braces. `--spacing-05`
+     is defined ONLY by `@faclon-labs/design-sdk/styles.css`; a consumer who
+     imports fds's stylesheet and this one but not the SDK's gets an undefined
+     var, which makes the whole declaration invalid and drops the inset to 0 —
+     silently, and looking exactly like a shell that was never given any
+     padding. Measured: it is how the content sheet lost its 16px. */
+  --shell-content-pad: var(--spacing-05, 16px);
+  /* The gap between blocks. A DEFAULT, not a law — override it on the element
+     or anywhere above it when a page genuinely wants a different density. */
+  --shell-content-gap: var(--spacing-05, 16px);
+
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
   /* No gutter and no native bar: the overlay thumb is painted on top, so it
      costs no layout width. That is what stops the content being pushed in and
-     shifting when a page starts or stops overflowing.
-
-     16px, matching the 16px the page roots carry top and bottom, so the sheet
-     is inset the same on all four sides. */
-  /* The literal fallback is load-bearing, not belt-and-braces. `--spacing-05` is
-     defined ONLY by `@faclon-labs/design-sdk/styles.css`; a consumer who imports
-     fds's stylesheet and this one but not the SDK's gets an undefined var, which
-     makes the whole declaration invalid and drops the inset to 0 — silently, and
-     looking exactly like a shell that was never given any padding. Measured: it
-     is how the content sheet lost its 16px. */
-  padding-inline: var(--spacing-05, 16px);
+     shifting when a page starts or stops overflowing. */
+  padding: var(--shell-content-pad) var(--shell-content-pad) 0;
   scrollbar-width: none;
+}
+
+/**
+ * 16px between blocks, supplied by the CONTAINER.
+ *
+ * This matters more here than anywhere else in the shell: this container takes
+ * generated dashboards. Content that has to remember its own margins gets it
+ * wrong at some depth; a container that supplies the rhythm cannot.
+ *
+ * `> * + *` rather than `display: flex; gap`, deliberately. Flex would change
+ * the layout model of the SCROLL CONTAINER: every child becomes a flex item
+ * with `flex-shrink: 1`, so a tall page would be squashed to fit instead of
+ * overflowing — which is the one thing a scroll container must not do. This
+ * adds spacing without touching how anything is laid out.
+ *
+ * Margins on adjacent siblings collapse, so a block that sets its own
+ * `margin-block-start` larger than the gap wins rather than adding to it. That
+ * is the correct precedence: content that has explicitly asked for room gets
+ * it, and content that has asked for nothing gets the default.
+ */
+.app-main-scroll > * + * {
+  margin-block-start: var(--shell-content-gap);
 }
 
 .app-main-scroll::-webkit-scrollbar {

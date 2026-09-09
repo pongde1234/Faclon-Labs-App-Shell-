@@ -195,24 +195,44 @@ useAppTheme  useIsMobile  useProfile  useNotifications  themes
 
 ## The content container
 
-> **The agreed rule is 16px left, right and top, none at the bottom, and a
-> default 16px between blocks — see [STORY.md](STORY.md) §3.** The code below is
-> what ships *today*, which still pads the bottom. STORY.md §3.3 has the two
-> changes that close the gap.
+`IosenseShell` renders your `children` inside `.app-main-scroll`, which owns the
+whole spacing rule:
 
-`IosenseShell` renders your `children` inside `.app-main-scroll`, which carries
-**`padding-inline: 16px`**. Page roots are expected to carry `padding: 16px 0`.
-That split is why the bottom is still padded — one declaration owns top and
-bottom together — and it is what §3.3 replaces with `padding: 16px 16px 0` on the
-container alone.
+| | Value | Why |
+|---|---|---|
+| left / right | **16px** | the top bar's breadcrumb is inset 16px from the same column, so page content and the bar's first glyph share a left edge |
+| top | **16px** | separates the first block from the bar |
+| **bottom** | **none** | this is the scroll container. A scrolling column has no bottom to pad — it has a cut-off |
+| between blocks | **16px** | supplied by the container, so content that says nothing about spacing still comes out right |
 
-16px rather than 12 is not a taste call: the top bar's breadcrumb is inset 16px
-from the same column, so page content and the bar's first glyph share a left
-edge. Measured at 17px on every side — the 16 plus the sheet's own 1px border.
+**Your page roots add nothing.** One element owns all three sides, so there is
+no second declaration to keep in sync:
 
-Content generated into this area should never set its own outer margin. Let the
-rhythm come from the container and from `Stack`/`Grid`/`Card`, so it holds at
-every nesting depth.
+```tsx
+<IosenseShell {...rest}>
+  <YourPage />           {/* no wrapper, no padding, no margin */}
+</IosenseShell>
+```
+
+Both values are custom properties, so override them when a page genuinely wants
+a different density — but inheriting is the default and overriding is a
+decision:
+
+```css
+.dense-page .app-main-scroll { --shell-content-gap: 8px; }
+```
+
+Content should not set its own outer margin. Let the rhythm come from the
+container and from `Stack`/`Grid`/`Card`, so it holds at every nesting depth.
+This matters most because **this container takes generated dashboards** — a
+generator that has to remember margins gets it wrong at some depth; a container
+that supplies the rhythm cannot.
+
+> The gap is `> * + *`, not `display: flex; gap`. Flex would make every child a
+> flex item with `flex-shrink: 1`, so a tall page would be squashed to fit
+> instead of overflowing — the one thing a scroll container must not do.
+
+Full rationale in [STORY.md](STORY.md) §3.
 
 ## Deliberately NOT exported
 

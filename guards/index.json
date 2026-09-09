@@ -13,7 +13,7 @@
     "buildTrail reads the SAME navItems array the rail renders, so the trail and the rail cannot disagree about the hierarchy. Only accordions become breadcrumb ancestors — a section groups rows visually and is never an ancestor.",
     "Three stylesheets, in order: @faclon-labs/design-sdk/styles.css, then @faclon-labs/fds/styles.css, then theme-overrides.css. The SDK sheet is REQUIRED — it is the only definition of --spacing-*, and without it the content sheet's padding-inline is invalid and silently collapses to 0.",
     "theme-overrides.css must be imported AFTER the SDK stylesheets AND after the component imports. design-sdk injects component CSS when its modules load, so overrides imported earlier lose the cascade.",
-    "The content sheet is inset 16px on all four sides: padding-inline on .app-main-scroll, padding-block on the page root. Content rendered into it must not set its own outer margin.",
+    "The content container is padded 16px left, right and TOP, and NOT at the bottom — it is the scroll container and a scrolling column has no bottom to pad. Blocks inside it are 16px apart by default. One owner: .app-main-scroll. Page roots add nothing, and children go in with no wrapper, no padding and no margin.",
     "The rail has THREE states, not two: pinned (a click, moves the page), peeked (a hover, floats over it) and collapsed. Never key behaviour on isPinned to mean \"open\".",
     "The hover peek is owned in React, not by the SDK. Both state objects strip the SDK data-hovered attribute, because React cannot see it and the component has to know it is expanded.",
     "The collapse control lives in the top bar, never in the rail: a control that hides a panel cannot sit inside it.",

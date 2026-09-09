@@ -263,9 +263,11 @@ export function IosenseShell({
           the bars are positioned against — anchoring them to <main> instead let
           the thumb run up over the sheet's top edge.
 
-          `.app-main-scroll` carries `padding-inline: 16px`; page roots carry
-          `padding: 16px 0`. That split is the 16px-on-all-four-sides rule —
-          change one and you must change the other. */}
+          `.app-main-scroll` owns the WHOLE spacing rule: 16px left, right and
+          top, none at the bottom (a scrolling column has no bottom to pad, only
+          a cut-off), and 16px between blocks. Page roots add nothing — one
+          owner, so there is no second declaration to keep in sync. Retune with
+          --shell-content-pad / --shell-content-gap. See STORY.md §3. */}
       <div className="app-scroll-frame">
         <div className="app-main-scroll" ref={scrollRef}>
           {children}

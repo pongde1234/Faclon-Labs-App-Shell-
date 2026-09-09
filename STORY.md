@@ -315,28 +315,60 @@ So the rule reads in that order:
 layout width — the content does not shift when a page starts or stops
 overflowing. That is also why the bottom needs no padding to keep clear of it.
 
-## 3.3 Where this differs from the code today
+## 3.3 How the code implements it
 
-Stated separately so this section is not read as a description of what already
-ships. **The code currently pads the bottom too.**
+**One owner.** `.app-main-scroll` carries the whole rule:
 
-| | Rule above | Code today |
-|---|---|---|
-| left / right | 16px | ✅ `.app-main-scroll` → `padding-inline: 16px` |
-| top | 16px | ✅ page root → `padding: 16px 0` |
-| bottom | **none** | ❌ same `padding: 16px 0` puts 16px there as well |
-| between blocks | 16px default | ⚠️ comes from `Stack`/`Grid`/`Card` per page, not from the container |
+```css
+.app-main-scroll {
+  --shell-content-pad: 16px;    /* three sides */
+  --shell-content-gap: 16px;    /* between blocks */
+  padding: var(--shell-content-pad) var(--shell-content-pad) 0;
+}
+.app-main-scroll > * + * {
+  margin-block-start: var(--shell-content-gap);
+}
+```
 
-Two changes make the code match:
+The inset used to be **split across two owners** — the sides here, the top and
+bottom on every page root's `padding: 16px 0`. That is what put padding at the
+bottom, and it meant the rule could not be stated in one place. **Page roots now
+add nothing.**
 
-1. Move the block padding onto the container — `.app-main-scroll` becomes
-   `padding: 16px 16px 0` — so the page root stops owning it. That also removes
-   the split-across-two-owners trap this section used to warn about: one element
-   owns all three sides, and there is nothing left to keep in sync.
-2. Give the container a default `gap` for its direct children, which a host can
-   override.
+```tsx
+<IosenseShell {...rest}>
+  <YourPage />           {/* no wrapper, no padding, no margin */}
+</IosenseShell>
+```
 
-Neither is done yet — this document is the agreed rule, and the code follows it.
+**Why `> * + *` and not `display: flex; gap`.** Flex would change the layout
+model of the *scroll container*: every child becomes a flex item with
+`flex-shrink: 1`, so a tall page gets squashed to fit instead of overflowing —
+the one thing a scroll container must not do. Verified: with the sibling
+selector, a 900px block inside an 851px viewport stays 900px and the container
+scrolls.
+
+**Margins collapse, and that is the right precedence.** A block that sets its own
+`margin-block-start` larger than the gap wins rather than adding to it — content
+that has explicitly asked for room gets it; content that asked for nothing gets
+the default.
+
+**Overriding.** Both values are custom properties, so a denser page is one
+declaration and does not re-state the rule:
+
+```css
+.dense-page .app-main-scroll { --shell-content-gap: 8px; }
+```
+
+**Measured**, with a page whose blocks set no padding or margin of their own:
+
+| | |
+|---|---|
+| computed padding | `16px / 16px / 0px / 16px` |
+| first block from the top / left / right | 16 / 16 / 16 |
+| between blocks | 16, 16 |
+| below the last block, scrolled to the end | **0** |
+| child heights (200, 900) | unchanged — not squashed |
 
 ---
 
@@ -356,7 +388,7 @@ the rest of this is.
 | Accordion entity | `NestedNavItem`, internal | export it |
 | Section | `NavGroup`, internal | export it |
 | Top nav | `AppTopBar` | fine as is — already slot-based |
-| Content container | `IosenseShell` | **two changes pending** — see 3.3: drop the bottom padding, and give the container a default 16px gap |
+| **Content container** | ✅ 16/16/16/0 and a default 16px gap, one owner | — |
 
 **What changed.** The rail's 22 hardcoded rows moved out to `iosenseNav.tsx` as
 `IOSENSE_NAV` — an example to copy, not a default to inherit. `AppSideNav` now
@@ -378,9 +410,8 @@ first run.
 
 **Order of work from here:**
 
-1. The content container: bottom padding off, default gap on (3.3)
-2. Stories for each `##` above
-3. Export Entity / Accordion / Section if a host ever needs one loose
+1. Stories for each `##` above
+2. Export Entity / Accordion / Section if a host ever needs one loose
 
 ---
 
