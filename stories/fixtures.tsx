@@ -16,15 +16,23 @@ import {
   Workflow,
 } from 'lucide-react'
 
-import { NAV_ICON_SIZE, type NavItem, type Profile } from '@faclon-labs/iosense-shell'
+import {
+  NAV_ICON_SIZE,
+  type AppNotification,
+  type NavItem,
+  type Profile,
+} from '@faclon-labs/iosense-shell'
 
 /**
  * Shared story fixtures.
  *
- * Small and hand-written rather than reusing IOSENSE_NAV: a story is meant to
- * isolate ONE behaviour, and a 22-row nav buries the row you are looking at.
- * The full product nav has its own story in Shell.stories.tsx, where seeing all
- * of it at once is the point.
+ * Small and hand-written: a story is meant to isolate ONE behaviour, and a
+ * 22-row nav buries the row you are looking at.
+ *
+ * They are also invented rather than borrowed. The product nav, profile and
+ * notifications live in demo/ and are not exported by the package — they are
+ * our pages and a real person, and neither belongs in something a consumer
+ * installs.
  */
 
 export const icon = (Glyph: typeof House) => <Glyph size={NAV_ICON_SIZE} />
@@ -110,7 +118,65 @@ export const SECTION_ROWS: NavItem[] = [
   },
 ]
 
-/** Not a real person — see IOSENSE_PROFILE for why that distinction matters. */
+/** Everything above, in one rail: badges, two accordions and a section. */
+export const FULL_NAV: NavItem[] = [
+  ...BADGED_ROWS.slice(0, 5),
+  ...ACCORDION_ROWS.slice(1),
+  ...SECTION_ROWS.slice(1),
+]
+
+/** Accordion parents are not pages, so an id landing on one is redirected. */
+export const DEMO_SECTION_DEFAULT: Record<string, string> = {
+  workflows: 'workflows-all',
+  reports: 'reports-scheduled',
+}
+
+/** A record sits inside the list it belongs to — one level the rail does not draw. */
+export const DEMO_RECORD_PARENT: Record<string, string> = {
+  'workflows-create': 'workflows-all',
+}
+
+/**
+ * Invented, not the product's. The real sample lives in `demo/sampleData.ts`
+ * and is not exported by the package — it names real floors in a real building.
+ */
+export const DEMO_NOTIFICATIONS: AppNotification[] = [
+  {
+    id: 'n1',
+    kind: 'alert',
+    title: 'Temperature above threshold',
+    source: 'Site A · Cold room 2',
+    at: '2026-07-17T15:50:00',
+    isRead: false,
+    isPinned: false,
+    action: '',
+    remarks: [],
+  },
+  {
+    id: 'n2',
+    kind: 'report',
+    title: 'Weekly summary ready',
+    source: 'Scheduled reports',
+    at: '2026-07-17T09:00:00',
+    isRead: false,
+    isPinned: false,
+    action: '',
+    remarks: [],
+  },
+  {
+    id: 'n3',
+    kind: 'system',
+    title: 'Firmware rollout finished',
+    source: 'Devices',
+    at: '2026-07-16T18:20:00',
+    isRead: true,
+    isPinned: false,
+    action: '',
+    remarks: [],
+  },
+]
+
+/** Invented too. Not a real person — that distinction is why it is invented. */
 export const DEMO_PROFILE: Profile = {
   firstName: 'Ada',
   lastName: 'Byron',

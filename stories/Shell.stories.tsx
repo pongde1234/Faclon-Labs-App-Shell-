@@ -6,17 +6,20 @@ import {
   IosenseShell,
   NavFooterRow,
   NAV_ICON_SIZE,
-  IOSENSE_NAV,
-  IOSENSE_NOTIFICATIONS,
-  IOSENSE_PROFILE,
-  IOSENSE_RECORD_PARENT,
-  IOSENSE_SECTION_DEFAULT,
   buildTrail,
   resolveSection,
   type NavItem,
 } from '@faclon-labs/iosense-shell'
 
-import { ACCORDION_ROWS, DEMO_PROFILE, DemoLogo } from './fixtures'
+import {
+  ACCORDION_ROWS,
+  DEMO_NOTIFICATIONS,
+  DEMO_PROFILE,
+  DEMO_RECORD_PARENT,
+  DEMO_SECTION_DEFAULT,
+  DemoLogo,
+  FULL_NAV,
+} from './fixtures'
 
 const PAGE_TITLES: Record<string, string> = {
   home: 'Overview Dashboard',
@@ -63,7 +66,7 @@ function ShellHarness({
 }) {
   const [activeId, setPage] = useState(initialId)
   const navigate = useCallback(
-    (id: string) => setPage(resolveSection(id, IOSENSE_SECTION_DEFAULT)),
+    (id: string) => setPage(resolveSection(id, DEMO_SECTION_DEFAULT)),
     [],
   )
   const title = PAGE_TITLES[activeId] ?? activeId
@@ -72,7 +75,7 @@ function ShellHarness({
       buildTrail(activeId, title, {
         items: navItems ?? [],
         pageTitles: PAGE_TITLES,
-        recordParent: IOSENSE_RECORD_PARENT,
+        recordParent: DEMO_RECORD_PARENT,
       }),
     [activeId, title, navItems],
   )
@@ -85,8 +88,8 @@ function ShellHarness({
       activeId={activeId}
       onNavigate={navigate}
       trail={trail}
-      profile={navItems === IOSENSE_NAV ? IOSENSE_PROFILE : DEMO_PROFILE}
-      notifications={IOSENSE_NOTIFICATIONS}
+      profile={DEMO_PROFILE}
+      notifications={DEMO_NOTIFICATIONS}
       unreadCount={3}
       onOpenNotifications={() => {}}
     >
@@ -142,18 +145,20 @@ export const Branded: Story = {
 }
 
 /**
- * The iosense product's own configuration — IOSENSE_NAV, IOSENSE_PROFILE,
- * IOSENSE_NOTIFICATIONS. This is what the live app looks like.
+ * Every row type at once: badges of both kinds, two accordions and a section.
  *
- * These constants are examples to COPY. Importing them into a product that is
- * not iosense ships our pages, and a real person's name and email, inside
- * someone else's app.
+ * This is a fixture, invented for the story. The iosense product's own nav is
+ * NOT here and is not exported by the package — it lives in
+ * `demo/iosenseNav.tsx`, because those rows are our pages and a package that
+ * exported them would put Zomato and Steam Trap into every install.
+ * `npm run dev` is where you look at the product.
  */
-export const TheIosenseProduct: Story = {
+export const EveryRowType: Story = {
   render: () => (
     <ShellHarness
-      navItems={IOSENSE_NAV}
-      initialId="memory"
+      navItems={FULL_NAV}
+      initialId="finance"
+      logo={<DemoLogo />}
       footer={<NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label="Help" />}
     />
   ),
@@ -165,7 +170,7 @@ export const TheIosenseProduct: Story = {
  */
 export const DeepLinked: Story = {
   render: () => (
-    <ShellHarness navItems={IOSENSE_NAV} initialId="workflows-create" logo={<DemoLogo />} />
+    <ShellHarness navItems={FULL_NAV} initialId="workflows-create" logo={<DemoLogo />} />
   ),
 }
 

@@ -197,8 +197,12 @@ export interface AppSideNavProps {
    *
    * Three shapes, all in `navItems.ts`: a plain entity, an accordion (a row
    * with `children`), and a section (`kind: 'section'`, a labelled group that
-   * folds). `IOSENSE_NAV` is a complete worked example; copy it rather than
-   * importing it into a product that is not iosense.
+   * folds). The demo has a complete worked example in `demo/iosenseNav.tsx` —
+   * copy it. It is not exported, because those rows are the iosense product's
+   * own pages.
+   *
+   * Build rows with `NAV_ICON_SIZE` for the glyph. The rail clamps anything
+   * else back to it, so a stray `size={32}` cannot widen the icon column.
    */
   items?: NavItem[]
   activeId: string

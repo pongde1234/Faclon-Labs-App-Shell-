@@ -155,11 +155,51 @@ swap.
 **What the client changes.** The rows themselves — id, label, icon, badge — and
 which of them are grouped, nested or sectioned.
 
-> **This is now data.** `AppSideNav` takes `items: NavItem[]` and renders
-> **nothing** by default. The iosense rows live in `iosenseNav.tsx` as
-> `IOSENSE_NAV` — an example to copy, not a default to inherit. Copy it into
-> your own file; importing it into a product that is not iosense ships our pages
-> inside someone else's app.
+> **The entities are NOT exported.** `AppSideNav` takes `items: NavItem[]` and
+> renders **nothing** by default. The rows we built are the iosense product's
+> pages — Zomato, Steam Trap, Memory B — and they were only ever demo content,
+> so they live in `demo/iosenseNav.tsx` and the package does not export them.
+> Copy that file as a starting point. Same for the profile and the notifications:
+> `demo/sampleData.ts`, not the package.
+
+### The fixed rules
+
+You supply the glyph and the label text. **Those are the only two things you
+supply**, and neither may change the row's geometry — otherwise one badly-sized
+icon in someone's nav data sets the width of the whole rail.
+
+So these are **enforced in CSS**, not asked for in a README:
+
+| | Fixed at | Enforced how |
+|---|---|---|
+| **Icon** | **14px square** | `> svg` in the icon slot is sized directly. Icon libraries set width/height as presentation *attributes*, and CSS beats those without `!important` — so a stray `size={64}` is harmless |
+| Icon slot | 16px, the SDK's | untouched, so every label starts at the same x whatever the glyph does |
+| **Label** | **one line, ellipsised** | `white-space: nowrap` + `text-overflow: ellipsis`. A wrapped label changes the row height, and rows of different heights make the icon column look broken |
+| **Font size** | **14px / weight 400** | one step above the SDK's default. Section labels sit one step below at 12px so the hierarchy reads |
+| Active row | still weight **400** | the SDK bolds it; overridden. The row is already marked by its background and ink, and bolding reflows the text a pixel or two as you navigate |
+
+`NAV_ICON_SIZE` (14) is exported so correct data is easy to write. The CSS is
+what makes incorrect data survivable.
+
+**Measured**, with a rail deliberately fed `size={8}`, `size={32}` and
+`size={64}` in adjacent rows:
+
+```
+label                   glyph    rowH  labelX  font        wrap
+Correct                 14x14    32    40      14px/400    nowrap
+size 8                  14x14    32    40      14px/400    nowrap
+size 32                 14x14    32    40      14px/400    nowrap
+size 64                 14x14    32    40      14px/400    nowrap
+Averylongunbrokenword…  14x14    32    40      14px/400    nowrap   ← clipped
+rail width: 240
+```
+
+**Why `label` is a `string` and not a `ReactNode`.** Arbitrary markup could not
+be measured for truncation, so the tooltip rule — show the label only when it is
+clipped — would silently stop working. The type is the rule.
+
+See `Side nav/Rules` in Storybook: every story there passes deliberately wrong
+data and shows the rail holding its shape.
 
 ## 1.3 Footer story
 
@@ -417,13 +457,14 @@ first run.
 
 # 5. Stories
 
-`npm run storybook`. Three files, grouped by the component you actually mount —
+`npm run storybook`. Four files, grouped by the component you actually mount —
 not one per section of this document, and the difference is worth explaining.
 
 ```
 stories/
   fixtures.tsx           small hand-written navs, a non-iosense logo, a frame
   SideNav.stories.tsx    §1  — 14 stories
+  Rules.stories.tsx      §1's fixed rules — 5 stories, each fed wrong data
   TopNav.stories.tsx     §2  —  8 stories
   Shell.stories.tsx      §3 + the whole shell — 6 stories
 ```
@@ -443,9 +484,10 @@ If §4's component split happens, these files split with it.
 | §1.2(b) accordion | `Accordions`, `AccordionOpensForActiveChild`, `CollapsedFlyout` |
 | §1.2(c) section | `Sections`, `CollapsedSectionStaysOpen` |
 | §1.3 footer | `Footer`, `FooterWithBanner` — and `Default`, which has none |
+| §1 fixed rules | `IconSizeIsFixed` (8/32/64px glyphs all clamp to 14), `LabelIsOneLine`, `TypeScaleIsFixed`, `WhatYouControl` |
 | §2 top bar | `OneCrumb`, `TwoCrumbs`, `ThreeCrumbs`, `WithActions`, `NoUnread`, `ManyUnread`, `Mobile` |
 | §3 content | `ContentSpacing`, `DenserContentSpacing` |
-| whole shell | `Default` (empty — what ships), `Branded`, `TheIosenseProduct`, `DeepLinked` |
+| whole shell | `Default` (empty — what ships), `Branded`, `EveryRowType`, `DeepLinked` |
 
 **The breadcrumb stories matter most.** `TwoCrumbs` and `ThreeCrumbs` are the
 rule that is easiest to get wrong and hardest to notice when it is wrong — try

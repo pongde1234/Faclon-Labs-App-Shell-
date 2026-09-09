@@ -9,9 +9,9 @@ import { type AppNotification } from './notifications'
  * cannot live inside either one or they would drift apart — hence one hook the
  * host owns and passes down.
  *
- * `seed` is EMPTY by default. `IOSENSE_NOTIFICATIONS` is our sample data — real
- * alerts about real floors in a real building — and is an example to look at,
- * not a default to inherit.
+ * `seed` is EMPTY by default. The sample data — real alerts about real floors in
+ * a real building — lives in `demo/sampleData.ts` and is deliberately not
+ * exported, for the same reason the sample nav is not.
  */
 export function useNotifications(seed: AppNotification[] = []) {
   const [items, setItems] = useState<AppNotification[]>(seed)

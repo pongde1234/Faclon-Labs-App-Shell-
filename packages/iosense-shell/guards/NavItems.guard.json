@@ -5,12 +5,12 @@
   "purpose": "The rail's data model. This package ships the rail's BEHAVIOUR — hover peek, the tooltip that only fires on an unreadable label, the accordion that opens itself on a deep link, the flyout in the 48px strip, the badge that becomes a dot when collapsed. None of it depends on which rows are in the rail, so the rows are data the host supplies and the rail renders NOTHING by default.",
   "useInstead": [
     {
-      "when": "You want the iosense product's own rail.",
-      "use": "IOSENSE_NAV — but only if you ARE iosense. Otherwise copy it and edit it."
+      "when": "You want a nav to start from.",
+      "use": "Copy demo/iosenseNav.tsx. It exercises every shape: both badge kinds, two accordions and a section. It is NOT exported — those rows are the iosense product pages."
     },
     {
-      "when": "You want a starting point for your own nav.",
-      "use": "Copy IOSENSE_NAV and replace the rows. It exercises every shape: both badge kinds, two accordions and a section."
+      "when": "You want the iosense product itself.",
+      "use": "npm run dev. The demo is the product configuration; the package deliberately ships none of it."
     }
   ],
   "decision": [
@@ -69,6 +69,23 @@
       "why": "buildTrail derives the hierarchy from it. Two different arrays is how a trail starts claiming a page sits somewhere the rail does not put it.",
       "bad": "trail={buildTrail(id, title, { items: SOME_OTHER_LIST, pageTitles })}",
       "good": "trail={buildTrail(id, title, { items: NAV, pageTitles })}"
+    },
+    {
+      "rule": "Build glyphs with NAV_ICON_SIZE.",
+      "why": "Correct data should be easy to write. The CSS clamp is a safety net for data that is wrong, not a licence to ignore the constant — a rail whose source says size={32} everywhere is a rail nobody can reason about.",
+      "bad": "icon: <House size={24} />",
+      "good": "icon: <House size={NAV_ICON_SIZE} />"
+    },
+    {
+      "rule": "label is a string. It is not a ReactNode, and that is on purpose.",
+      "why": "Arbitrary markup cannot be measured for truncation, so the tooltip rule — show the label only when it is clipped — would silently stop working. The type IS the rule.",
+      "bad": "label: <><b>New</b> reports</>",
+      "good": "label: 'New reports'"
+    },
+    {
+      "rule": "Do not restyle a nav row from outside.",
+      "why": "The glyph size, the label type scale, the single line and the row height are the shape of the rail. A host stylesheet that changes one of them changes it for one product and not the next, which is the inconsistency the package exists to prevent.",
+      "instead": "If a row needs to say something extra, that is what the badge slot is for."
     }
   ],
   "composition": {
@@ -100,6 +117,21 @@
       "pattern": "Reaching for tone 'alert' for any count you want noticed.",
       "why": "It only works as a signal while nothing else borrows it. Twelve accounts and three deals are not news, they are furniture — and red on a sales pipeline reads as '3 problems'.",
       "instead": "'info'. Reach for 'alert' only when the number itself is the bad news."
+    },
+    {
+      "pattern": "Importing a sample nav from the package.",
+      "why": "There is none. The rows we built are the iosense product pages and were only ever demo content, so they live in demo/iosenseNav.tsx and are not exported. A package that exported them would put Zomato and Steam Trap into every install that forgot to pass its own.",
+      "instead": "Copy demo/iosenseNav.tsx into your own file and replace every row."
+    },
+    {
+      "pattern": "Passing a differently-sized icon because a row needs emphasis.",
+      "why": "It will be clamped to 14px, so the emphasis will not appear and the intent is lost in the source. Emphasis in a rail comes from the badge and the active state, not from icon size.",
+      "instead": "A badge with tone alert, or nothing."
+    },
+    {
+      "pattern": "Wrapping a label to fit a long name.",
+      "why": "It cannot wrap — nowrap is enforced — and if it could, the row height would change and the icon column would look broken.",
+      "instead": "Let it ellipsise. The tooltip shows the full text, and that is the only case an expanded row shows one."
     }
   ],
   "examples": [
@@ -115,5 +147,12 @@
       "title": "A footer, which is empty unless you fill it",
       "code": "// NavFooterRow, not a bare IconButton: the label then fades in when the rail\n// opens and drops to the icon alone in the 48px strip, like every other row.\n<IosenseShell\n  sideNavFooter={\n    <NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label=\"Help\" onClick={openHelp} />\n  }\n  {...rest}\n/>"
     }
-  ]
+  ],
+  "sizing": {
+    "icon": "14px square, ENFORCED. The icon slot > svg is sized in CSS, and icon libraries set width/height as presentation attributes which CSS beats without !important — so a stray size={64} in nav data is clamped rather than catastrophic. Measured: rows fed size 8, 32 and 64 all render 14x14, all row heights stay 32, and every label still starts at x=40.",
+    "iconSlot": "16px, the SDK own. Untouched, so every label starts at the same x whatever the glyph does. That is why the glyph is 14 and not 16 — icons read lighter without moving the icon column.",
+    "label": "One line, white-space: nowrap with text-overflow: ellipsis. A wrapped label changes the row height, and rows of differing heights make the icon column look broken. The clipped case is exactly what the tooltip exists for.",
+    "fontSize": "14px / weight 400 / --line-height-200 for a nav row; 12px for a section label, one step down so the hierarchy reads. The ACTIVE row keeps weight 400 — the SDK bolds it and that is overridden, because the row is already marked by background and ink and bolding reflows the text as you navigate.",
+    "rowHeight": "32px, and it is a consequence of the above rather than a separate rule. Nothing a host passes may change it."
+  }
 }

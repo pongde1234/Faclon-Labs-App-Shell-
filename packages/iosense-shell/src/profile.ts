@@ -35,25 +35,6 @@ export const EMPTY_PROFILE: Profile = {
   avatarUrl: '',
 }
 
-/**
- * The iosense product's own seed data — an EXAMPLE, the way IOSENSE_NAV is.
- * Stands in for whatever the account API would return.
- *
- * Do not pass this in a product that is not iosense: it is a real person.
- */
-export const IOSENSE_PROFILE: Profile = {
-  firstName: 'Siddharth',
-  lastName: 'Jain',
-  gender: 'Prefer not to say',
-  org: 'Faclon Labs',
-  email: 'siddharth.j@iosense.io',
-  phone: '+91 98200 41122',
-  jobTitle: 'Operations Lead',
-  location: 'Mumbai, India',
-  bio: 'Runs cold-chain monitoring across 240 retail sites. Watches door events and humidity more than anyone should.',
-  avatarUrl: '',
-}
-
 export const GENDERS = ['Male', 'Female', 'Others', 'Prefer not to say']
 
 export const LOCATIONS = [

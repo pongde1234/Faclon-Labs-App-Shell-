@@ -8,14 +8,13 @@ import {
   resolveSection,
   useNotifications,
   useProfile,
-  IOSENSE_NAV,
-  IOSENSE_NOTIFICATIONS,
-  IOSENSE_PROFILE,
-  IOSENSE_RECORD_PARENT,
-  IOSENSE_SECTION_DEFAULT,
   NAV_ICON_SIZE,
   navPageIds,
 } from '@faclon-labs/iosense-shell'
+
+// The product's own content. It lives HERE, in the demo, not in the package.
+import { IOSENSE_NAV, IOSENSE_RECORD_PARENT, IOSENSE_SECTION_DEFAULT } from './iosenseNav'
+import { IOSENSE_NOTIFICATIONS, IOSENSE_PROFILE } from './sampleData'
 
 /**
  * The demo, and the reason it exists.

@@ -27,18 +27,16 @@ export type { IosenseShellProps } from './IosenseShell'
 // on an unreadable label, the accordion that opens on a deep link, the flyout
 // in the 48px strip, the badge that becomes a dot — none of which depends on
 // which rows are in it.
-export { isSection, isAccordion, navPageIds, navParents } from './navItems'
+export { isSection, isAccordion, navPageIds, navParents, NAV_ICON_SIZE } from './navItems'
 export type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge, NavTone } from './navItems'
 
-// One complete, realistic nav — every row type, both badge kinds, two
-// accordions and a section. COPY IT; do not import it into a product that is
-// not iosense, or you ship our pages in someone else's app.
-export {
-  IOSENSE_NAV,
-  IOSENSE_SECTION_DEFAULT,
-  IOSENSE_RECORD_PARENT,
-  NAV_ICON_SIZE,
-} from './iosenseNav'
+// NO SAMPLE NAV IS EXPORTED, deliberately. The rows we built are the iosense
+// product's pages — Zomato, Steam Trap, Memory B — and a package that exported
+// them would put them into every install that forgot to pass its own. They live
+// in `demo/iosenseNav.tsx`, where they are demo content and nothing else.
+//
+// What ships is the model (above) and the behaviour. Copy the demo's file as a
+// starting point if you want one.
 
 // ── The pieces, for hosts that assemble their own ────────────────────────────
 export { AppSideNav, NavFooterRow } from './AppSideNav'
@@ -57,11 +55,10 @@ export { buildTrail, resolveSection } from './trail'
 export type { BuildTrailOptions } from './trail'
 
 // ── State the chrome's required props need ───────────────────────────────────
-export { useProfile, EMPTY_PROFILE, IOSENSE_PROFILE, fullName, readFileAsDataUrl, GENDERS, LOCATIONS, MAX_AVATAR_BYTES } from './profile'
+export { useProfile, EMPTY_PROFILE, fullName, readFileAsDataUrl, GENDERS, LOCATIONS, MAX_AVATAR_BYTES } from './profile'
 export type { Profile } from './profile'
 export { useNotifications } from './useNotifications'
 export {
-  IOSENSE_NOTIFICATIONS,
   KIND_LABEL,
   KIND_COLOR,
   greeting,

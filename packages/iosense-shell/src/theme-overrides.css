@@ -997,6 +997,43 @@ body {
   transform: rotate(180deg);
 }
 
+/* ---- THE FIXED SHAPE OF A NAV ROW --------------------------------------
+ *
+ * A row is [16px icon slot][label][trailing slot], and the host supplies the
+ * glyph and the label text. Those are the only two things it supplies, and
+ * neither may change the row's geometry — otherwise one badly-sized icon in
+ * someone's nav data sets the width of the whole rail.
+ *
+ * So the sizes are ENFORCED here rather than merely recommended:
+ *
+ *   glyph        clamped to 14px square, whatever `size` the host passed
+ *   icon slot    16px, the SDK's, untouched — so every label starts at the
+ *                same x no matter what the glyph does
+ *   label        14px / 400, one ellipsised line, never wraps
+ *
+ * NAV_ICON_SIZE (14) is exported so correct data is easy to write; this block
+ * is what makes incorrect data harmless.
+ */
+.fds-sidenav-menu-button__icon > svg,
+.app-sidenav__group-label > svg,
+.fds-sidenav-menu-badge > svg {
+  width: var(--shell-nav-icon-size, 14px);
+  height: var(--shell-nav-icon-size, 14px);
+  /* lucide and most icon sets set width/height as ATTRIBUTES; CSS beats a
+     presentation attribute, so this wins without !important. flex-shrink keeps
+     a stubborn icon from being squeezed instead of resized. */
+  flex: none;
+}
+
+/* A label is one line, and it ellipsises. Not a style preference: a wrapped
+   label changes the row's height, and rows of different heights make the icon
+   column look broken. The clipped case is exactly what the tooltip exists for. */
+.fds-sidenav-menu-button__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* ---- Rail typography ---------------------------------------------------
    Base for every nav label is 14px regular (--font-size-200 / --font-weight-400).
    The SDK defaults the menu button to --font-size-100 (13px in this app), so the

@@ -1,6 +1,26 @@
 import type { ReactNode } from 'react'
 
 /**
+ * THE FIXED SIZES. These are not suggestions and not defaults — they are the
+ * shape of a nav row, and the rail enforces them in CSS so a wrong value
+ * cannot break the column.
+ *
+ *   icon slot   16px, the SDK's
+ *   glyph       14px, drawn inside it — clamped, see theme-overrides.css
+ *   label       14px / 400 / --line-height-200, one step above the SDK default
+ *   group label 12px, one step below the base, so the hierarchy reads
+ *
+ * The glyph is 14 rather than 16 so icons read lighter WITHOUT moving the icon
+ * column: the slot stays 16, so every label starts at the same x whatever the
+ * glyph does.
+ *
+ * Use this constant in your nav data. Mixing 14 and 16 across rows makes the
+ * icon column look ragged — and if you pass something else entirely, the CSS
+ * clamps it back rather than letting one row set the rail's width.
+ */
+export const NAV_ICON_SIZE = 14
+
+/**
  * The rail's data model.
  *
  * THE POINT OF THIS FILE: the rail is a set of behaviours — hover peek, the
@@ -9,7 +29,10 @@ import type { ReactNode } from 'react'
  * dot when collapsed. None of that depends on WHICH rows are in it. So the rows
  * are data the host supplies, and the package ships the behaviour.
  *
- * `IOSENSE_NAV` is one example of this data, not the default.
+ * No sample nav is exported, deliberately. The rows we built are the iosense
+ * product's pages, and a package that exported them would put them into every
+ * install that forgot to pass its own. The demo has a complete one in
+ * `demo/iosenseNav.tsx` — copy that.
  */
 
 /**

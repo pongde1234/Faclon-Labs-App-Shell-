@@ -28,19 +28,14 @@ import {
   Zap,
 } from 'lucide-react'
 
-import type { NavItem } from './navItems'
+import { NAV_ICON_SIZE, type NavItem } from '@faclon-labs/iosense-shell'
 
 /**
- * Rail glyph size. The SDK's icon slot stays 16px — this is the DRAWN size
- * inside it, so icons read lighter without moving the icon column.
+ * The iosense product's rail.
  *
- * Exported because your own nav data has to use it: mixing 14 and 16 in one
- * rail makes the column look ragged.
- */
-export const NAV_ICON_SIZE = 14
-
-/**
- * The iosense product's rail, as an EXAMPLE — not a default.
+ * THIS LIVES IN THE DEMO, not in the package, and that is the point: these are
+ * our pages. A package that exported them would put Zomato and Steam Trap into
+ * every install that forgot to pass its own.
  *
  * `AppSideNav` renders whatever `items` you give it and renders NOTHING if you
  * give it nothing. This constant exists so you can see a complete, realistic
