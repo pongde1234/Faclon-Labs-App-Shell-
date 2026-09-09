@@ -7,7 +7,7 @@
   "invariants": [
     "This package is NOT dependency-free. It is built on @faclon-labs/design-sdk and @faclon-labs/fds and inherits their tokens. Use @faclon-labs/app-shell if you need a portable shell.",
     "IosenseShell is the entry point. The individual components do NOT render the markup the content-area CSS targets (data-topbar, data-sidenav-pinned, .app-scroll-frame, .app-main-scroll), so assembling them by hand loses the content inset, the overlay scrollbar and the rail offset.",
-    "The rail ships EMPTY and NO SAMPLE NAV IS EXPORTED. No sample nav ships and none is exported. The demo has a six-row PLACEHOLDER in demo/placeholderNav.tsx whose only job is to make the accordion, the section and the collapse clickable — the product rows that used to be there are gone. Copy it; you cannot import it.",
+    "The rail ships EMPTY, no sample nav is exported, and nothing in the repo renders rows — the demo is the bare chrome. What the rail does with the rows you pass is specified in STORY.md 1.2 and 1.4, contracted in NavItems.guard.json, and exercised in stories/SideNav.stories.tsx and stories/Rules.stories.tsx.",
     "Set the logo prop. Left unset, design-sdk falls through to its own built-in iosense mark, so an unbranded install silently ships our identity.",
     "A nav row has a FIXED shape and the host supplies only two things: the glyph and the label text. Icon 14px square (clamped in CSS, so a stray size={64} is harmless), label one ellipsised line (never wraps), 14px/400 type, 32px row. Section labels 12px. The active row keeps weight 400. None of it is a host decision.",
     "The rail footer ships EMPTY. Help is what the iosense product puts there; it is not chrome. Build footer rows with NavFooterRow so labels fade with the rail.",

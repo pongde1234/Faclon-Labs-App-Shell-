@@ -29,9 +29,11 @@ export const NAV_ICON_SIZE = 14
  * dot when collapsed. None of that depends on WHICH rows are in it. So the rows
  * are data the host supplies, and the package ships the behaviour.
  *
- * No sample nav is exported, deliberately. A shell has no opinion about what a
- * product's pages are. The demo has a six-row placeholder in
- * `demo/placeholderNav.tsx` — copy that.
+ * NO SAMPLE NAV EXISTS ANYWHERE IN THIS REPO — not exported, and not rendered
+ * by the demo either. A shell has no opinion about what a product's pages are.
+ *
+ * What it DOES have an opinion about is what happens once you pass some, and
+ * that is written down rather than demonstrated: STORY.md §1.2 and §1.4 specify it, guards/NavItems.guard.json contracts it, and stories/SideNav.stories.tsx and stories/Rules.stories.tsx exercise it against their own fixtures.
  */
 
 /**

@@ -105,10 +105,14 @@ The trailing `badge` is either a **Counter** (a quantity — `{ kind: 'count', v
 or a **Badge** (a word — `{ kind: 'word', label: 'Beta', tone: 'label' }`). Not a
 Chip: Chip renders a `<button>` and the row is already a `<button>`.
 
-**No sample nav is exported, and none exists to import.** A shell has no opinion
-about what your pages are. The demo has a six-row placeholder in
-`demo/placeholderNav.tsx` whose only job is to make the accordion, the section
-and the collapse clickable — copy it for the shapes if it helps, then replace it.
+**No sample nav is exported, and none exists anywhere in the repo.** A shell has
+no opinion about what your pages are, and the demo renders the bare chrome — an
+empty rail — rather than inventing rows to fill it.
+
+What the rail *does* with the rows you pass is written down instead:
+[STORY.md](../../STORY.md) §1.2 and §1.4 specify it, `guards/NavItems.guard.json`
+contracts it, and `stories/SideNav.stories.tsx` and `stories/Rules.stories.tsx`
+exercise every case against their own fixtures.
 
 `buildTrail` reads the **same array**, so the trail and the rail cannot drift
 apart — there is one definition of what contains what.

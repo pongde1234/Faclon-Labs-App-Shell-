@@ -155,12 +155,16 @@ swap.
 **What the client changes.** The rows themselves — id, label, icon, badge — and
 which of them are grouped, nested or sectioned.
 
-> **The entities are NOT exported.** `AppSideNav` takes `items: NavItem[]` and
-> renders **nothing** by default. The rows we built are the iosense product's
-> pages — Zomato, Steam Trap, Memory B — and they were only ever demo content,
-> so they live in `demo/placeholderNav.tsx` and the package does not export them.
-> Copy that file as a starting point. Same for the profile and the notifications:
-> `demo/sampleData.ts`, not the package.
+> **NO ROWS EXIST ANYWHERE IN THIS REPO.** `AppSideNav` takes `items: NavItem[]`
+> and renders **nothing** by default; the package exports no sample, and the demo
+> renders the bare chrome rather than inventing rows to fill it. The 22 iosense
+> pages that used to be here are deleted.
+>
+> That is why this section reads the way it does. The behaviour below is not
+> demonstrated anywhere you can click except the stories — it is **specified**
+> here, contracted in `guards/NavItems.guard.json`, and exercised in
+> `stories/SideNav.stories.tsx` and `stories/Rules.stories.tsx` against fixtures
+> that live with the stories.
 
 ### The fixed rules
 

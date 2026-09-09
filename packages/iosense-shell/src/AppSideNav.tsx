@@ -197,9 +197,12 @@ export interface AppSideNavProps {
    *
    * Three shapes, all in `navItems.ts`: a plain entity, an accordion (a row
    * with `children`), and a section (`kind: 'section'`, a labelled group that
-   * folds). The demo has a placeholder in `demo/placeholderNav.tsx` —
-   * six rows whose only job is to make the accordion, the section and the
-   * collapse clickable. Nothing is exported: a shell has no opinion about pages.
+   * folds).
+   *
+   * NOTHING IN THIS REPO RENDERS ROWS — not the package, not the demo. What the
+   * rail does with them is specified in STORY.md §1.2 and §1.4, contracted in
+   * guards/NavItems.guard.json, and exercised in stories/SideNav.stories.tsx
+   * and stories/Rules.stories.tsx against fixtures that live with the stories.
    *
    * Build rows with `NAV_ICON_SIZE` for the glyph. The rail clamps anything
    * else back to it, so a stray `size={32}` cannot widen the icon column.

@@ -5,12 +5,12 @@
   "purpose": "The rail's data model. This package ships the rail's BEHAVIOUR — hover peek, the tooltip that only fires on an unreadable label, the accordion that opens itself on a deep link, the flyout in the 48px strip, the badge that becomes a dot when collapsed. None of it depends on which rows are in the rail, so the rows are data the host supplies and the rail renders NOTHING by default.",
   "useInstead": [
     {
-      "when": "You want a nav to start from.",
-      "use": "Copy demo/placeholderNav.tsx. It is six rows that exist only to demonstrate the three shapes — two entities with the two badge kinds, one accordion, one section — and it is NOT exported. The product rows it replaced were our pages."
+      "when": "You want to know what the rail DOES with rows.",
+      "use": "STORY.md 1.2 and 1.4, then the Side nav and Side nav/Rules stories. Nothing in the repo renders rows, so there is no sample to read — the behaviour is written down instead."
     },
     {
-      "when": "You want the iosense product itself.",
-      "use": "npm run dev. The demo is the product configuration; the package deliberately ships none of it."
+      "when": "You want the shapes to copy.",
+      "use": "The examples at the bottom of this guard. They are the four shapes in full."
     }
   ],
   "decision": [
@@ -101,8 +101,8 @@
   "antiPatterns": [
     {
       "pattern": "Looking for a sample nav to import.",
-      "why": "Those are our pages — Zomato, Steam Trap, Memory B. A client installing this package and getting them is the exact failure the data model exists to prevent.",
-      "instead": "Copy it into your own file and replace every row."
+      "why": "There is none anywhere: not exported, and not rendered by the demo either. A shell has no opinion about what a product pages are. What it does have an opinion about is what happens once you pass some, and that is documented rather than demonstrated.",
+      "instead": "Write your own NavItem[] from the shapes in the examples below, and read STORY.md 1.4 for what the rail will do with it."
     },
     {
       "pattern": "Leaving `logo` unset.",
@@ -126,8 +126,8 @@
     },
     {
       "pattern": "Importing a sample nav from the package.",
-      "why": "There is none, and there will not be. A shell has no opinion about what a product pages are. The demo has a six-row placeholder in demo/placeholderNav.tsx that exists only to make the accordion, the section and the collapse clickable.",
-      "instead": "Write your own NavItem[]. Copy demo/placeholderNav.tsx for the shapes if it helps."
+      "why": "There is none anywhere: not exported, and not rendered by the demo either — the demo is the bare chrome. A shell has no opinion about what a product pages are. What it DOES have an opinion about is what happens once you pass some, and that is documented rather than demonstrated.",
+      "instead": "Write your own NavItem[] from the shapes in the examples below, and read STORY.md 1.4 for what the rail will do with it."
     },
     {
       "pattern": "Passing a differently-sized icon because a row needs emphasis.",

@@ -35,9 +35,11 @@ export type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge, NavTone } 
 // carry were the iosense product's own, and a package that exported them would
 // put them into every install that forgot to pass its own.
 //
-// The demo has a six-row PLACEHOLDER in `demo/placeholderNav.tsx` whose only job
-// is to make the accordion, the section and the collapse clickable. Copy that if
-// you want a starting point.
+// The demo does not render rows either — it is the bare chrome. The rail's
+// behaviour is written down instead of demonstrated:
+//   STORY.md §1.2 and §1.4        specify it
+//   guards/NavItems.guard.json   contracts it
+//   stories/SideNav + Rules      exercise it, against their own fixtures
 //
 // What ships is the model (above) and the behaviour.
 

@@ -147,11 +147,10 @@ export const Branded: Story = {
 /**
  * Every row type at once: badges of both kinds, two accordions and a section.
  *
- * This is a fixture, invented for the story. The iosense product's own nav is
- * NOT here and is not exported by the package — it lives in
- * `demo/placeholderNav.tsx`, because those rows are our pages and a package that
- * exported them would put Zomato and Steam Trap into every install.
- * `npm run dev` is where you look at the product.
+ * These rows are a FIXTURE, invented for the story and living beside it. No nav
+ * ships in the package and none is rendered by the demo either — the demo is the
+ * bare chrome. Stories are the only place in this repo where the rail has rows,
+ * because a story is where a behaviour is meant to be isolated.
  */
 export const EveryRowType: Story = {
   render: () => (
