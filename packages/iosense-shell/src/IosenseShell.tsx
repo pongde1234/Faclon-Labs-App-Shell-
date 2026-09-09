@@ -73,8 +73,19 @@ export interface IosenseShellProps {
   preference?: ThemePreference
   onPreferenceChange?: (next: ThemePreference) => void
 
-  /** The page. Rendered inside the scrolling content sheet. */
-  children: ReactNode
+  /**
+   * The page, rendered inside the scrolling content sheet.
+   *
+   * Optional: a shell with nothing in it is a legitimate state — it is what the
+   * package looks like before a host fills it, and what a route renders while it
+   * has nothing to show.
+   *
+   * EVERY DIRECT CHILD GETS THE 16px GAP, including ones that draw nothing. An
+   * `<svg>` defs block or a portal anchor placed here is a sibling in that
+   * chain, so it pushes the first visible block down by a full gap — measured at
+   * 32px from the top instead of 16. Keep invisible helpers OUTSIDE the shell.
+   */
+  children?: ReactNode
 }
 
 /**

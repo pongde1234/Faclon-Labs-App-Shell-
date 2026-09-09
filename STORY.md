@@ -522,8 +522,21 @@ so the avatar's right edge stays aligned with the content edge below it.
 
 # 3. The main content container
 
-**16px left, right and top. No padding on the bottom. 16px between blocks.**
-This is the rule the whole export exists to protect.
+**16px left, right and top — equal, and measured equal. No padding on the
+bottom. 16px between blocks.** This is the rule the whole export exists to
+protect.
+
+> **EVERY DIRECT CHILD GETS THE GAP, including ones that draw nothing.**
+>
+> The gap is `> * + *`, so an element that renders no pixels is still a sibling
+> in that chain. An `<svg>` defs block, a portal anchor or a hidden marker
+> placed in the content container pushes the first visible block down by a full
+> gap — **measured at 32px from the top instead of 16**, while the left and
+> right stayed at 16. Three sides that should have been equal were not, and
+> nothing on screen showed why.
+>
+> Keep invisible helpers **outside** the shell. The demo renders its gradient
+> defs in `main.tsx`, above `<IosenseDemo />`, for exactly this reason.
 
 ```
 ┌─────────────────────────────────────────┐
@@ -597,6 +610,20 @@ month apart will not match.
 Both packages are peers you already have: `@faclon-labs/design-sdk` and
 `@faclon-labs/fds`. If a surface seems to be missing, it is far more likely to be
 named something else than to be absent — the SDK ships ~100 subpaths.
+
+**This is also how content follows the theme.** The shell stamps `data-theme` on
+the document root, and every SDK component reads it. Nothing in a page needs to
+know which theme is active, or to branch on it — an SDK `Card` is
+`rgb(255,255,255)` in light and `rgb(31,33,35)` in dark on its own, and its ink
+follows.
+
+A hand-rolled surface does not. `background: #fff` is white in dark mode, and
+`color: #101828` is black-on-black. That is not a styling preference, it is the
+difference between a page that themes and a page that breaks — and it is why the
+rule above is a rule rather than a suggestion.
+
+Measured in dark: main `rgb(19,20,21)`, SDK cards `rgb(31,33,35)`, ink
+`rgb(255,255,255)` — all from the components, none from the page.
 
 **Do not re-style an SDK component to make it fit either.** An overridden card
 is a fork of the card, and it silently stops tracking the original. Use the props

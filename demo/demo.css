@@ -1,102 +1,25 @@
 /**
- * The demo page's own styling. NOT part of either package.
+ * The demo's own CSS. NOT part of either package.
  *
- * Deliberately thin, and deliberately free of outer margins: every gap you see
- * between blocks on the page comes from the shell's content container, not from
- * here. That is the property the demo is meant to demonstrate, so breaking it
- * here would make the demo lie.
+ * It is down to two rules, and that is the honest end state: the content
+ * container is EMPTY — a host fills it — and the only thing the demo draws for
+ * itself is the assistant button's gradient, which belongs to a button the
+ * package deliberately does not export.
  *
- * Colours come from design-sdk tokens with literal fallbacks, so the page still
- * reads if a token is missing rather than painting black on black.
+ * Nothing here does spacing, surfaces or type. The shell supplies the spacing;
+ * the SDK supplies everything a page would put inside it.
  */
-
-/* WHAT IS LEFT IN HERE, and why none of it is a surface.
- *
- * The page's surfaces are all SDK Cards now — .demo-card and friends are gone.
- * What remains is:
- *
- *   .demo-grid          LAYOUT. Arranging cards is the page author's job; the
- *                       SDK ships no layout primitive for it.
- *   .demo-text/-list    prose inside a CardBody.
- *   .demo-metric-*      the type scale for a metric tile's three lines.
- *   code, kbd           INLINE TEXT decorations, not surfaces. A rounded inline
- *                       code span is typography; it is not a card, and reaching
- *                       for a component here would be sillier than not.
- *   .ai-icon/.svg-defs  the assistant glyph's gradient — see below.
- */
-
-.demo-text code {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.92em;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--background-surface-subtle, #f2f4f7);
-}
-
-/* Four across, collapsing on narrow viewports. `auto-fit` rather than a fixed
-   count so the demo does not need its own breakpoints. */
-.demo-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-}
-
-.demo-text {
-  margin: 0 0 8px;
-  font-size: 13px;
-  line-height: 1.6;
-  color: var(--text-neutral-subtle, #475467);
-}
-
-.demo-text:last-child {
-  margin-bottom: 0;
-}
-
-.demo-list {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 13px;
-  line-height: 1.9;
-  color: var(--text-neutral-subtle, #475467);
-}
-
-.demo-list kbd {
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 0.85em;
-  padding: 1px 5px;
-  border: 1px solid var(--border-neutral-subtle, #e4e7ec);
-  border-bottom-width: 2px;
-  border-radius: 4px;
-  background: var(--background-surface-subtle, #f9fafb);
-}
-
-/* Tall enough to force the scroller, so the no-bottom-padding rule is visible
-   rather than merely documented. */
-.demo-metric-label {
-  margin: 0;
-  font-size: 13px;
-  color: var(--text-neutral-subtle, #667085);
-}
-
-.demo-metric-value {
-  margin: 4px 0 0;
-  font-size: 26px;
-  font-weight: 600;
-  letter-spacing: -0.02em;
-  color: var(--text-neutral-default, #101828);
-}
-
-.demo-metric-note {
-  margin: 2px 0 0;
-  font-size: 12px;
-  color: var(--text-neutral-subtle, #98a2b3);
-}
 
 /* ---- The assistant glyph's gradient -------------------------------------
-   Moved here from the package. It styles the ASSISTANT BUTTON, which the
-   package deliberately does not export — and `.ai-icon` references a paint
-   server (#ai-gradient) that only exists because <AiGradientDefs /> renders it,
-   so shipping the CSS without the defs left consumers pointing at nothing. */
+   Moved out of the package. It styles the ASSISTANT BUTTON, which the package
+   does not export — and `.ai-icon` references a paint server (#ai-gradient)
+   that only exists because <AiGradientDefs /> renders it, so shipping the CSS
+   without the defs left consumers pointing at nothing.
+
+   The defs render in main.tsx, OUTSIDE the shell. Inside the content container
+   they would be a direct child, and every direct child gets the 16px gap even
+   when it draws nothing — measured pushing the first visible block to 32px from
+   the top instead of 16. */
 
 .svg-defs {
   position: absolute;
@@ -111,10 +34,4 @@
    lucide writes. */
 .ai-icon {
   stroke: url(#ai-gradient);
-}
-
-/* Tall filler, so the scroller is exercised without a magic min-height on a
-   Card — the Card keeps its own padding contract. */
-.demo-tall-filler {
-  min-height: 700px;
 }

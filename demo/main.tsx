@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 
+import { AiGradientDefs } from './AiGradientDefs'
 import { IosenseDemo } from './IosenseDemo'
 
 // The three stylesheets, in the order the README's stylesheet contract
@@ -21,6 +22,12 @@ import './demo.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    {/* OUTSIDE the shell, and that placement is the point.
+        Every direct child of the content container gets the 16px gap, including
+        one that draws nothing — so an <svg> defs block placed in there is a
+        sibling in that chain and pushes the first visible block down by a full
+        gap. Measured at 32px from the top instead of 16 while it lived there. */}
+    <AiGradientDefs />
     <IosenseDemo />
   </StrictMode>,
 )

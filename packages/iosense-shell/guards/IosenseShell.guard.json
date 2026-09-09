@@ -29,7 +29,8 @@
     "actions": "Empty. The top bar shows the bell and the avatar and nothing else.",
     "navItems": "[] — an empty rail. This package ships the chrome, not our content. IOSENSE_NAV is a worked example to COPY, not to import into a product that is not iosense.",
     "logo": "Unset falls through to design-sdk built-in iosense mark. SET THIS, or an unbranded install silently ships our identity.",
-    "sideNavFooter": "Empty. Help is what the iosense product puts there; it is not chrome. Build rows with NavFooterRow."
+    "sideNavFooter": "Empty. Help is what the iosense product puts there; it is not chrome. Build rows with NavFooterRow.",
+    "children": "Optional. A shell with nothing in it is a legitimate state — it is what the package looks like before a host fills it, and what a route renders while it has nothing to show."
   },
   "sizing": {
     "rail": "240px pinned, 48px collapsed. A hover peek widens the inner panel over the page while the 48px footprint stays put, so the content does not move.",
@@ -98,6 +99,18 @@
       "rule": "LAYOUT is the one exception. Arranging SDK components is yours.",
       "why": "A grid or a flex row that positions cards is structure, not a surface — the SDK ships no layout primitive for it and inventing one here would be a second opinion about spacing. Surfaces, type, colour, elevation and interaction states come from the SDK; where the boxes sit does not.",
       "good": "<div className=\"cards-grid\"><Card/><Card/></div>   // layout yours, cards theirs"
+    },
+    {
+      "rule": "Keep invisible helpers OUT of children.",
+      "why": "The 16px gap is > * + *, so an element that draws no pixels is still a sibling in that chain. An svg defs block, a portal anchor or a hidden marker pushes the first visible block down by a full gap — measured at 32px from the top while left and right stayed 16, so three sides that should have been equal were not and nothing on screen showed why.",
+      "bad": "<IosenseShell><SvgGradientDefs /><YourPage /></IosenseShell>",
+      "good": "<><SvgGradientDefs /><IosenseShell><YourPage /></IosenseShell></>"
+    },
+    {
+      "rule": "Content follows the theme because it comes from the SDK, not because it checks.",
+      "why": "The shell stamps data-theme on the document root and every SDK component reads it — a Card is rgb(255,255,255) in light and rgb(31,33,35) in dark on its own. A page never needs to branch on the theme. A hand-rolled surface does not follow it at all: background #fff is white in dark mode and color #101828 is black on black.",
+      "bad": "<div style={{ background: \"#fff\", color: \"#101828\" }}>",
+      "good": "<Card><CardBody>…</CardBody></Card>"
     }
   ],
   "composition": {
