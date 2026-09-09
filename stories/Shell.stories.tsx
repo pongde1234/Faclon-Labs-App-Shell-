@@ -200,6 +200,46 @@ export const ContentSpacing: Story = {
 }
 
 /**
+ * SCROLLING. The content area is the only thing that scrolls; the chrome never
+ * moves.
+ *
+ *   scroll container   .app-main-scroll, and nothing above it
+ *   rail and top bar   fixed — they do not scroll with the page
+ *   the document       does not scroll; the shell is locked to the viewport
+ *   the scrollbar      an OVERLAY, measured at 0px of layout width
+ *   on navigation      resets to the top
+ *
+ * Two things to try here, both of which were bugs before they were rules:
+ *
+ * 1. Scroll to the bottom and watch the rail and the bar. They do not move. The
+ *    scroller is ours rather than <main> precisely so the overlay bars can be a
+ *    SIBLING of it — anchored to <main> instead, the thumb ran up over the
+ *    sheet's top edge.
+ *
+ * 2. Scroll down, then click a different row. THE NEW PAGE STARTS AT THE TOP.
+ *    Without that reset the offset simply persisted, and arriving 620px down a
+ *    page you have never seen reads as a broken render rather than as a scroll
+ *    position. Measured at exactly that before the fix.
+ *
+ * The bar costing nothing is what stops content shifting sideways by ~15px
+ * every time a page starts or stops overflowing.
+ */
+export const Scrolling: Story = {
+  render: () => (
+    <ShellHarness navItems={FULL_NAV} initialId="finance" logo={<DemoLogo />}>
+      <div style={card}>
+        Scroll down, then pick another row in the rail — you will land at the top of it.
+      </div>
+      {Array.from({ length: 12 }, (_, i) => (
+        <div key={i} style={{ ...card, minHeight: 120 }}>
+          Block {i + 1} of 12 — the chrome stays put while these move under it.
+        </div>
+      ))}
+    </ShellHarness>
+  ),
+}
+
+/**
  * The gap is a DEFAULT, not a law. One custom property changes it, and the rule
  * itself is not re-stated.
  */

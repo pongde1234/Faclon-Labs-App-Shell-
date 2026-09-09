@@ -34,7 +34,9 @@
   "sizing": {
     "rail": "240px pinned, 48px collapsed. A hover peek widens the inner panel over the page while the 48px footprint stays put, so the content does not move.",
     "content": ".app-main-scroll owns the whole spacing rule: padding 16px left, right and TOP, and NONE at the bottom — it is the scroll container, and a scrolling column has no bottom to pad, only a cut-off. Between direct children, 16px via `> * + *`. Page roots add nothing. Retune with --shell-content-pad / --shell-content-gap.",
-    "breakpoint": "The rail becomes a drawer below the mobile breakpoint. IosenseShell mounts exactly one of them — never both, because two copies would run two copies of the open-groups state."
+    "breakpoint": "The rail becomes a drawer below the mobile breakpoint. IosenseShell mounts exactly one of them — never both, because two copies would run two copies of the open-groups state.",
+    "scrolling": "The content area is the ONLY thing that scrolls. .app-main-scroll is the scroll container; the rail, the top bar and the document do not move. The scrollbar is an overlay and costs 0px of layout width (measured: offsetWidth equals clientWidth), so content never shifts sideways when a page starts or stops overflowing. The scroller is ours rather than main so the overlay bars can be a SIBLING of it — anchored to main, the thumb ran up over the sheet top edge.",
+    "scrollReset": "A new page starts at the top: the shell resets scrollTop when activeId changes. Keyed on activeId and not on children, because children is a new element every render and would fight the reader for the scrollbar on any parent state change. Instant, not smooth — the page is already replaced, so animating would scroll content nobody asked to see. If your router navigates WITHOUT changing activeId the reset will not fire, and the active row and breadcrumb will be wrong too."
   },
   "accessibility": [
     "The collapse control is in the top bar and carries an accessible label that follows the state ('Open sidebar' / 'Close sidebar').",
@@ -76,6 +78,15 @@
       "why": "The container owns 16px on three sides and 16px between blocks. A wrapper that adds its own padding doubles it, and it doubles it only on the pages that have the wrapper — which is how a shell stops being predictable for generated content.",
       "bad": "<IosenseShell><div style={{ padding: 16 }}><YourPage /></div></IosenseShell>",
       "good": "<IosenseShell><YourPage /></IosenseShell>"
+    },
+    {
+      "rule": "actions takes any number of nodes, and they always sit LEFT of the bell and avatar.",
+      "why": "It is a container, not two fixed buttons — icon buttons, a badge, a menu trigger, an environment marker all work. But the bell and the avatar are chrome and never move, so a user learns one spot for my account and one for what happened; a slot that could displace them would take that away.",
+      "good": "actions={<><AssistantButton /><AppLauncher /><SearchButton /><EnvBadge /></>}"
+    },
+    {
+      "rule": "Change activeId on every navigation.",
+      "why": "Three things key off it: the rail active row, the breadcrumb trail, and the scroll reset. A router that navigates without changing it leaves all three stale."
     }
   ],
   "composition": {

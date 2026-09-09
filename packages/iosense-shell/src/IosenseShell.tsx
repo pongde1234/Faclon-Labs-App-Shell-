@@ -185,6 +185,23 @@ export function IosenseShell({
   const scrollRef = useRef<HTMLDivElement>(null)
   const scrollBars = useScrollBars(scrollRef, 'y')
 
+  // A NEW PAGE STARTS AT THE TOP.
+  //
+  // The shell owns the scroller, so it owns this: without it the offset simply
+  // persists across a navigation, and arriving 620px down a page you have never
+  // seen reads as a broken render rather than as a scroll position. Measured
+  // before the fix — scrollTop stayed exactly where the previous page left it.
+  //
+  // Keyed on activeId rather than on children, because children is a new
+  // element on every render and this would then fight the user for the
+  // scrollbar on any parent state change.
+  //
+  // Instant, not smooth: the page has already been replaced, so animating to
+  // the top would scroll content the reader never asked to see.
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 })
+  }, [activeId])
+
   const railTheme = railThemeFor(resolved)
   const workspaceNode = workspace ?? <WorkspaceLabel name={profile.org} />
 

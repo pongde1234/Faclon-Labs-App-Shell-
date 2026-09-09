@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Grid3x3, Sparkles } from 'lucide-react'
+import { Grid3x3, Search, Sparkles } from 'lucide-react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 
 import { AppTopBar, buildTrail, type ThemePreference } from '@faclon-labs/iosense-shell'
@@ -195,6 +195,47 @@ export const WithActions: Story = {
       </>
     ),
   },
+}
+
+/**
+ * FOUR things in the slot, to show it is a CONTAINER and not two fixed buttons.
+ *
+ * It takes any node, so it takes any number of them: icon buttons, a badge, a
+ * menu trigger, an environment marker. The shell spaces them and puts them in
+ * the row; it does not care what they are.
+ *
+ * They stay to the LEFT of the bell and the avatar however many there are.
+ * Those two are chrome and always in the same place, so a user learns one spot
+ * for "my account" and one for "what happened" — a slot that could displace
+ * them would take that away.
+ */
+export const ActionsIsAContainer: Story = {
+  args: {
+    actions: (
+      <>
+        <Sparkles size={18} aria-hidden />
+        <Grid3x3 size={18} aria-hidden />
+        <Search size={18} aria-hidden />
+        <span
+          style={{
+            fontSize: 11,
+            fontWeight: 600,
+            padding: '2px 8px',
+            borderRadius: 999,
+            background: 'var(--background-warning-subtle, #fef0c7)',
+            color: 'var(--text-warning-default, #93370d)',
+          }}
+        >
+          Staging
+        </span>
+      </>
+    ),
+  },
+}
+
+/** Empty — the default. The bar shows the bell and the avatar and nothing else. */
+export const NoActions: Story = {
+  args: { actions: undefined },
 }
 
 /** No unread — the pill disappears rather than rendering a zero. */

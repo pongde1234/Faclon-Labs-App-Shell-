@@ -403,9 +403,35 @@ Fixed order, right edge inward:
 
 | | What it is | Client's? |
 |---|---|---|
-| **actions** | a slot, rendered to the **left** of the other two | yes — anything |
+| **actions** | a slot, rendered to the **left** of the other two | yes — anything, any number |
 | **notifications** | bell + unread count pill in the corner | the items and count are the client's; the menu is ours |
 | **profile** | avatar with initials or an image, opening the account menu | the profile object is the client's; the menu is ours |
+
+### `actions` is a container, not two fixed buttons
+
+It takes **any node**, so it takes **any number of them**. The product happens to
+put two there — the assistant and the application launcher — but nothing about
+the slot is specific to those, and neither ships:
+
+```tsx
+actions={
+  <>
+    <IconButton icon={AssistantIcon} accessibilityLabel="Assistant" onClick={…} />
+    <YourAppLauncher />
+    <IconButton icon={Search} accessibilityLabel="Search" onClick={…} />
+    <EnvironmentBadge label="Staging" />
+  </>
+}
+```
+
+Icon buttons, a badge, a menu trigger, an environment marker, a "what's new"
+button — whatever the use case needs. The shell spaces them and puts them in the
+row; it does not care what they are.
+
+**One rule: they go to the LEFT of the bell and the avatar, always.** Those two
+are chrome and are always in the same place, so a user learns one spot for "my
+account" and one for "what happened". A slot that could displace them would take
+that away, which is why it is a slot on one side rather than a free-form bar.
 
 The two on the right are chrome and always in that order, so a user learns one
 place for "my account" and one for "what happened". Anything a product adds goes
@@ -547,7 +573,51 @@ So the rule reads in that order:
 layout width — the content does not shift when a page starts or stops
 overflowing. That is also why the bottom needs no padding to keep clear of it.
 
-## 3.3 How the code implements it
+## 3.3 Scrolling
+
+**The content area is the only thing that scrolls. The chrome never moves.**
+
+| | Behaviour |
+|---|---|
+| Scroll container | `.app-main-scroll`, and nothing above it |
+| Rail | fixed. Does not scroll with the page |
+| Top bar | fixed. Does not scroll with the page |
+| Document | does not scroll — the shell is locked to the viewport |
+| Scrollbar | an **overlay**, drawn on top |
+| Layout cost of the bar | **0px** — measured `offsetWidth − clientWidth = 0` |
+| On navigation | **resets to the top** |
+
+**Why the scroller is ours and not `<main>`.** `<main>` stays a positioned,
+non-scrolling column so the overlay bars can be rendered as a *sibling* of the
+scroller rather than a child of it. That is what lets the thumb sit still while
+the content moves under it — anchoring the bars to `<main>` let the thumb run up
+over the sheet's top edge.
+
+**Why the bar costs nothing.** `scrollbar-width: none` plus a hidden
+`::-webkit-scrollbar`, with fds's overlay thumb painted on top. A native gutter
+would appear and disappear as pages start and stop overflowing, moving all your
+content sideways by ~15px each time. Measured: `clientWidth` and `offsetWidth`
+are both 1190 — the bar takes nothing.
+
+**A new page starts at the top.** The shell resets `scrollTop` when `activeId`
+changes. Without it the offset simply persists, and arriving 620px down a page
+you have never seen reads as a broken render rather than as a scroll position —
+which is exactly what it did before this was added.
+
+It is keyed on `activeId`, not on `children`: `children` is a new element on
+every render, so keying there would fight the reader for the scrollbar on any
+parent state change. And it is instant rather than smooth — the page has already
+been replaced, so animating to the top would scroll content nobody asked to see.
+
+> If your app has its own router and you navigate **without** changing
+> `activeId`, the reset will not fire. Change `activeId` on every navigation —
+> the rail's active row and the breadcrumb depend on that too.
+
+**Long content is your business, not the container's.** It does not cap height,
+add its own inner scrollers, or virtualise. One scroll container, all the way
+down.
+
+## 3.4 How the code implements it
 
 **One owner.** `.app-main-scroll` carries the whole rule:
 
@@ -657,12 +727,12 @@ stories/
   fixtures.tsx           small hand-written navs, a non-iosense logo, a frame
   SideNav.stories.tsx    §1   — 14 stories
   Rules.stories.tsx      §1.4 the guardrails — 8: sizes, states, collapsed/expanded
-  TopNav.stories.tsx     §2   — 13 stories: the toggle, every crumb case, the right edge
+  TopNav.stories.tsx     §2   — 15: the toggle, every crumb case, the actions container
   Menus.stories.tsx      §2.3 — 10 stories, the two panels OPEN
-  Shell.stories.tsx      §3 + the whole shell — 6 stories
+  Shell.stories.tsx      §3 + the whole shell — 7, including Scrolling
 ```
 
-51 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
+54 stories. `Menus.stories.tsx` opens its panels with a `play` function on mount,
 because a bell and an avatar shown closed tell you nothing about what they do —
 and both are portalled, so those plays query `document.body` rather than the
 canvas.
@@ -685,10 +755,10 @@ If §4's component split happens, these files split with it.
 | §1 fixed rules | `IconSizeIsFixed` (8/32/64px glyphs all clamp to 14), `LabelIsOneLine`, `TypeScaleIsFixed`, `WhatYouControl` |
 | §2.1 toggle | `ToggleWhenOpen`, `ToggleWhenCollapsed`, `ToggleOnMobile`, `ToggleOnMobileOpen` — the glyph and label flip to show what pressing it will *do* |
 | §2.2 breadcrumbs | `OneCrumb`, `TwoCrumbs` (first is inert text), `ThreeCrumbs` (text → LINK → current), `LongCrumb` |
-| §2.3 right edge | `RightEdge`, `WithActions`, `NoUnread`, `ManyUnread`, `AvatarFallsBackToInitials` |
+| §2.3 right edge | `RightEdge`, `WithActions`, `ActionsIsAContainer` (four things in the slot), `NoActions`, `NoUnread`, `ManyUnread`, `AvatarFallsBackToInitials` |
 | §2.3 profile menu | `Trigger`, `Open` (Settings / Theme / Log Out), `OpenWithInitials`, `OpenOnDarkTheme`, `AppearancePicker` |
 | §2.3 notifications | `NotificationsOpen`, `NotificationsEmpty`, `NotificationsOverflowing`, `NotificationsManyUnread`, `NotificationsNoUnread` |
-| §3 content | `ContentSpacing`, `DenserContentSpacing` |
+| §3 content | `ContentSpacing`, `DenserContentSpacing`, `Scrolling` (chrome stays put; a new page starts at the top) |
 | whole shell | `Default` (empty — what ships), `Branded`, `EveryRowType`, `DeepLinked` |
 
 **The breadcrumb stories matter most.** `TwoCrumbs` and `ThreeCrumbs` are the
