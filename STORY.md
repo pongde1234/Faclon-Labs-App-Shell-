@@ -299,6 +299,23 @@ to their **left**, where it cannot displace them.
 assistant button. One lists applications only the host can enumerate, the other
 opens an assistant this package knows nothing about. Both go in `actions`.
 
+> **The demo puts them back, and that is the proof.** `npm run dev` renders the
+> product's top bar exactly — gradient sparkle, app grid, bell, avatar — with
+> both buttons passed through `actions` from `demo/IosenseDemo.tsx`. The package
+> ships neither. If the slot were not sufficient, the demo could not reproduce
+> the screenshot, and it does.
+>
+> Measured against the product at 1917×949 with the rail collapsed: rail 48px,
+> logo 48×48 at the origin, content inset `16px 16px 0 16px`, 0 console
+> exceptions.
+>
+> The assistant's gradient moved to the demo with it. `.ai-icon` sets
+> `stroke: url(#ai-gradient)`, and that paint server was defined by an
+> `<svg><defs>` in the app's own root which never shipped — so the package was
+> carrying CSS pointing at an id it did not define. An SVG stroke can only
+> reference a paint server that exists in the document, so the defs now render
+> next to the button that needs them.
+
 ### What the notifications bell opens
 
 ```

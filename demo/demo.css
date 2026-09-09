@@ -115,3 +115,24 @@
   font-size: 12px;
   color: var(--text-neutral-subtle, #98a2b3);
 }
+
+/* ---- The assistant glyph's gradient -------------------------------------
+   Moved here from the package. It styles the ASSISTANT BUTTON, which the
+   package deliberately does not export — and `.ai-icon` references a paint
+   server (#ai-gradient) that only exists because <AiGradientDefs /> renders it,
+   so shipping the CSS without the defs left consumers pointing at nothing. */
+
+.svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* lucide paints via `stroke` and its children inherit it, so pointing the
+   stroke at the gradient paint server colours the whole glyph. Set in CSS
+   rather than as a prop because CSS wins over the presentation attribute
+   lucide writes. */
+.ai-icon {
+  stroke: url(#ai-gradient);
+}

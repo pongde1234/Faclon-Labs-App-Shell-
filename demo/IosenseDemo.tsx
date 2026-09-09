@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react'
-import { CircleQuestionMark } from 'lucide-react'
+import { CircleQuestionMark, Grid3x3, Sparkles } from 'lucide-react'
+import { IconButton } from '@faclon-labs/fds/button'
 
 import {
   IosenseShell,
@@ -64,6 +65,36 @@ const PAGE_TITLES: Record<string, string> = {
 
 const KNOWN = navPageIds(IOSENSE_NAV)
 
+/**
+ * fds's IconButton takes a COMPONENT, not an element, so anything the glyph
+ * needs beyond `size` has to be baked into a wrapper rather than passed at the
+ * call site. `.ai-icon` points the stroke at the gradient defined in
+ * <AiGradientDefs /> below.
+ */
+const AssistantIcon = (props: { size?: number | string }) => (
+  <Sparkles {...props} className="ai-icon" />
+)
+
+/**
+ * The gradient the assistant glyph strokes itself with.
+ *
+ * An SVG stroke can only reference a paint server that EXISTS IN THE DOCUMENT,
+ * so these defs have to be rendered once somewhere. They live here rather than
+ * in the package because the button they serve is not part of the package —
+ * and a package shipping CSS that points at an id it never defines is exactly
+ * the dangling reference this move fixed.
+ */
+const AiGradientDefs = () => (
+  <svg width="0" height="0" aria-hidden="true" focusable="false" className="svg-defs">
+    <defs>
+      <linearGradient id="ai-gradient" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stopColor="var(--global-brand-500)" />
+        <stop offset="100%" stopColor="var(--global-sapphire-500)" />
+      </linearGradient>
+    </defs>
+  </svg>
+)
+
 export function IosenseDemo() {
   const [activeId, setPage] = useState('memory')
 
@@ -100,7 +131,33 @@ export function IosenseDemo() {
       onOpenNotifications={() => navigate('notifications')}
       // Empty by default. Help is the product's choice, not the package's.
       sideNavFooter={<NavFooterRow icon={<CircleQuestionMark size={NAV_ICON_SIZE} />} label="Help" />}
+      /* THE ASSISTANT AND THE APPLICATION LAUNCHER, through the slot.
+         Both are in the product's top bar and NEITHER is in the package: one
+         opens an assistant the shell knows nothing about, the other lists
+         applications only the host can enumerate. They go here, to the left of
+         the bell and the avatar, which is where the product has them — so this
+         demo reproduces the real chrome exactly while the package stays free of
+         both. */
+      actions={
+        <>
+          <IconButton
+            icon={AssistantIcon}
+            size="Medium"
+            isHighlighted
+            accessibilityLabel="Assistant"
+            onClick={() => {}}
+          />
+          <IconButton
+            icon={Grid3x3}
+            size="Medium"
+            isHighlighted
+            accessibilityLabel="Applications"
+            onClick={() => {}}
+          />
+        </>
+      }
     >
+      <AiGradientDefs />
       <DemoPage id={activeId} title={title} />
     </IosenseShell>
   )

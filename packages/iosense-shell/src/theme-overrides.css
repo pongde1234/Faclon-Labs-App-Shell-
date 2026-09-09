@@ -1696,19 +1696,12 @@ body {
   outline-offset: 2px;
 }
 
-.svg-defs {
-  position: absolute;
-  width: 0;
-  height: 0;
-  overflow: hidden;
-}
-
-/* lucide paints via `stroke` and its children inherit it, so pointing the stroke
-   at the gradient paint server colours the whole glyph. Set in CSS rather than
-   as a prop because CSS wins over the presentation attribute lucide writes. */
-.ai-icon {
-  stroke: url(#ai-gradient);
-}
+/* `.ai-icon` and `.svg-defs` used to sit here. They style the ASSISTANT BUTTON,
+   which this package deliberately does not export — and worse, `.ai-icon` set
+   `stroke: url(#ai-gradient)`, a paint server defined by an <svg><defs> that
+   lived in the app's own root and never shipped. Any consumer who applied the
+   class got a glyph pointing at an id that did not exist. Both now live in the
+   demo, next to the button they belong to. */
 
 /* Unread count on the bell. */
 .topnav__bell {
