@@ -3,10 +3,13 @@
   "package": "@faclon-labs/iosense-shell",
   "version": "0.1.0",
   "description": "Machine-readable usage contracts for the iosense application chrome. Each guard states what the component is for, how an AI should choose its props, which combinations are illegal, and the anti-patterns that keep recurring.",
-  "readFirst": "AppSideNav.guard.json — the rail carries most of the behaviour, and its three-state model (pinned / peeked / collapsed) is the thing most likely to be got wrong.",
+  "readFirst": "IosenseShell.guard.json — it is the entry point, and mounting the pieces without it is the single most common way to get a shell that looks nearly right. Then AppSideNav.guard.json, whose three-state model (pinned / peeked / collapsed) is the thing most likely to be got wrong.",
   "invariants": [
     "This package is NOT dependency-free. It is built on @faclon-labs/design-sdk and @faclon-labs/fds and inherits their tokens. Use @faclon-labs/app-shell if you need a portable shell.",
-    "theme-overrides.css must be imported AFTER the SDK stylesheets. design-sdk injects component CSS when its modules load, so overrides imported earlier lose the cascade.",
+    "IosenseShell is the entry point. The individual components do NOT render the markup the content-area CSS targets (data-topbar, data-sidenav-pinned, .app-scroll-frame, .app-main-scroll), so assembling them by hand loses the content inset, the overlay scrollbar and the rail offset.",
+    "Three stylesheets, in order: @faclon-labs/design-sdk/styles.css, then @faclon-labs/fds/styles.css, then theme-overrides.css. The SDK sheet is REQUIRED — it is the only definition of --spacing-*, and without it the content sheet's padding-inline is invalid and silently collapses to 0.",
+    "theme-overrides.css must be imported AFTER the SDK stylesheets AND after the component imports. design-sdk injects component CSS when its modules load, so overrides imported earlier lose the cascade.",
+    "The content sheet is inset 16px on all four sides: padding-inline on .app-main-scroll, padding-block on the page root. Content rendered into it must not set its own outer margin.",
     "The rail has THREE states, not two: pinned (a click, moves the page), peeked (a hover, floats over it) and collapsed. Never key behaviour on isPinned to mean \"open\".",
     "The hover peek is owned in React, not by the SDK. Both state objects strip the SDK data-hovered attribute, because React cannot see it and the component has to know it is expanded.",
     "The collapse control lives in the top bar, never in the rail: a control that hides a panel cannot sit inside it.",
@@ -16,6 +19,10 @@
     "Never put a ref on the direct child of an fds Tooltip or Popover — the clone spreads children.props after ref and the component silently never opens."
   ],
   "guards": [
+    {
+      "component": "IosenseShell",
+      "path": "./guards/IosenseShell.guard.json"
+    },
     {
       "component": "AppNavDrawer",
       "path": "./guards/AppNavDrawer.guard.json"

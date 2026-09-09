@@ -261,7 +261,13 @@ body {
 
      16px, matching the 16px the page roots carry top and bottom, so the sheet
      is inset the same on all four sides. */
-  padding-inline: var(--spacing-05);
+  /* The literal fallback is load-bearing, not belt-and-braces. `--spacing-05` is
+     defined ONLY by `@faclon-labs/design-sdk/styles.css`; a consumer who imports
+     fds's stylesheet and this one but not the SDK's gets an undefined var, which
+     makes the whole declaration invalid and drops the inset to 0 — silently, and
+     looking exactly like a shell that was never given any padding. Measured: it
+     is how the content sheet lost its 16px. */
+  padding-inline: var(--spacing-05, 16px);
   scrollbar-width: none;
 }
 
@@ -1584,3 +1590,77 @@ body {
   opacity: 0.57;
   cursor: default;
 }
+
+/* ============================================================================
+ * TOP-BAR CONTROL CHROME
+ *
+ * These four rules were stranded in the app's own App.css and did not ship
+ * with the first cut of this package, so a consumer got the avatar with no
+ * hover halo and no focus ring, and the unread pill unpositioned at the top
+ * left of the bell. They are here because ProfileMenu and NotificationMenu —
+ * both IN this package — render these exact class names.
+ * ========================================================================= */
+
+/* Avatar trigger for the account menu — the Avatar handles its own visuals, so
+   the button is only a hit target. */
+.profile-trigger {
+  display: inline-flex;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  /* Circular, to match the avatar it wraps — the 8px ceiling elsewhere is for
+     rectangles, and a rounded square around a circle reads as a mistake. */
+  border-radius: 50%;
+  transition: box-shadow var(--fds-duration-quick) var(--fds-easing-standard);
+}
+
+/* Hover drawn as a box-shadow halo rather than padding + background.
+   `--background-interaction-highlighted` is the same token the bell, launcher
+   and assistant IconButtons use, so all four top-bar controls respond alike.
+   A shadow costs NO layout: padding the button out to a 32px hit area would
+   have pulled the avatar's right edge 4px off the content edge it was aligned
+   to earlier. */
+.profile-trigger:hover {
+  box-shadow: 0 0 0 4px var(--background-interaction-highlighted);
+}
+
+.profile-trigger:focus-visible {
+  outline: 2px solid var(--border-brand-default, var(--text-brand-default));
+  outline-offset: 2px;
+}
+
+.svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+  overflow: hidden;
+}
+
+/* lucide paints via `stroke` and its children inherit it, so pointing the stroke
+   at the gradient paint server colours the whole glyph. Set in CSS rather than
+   as a prop because CSS wins over the presentation attribute lucide writes. */
+.ai-icon {
+  stroke: url(#ai-gradient);
+}
+
+/* Unread count on the bell. */
+.topnav__bell {
+  position: relative;
+  display: inline-flex;
+}
+
+/* Placement ONLY. The pill itself is an fds <Counter size="Small">, which owns
+   its own 16px box, radius, fill, ink and type — none of that is restated here.
+   Counter has no anchor or overlay mode by design ("it renders inline exactly
+   where you place it"), so the corner position is the caller's job, and this is
+   the whole of that job. The ring is a cut-out against the bar, not decoration:
+   it separates the pill from the bell glyph underneath. */
+.topnav__bell-count {
+  position: absolute;
+  top: -2px;
+  right: -2px;
+  pointer-events: none;
+  box-shadow: 0 0 0 2px var(--background-surface-subtle);
+}
+

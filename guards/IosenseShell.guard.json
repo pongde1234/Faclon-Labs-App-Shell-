@@ -1,0 +1,129 @@
+{
+  "$schema": "./guard.schema.json",
+  "component": "IosenseShell",
+  "import": "import { IosenseShell } from '@faclon-labs/iosense-shell'",
+  "purpose": "The iosense chrome assembled: the rail, the top bar, the mobile drawer, the menus, and the scrolling content sheet with its 16px inset. Wrap your page in it and you have the product's shell. This is the entry point of the package — reach for the individual components only when you cannot use this one.",
+  "useInstead": [
+    {
+      "when": "You want the iosense look around a page.",
+      "use": "IosenseShell. This is the case it exists for."
+    },
+    {
+      "when": "You need a shell with no design-sdk or fds dependency.",
+      "use": "@faclon-labs/app-shell — a different package. This one inherits the SDK's tokens and cannot be made portable."
+    },
+    {
+      "when": "You are embedding only the rail inside a shell you already own.",
+      "use": "AppSideNav directly, and read its guard — you then also own data-sidenav-pinned, the content offset and the scroller, none of which the rail provides."
+    }
+  ],
+  "decision": [
+    "Do you want the product's chrome? -> IosenseShell.",
+    "Do you already have a shell and want one piece of ours? -> the individual component, and accept that the content-area styling will not apply.",
+    "Do you need portability off the SDK? -> the wrong package; use @faclon-labs/app-shell."
+  ],
+  "defaults": {
+    "isPinned": "Uncontrolled. The shell reads localStorage 'iosense:sidenav-pinned'; with nothing stored the default is width-aware — pinned at >= 1024px, collapsed below. Pass isPinned AND onPinnedChange together to drive it yourself.",
+    "preference": "Uncontrolled. The shell runs its own useAppTheme, which stamps data-theme on <html>. Pass preference AND onPreferenceChange together to drive it yourself.",
+    "workspace": "Defaults to <WorkspaceLabel name={profile.org} />. Override only to render a switcher or a different identity row.",
+    "actions": "Empty. The top bar shows the bell and the avatar and nothing else."
+  },
+  "sizing": {
+    "rail": "240px pinned, 48px collapsed. A hover peek widens the inner panel over the page while the 48px footprint stays put, so the content does not move.",
+    "content": "padding-inline: 16px on .app-main-scroll. Page roots are expected to add padding: 16px 0. Together that is the 16px-on-all-four-sides rule; changing one side without the other makes the sheet lopsided.",
+    "breakpoint": "The rail becomes a drawer below the mobile breakpoint. IosenseShell mounts exactly one of them — never both, because two copies would run two copies of the open-groups state."
+  },
+  "accessibility": [
+    "The collapse control is in the top bar and carries an accessible label that follows the state ('Open sidebar' / 'Close sidebar').",
+    "Ctrl/Cmd+B toggles the rail (or the drawer, below the breakpoint). It is skipped while focus is in an input, textarea, select or contenteditable, so it never hijacks typing.",
+    "The current page's crumb carries aria-current. A crumb with no id is inert text and is NOT tabbable — that is intentional, not an oversight.",
+    "The content sheet is the scroll container. Its scrollbar is an overlay drawn on top, so it costs no layout width and the content does not shift when a page starts or stops overflowing."
+  ],
+  "propRules": [
+    {
+      "rule": "activeId must be an id the rail knows, and section ids are not pages.",
+      "why": "Landing on 'workflows' or 'reports' shows an empty page — sections have no content of their own. Run every incoming id through resolveSection() so a hand-typed route cannot reach one.",
+      "bad": "setActiveId('workflows')",
+      "good": "setActiveId(resolveSection('workflows')) // -> 'workflows-all'"
+    },
+    {
+      "rule": "Build trail with buildTrail(), not by hand.",
+      "why": "buildTrail is what decides which crumb has NO id, and an id-less crumb is what AppTopBar draws as plain text. Hand-built trails give sections an id, which turns a crumb that should go UP into one that moves the reader SIDEWAYS into a sibling.",
+      "bad": "trail={[{ label: 'Workflows', id: 'workflows' }, { label: title }]}",
+      "good": "trail={buildTrail(activeId, title, { pageTitles: PAGE_TITLES })}"
+    },
+    {
+      "rule": "isPinned and onPinnedChange are a pair. Same for preference and onPreferenceChange.",
+      "why": "Passing only the value freezes the control — the shell reads your prop and its internal setter no longer reaches anything, so the toggle stops working with no error.",
+      "bad": "<IosenseShell isPinned={true} …>",
+      "good": "<IosenseShell isPinned={pinned} onPinnedChange={setPinned} …>"
+    },
+    {
+      "rule": "children is the page, not another shell.",
+      "why": "IosenseShell already renders <main>, the scroll frame and the sheet. Nesting a second shell (or another AppShell) mounts two scroll containers and two rails."
+    },
+    {
+      "rule": "Content inside children must not set an outer margin.",
+      "why": "The 16px rhythm comes from the container and from Stack/Grid/Card. A margin on a page root fights the container's padding and the spacing stops being predictable at depth — which matters most for content that is generated rather than hand-written."
+    }
+  ],
+  "composition": {
+    "renders": "design-sdk AppShell (with data-topbar='column', data-theme and data-sidenav-pinned) > AppTopBar in the topNav slot, AppSideNav in the sideNav slot, and .app-scroll-frame > .app-main-scroll around children.",
+    "requires": [
+      "@faclon-labs/design-sdk/styles.css imported FIRST. It is the only definition of --spacing-* and of the SDK's component CSS. Without it the rail renders as unstyled rows and the content sheet's padding-inline resolves against an undefined custom property, which invalidates the declaration and drops the inset to 0 — silently.",
+      "@faclon-labs/fds/styles.css second.",
+      "@faclon-labs/iosense-shell/theme-overrides.css LAST, and after the component imports. design-sdk injects component CSS when its modules load, so a stylesheet imported above IosenseShell loses the cascade — measured: the pinned rail's 240px offset stopped applying and the content sat at x=0 under the rail."
+    ],
+    "provides": "The markup the content-area CSS targets. This is why assembling the pieces by hand is not equivalent."
+  },
+  "antiPatterns": [
+    {
+      "pattern": "Mounting AppSideNav and AppTopBar into your own layout and expecting the product's look.",
+      "why": "theme-overrides.css styles the content area through .fds-app-shell[data-topbar='column'], [data-sidenav-pinned='true'] and .app-scroll-frame > .app-main-scroll. None of those components render any of it. The result is a shell that looks nearly right: no content inset, a native scrollbar, no rail offset.",
+      "instead": "Use IosenseShell."
+    },
+    {
+      "pattern": "Importing theme-overrides.css at the top of the file, above the component imports.",
+      "why": "ES modules evaluate in source order and design-sdk injects its CSS at module load, so the SDK's rules land after yours and win.",
+      "instead": "Put the three stylesheet imports at the END of the import block."
+    },
+    {
+      "pattern": "Skipping @faclon-labs/design-sdk/styles.css because fds's sheet is already imported.",
+      "why": "They are not interchangeable — the two packages share only a small fraction of their token names, and --spacing-* is design-sdk's alone.",
+      "instead": "Import both, SDK first."
+    },
+    {
+      "pattern": "Treating isPinned as 'the rail is open'.",
+      "why": "There are three states. During a hover peek the rail is expanded but not pinned, so anything keyed on isPinned is wrong for the whole duration of the hover — tooltips fire on rows whose labels are plainly readable, and the organisation name stays hidden.",
+      "instead": "Let the rail own it. If you must know, read data-state on the rail rather than inferring from isPinned."
+    },
+    {
+      "pattern": "Adding an application launcher or assistant button by forking AppTopBar.",
+      "why": "They are excluded on purpose: one lists applications only the host can enumerate, the other opens an assistant the package knows nothing about.",
+      "instead": "Pass them through the actions prop, which renders them to the left of the bell and the avatar."
+    },
+    {
+      "pattern": "Wrapping children in a div with its own padding to 'add some breathing room'.",
+      "why": "The container already provides 16px inline and the page root provides 16px block. A second layer doubles it and only on some pages.",
+      "instead": "padding: 16px 0 on the page root, nothing else."
+    }
+  ],
+  "examples": [
+    {
+      "title": "The whole chrome, uncontrolled",
+      "code": "const [activeId, setActiveId] = useState('home')\nconst { profile } = useProfile()\nconst notifications = useNotifications()\nconst title = PAGE_TITLES[activeId] ?? ''\n\nreturn (\n  <IosenseShell\n    activeId={activeId}\n    onNavigate={(id) => setActiveId(resolveSection(id))}\n    trail={buildTrail(activeId, title, { pageTitles: PAGE_TITLES })}\n    profile={profile}\n    notifications={notifications.items}\n    unreadCount={notifications.unreadCount}\n    onOpenNotifications={() => setActiveId('notifications')}\n  >\n    <div style={{ padding: '16px 0' }}>\n      <YourPage />\n    </div>\n  </IosenseShell>\n)"
+    },
+    {
+      "title": "With extra top-bar controls",
+      "code": "<IosenseShell\n  {...rest}\n  actions={\n    <>\n      <IconButton icon={SparklesIcon} accessibilityLabel=\"Assistant\" onClick={openAssistant} />\n      <YourAppLauncher />\n    </>\n  }\n>\n  <YourPage />\n</IosenseShell>"
+    },
+    {
+      "title": "Driving the rail and the theme yourself",
+      "code": "const [pinned, setPinned] = useState(true)\nconst { preference, setPreference } = useAppTheme()\n\n<IosenseShell\n  {...rest}\n  isPinned={pinned}\n  onPinnedChange={setPinned}\n  preference={preference}\n  onPreferenceChange={setPreference}\n>\n  <YourPage />\n</IosenseShell>"
+    },
+    {
+      "title": "The breadcrumb rule, which buildTrail encodes",
+      "code": "// one crumb   -> the page itself, marked aria-current\n// two crumbs  -> Workflows [plain text, NOT a link] / This page [current]\n// three       -> Workflows [text] / All Workflows [LINK] / This record [current]\n//\n// The section crumb has no id, which is what makes it inert. Verified in a\n// browser: the two-layer trail renders the first crumb as text and the\n// three-layer trail renders the middle crumb as a button.\nbuildTrail('workflows-create', 'Create company when a deal closes', { pageTitles: PAGE_TITLES })"
+    }
+  ]
+}
