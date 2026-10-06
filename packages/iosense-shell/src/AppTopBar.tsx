@@ -27,7 +27,25 @@ export interface AppTopBarProps {
   /** Newest first; the bell previews the top few. */
   unreadCount: number
   onOpenNotifications: () => void
-  /** Extra controls, to the left of notifications and the avatar. */
+  /**
+   * THE SECOND CONTAINER: the assistant, on its own.
+   *
+   * Separate from `actions` because it is not an icon — it is a labelled
+   * button, and it sits flush against the icon container with no gap between
+   * them. Passing it through `actions` would put it inside that container and
+   * give it the icons' spacing.
+   *
+   * Empty by default: what the assistant is, and whether there is one, is the
+   * product's business and not the shell's.
+   */
+  assistant?: ReactNode
+  /**
+   * THE THIRD CONTAINER: extra icons, to the left of the bell and the avatar.
+   *
+   * Whatever goes here joins the same row as the two the shell mounts itself
+   * and takes the same spacing, so a control added later lands in line without
+   * anyone touching the stylesheet.
+   */
   actions?: ReactNode
   /** Rail state. The bar owns the control that changes it — see the toggle below. */
   isPinned: boolean
@@ -87,6 +105,7 @@ export function AppTopBar({
   onPreferenceChange,
   unreadCount,
   onOpenNotifications,
+  assistant,
   actions,
   isPinned,
   onTogglePin,
@@ -148,20 +167,31 @@ export function AppTopBar({
         </Breadcrumb>
       </TopNavContent>
 
+      {/* THE BAR IS THREE CONTAINERS, left to right:
+            1. TopNavContent above — the rail toggle and the trail
+            2. the assistant
+            3. the icons
+          Two and three live in here. The gap BETWEEN them is zero and the gap
+          WITHIN the icons is 6px, both set in theme-overrides.css — which is
+          why they are two elements rather than one flat row: a single row can
+          only have one gap.
+
+          Neither the assistant nor the launcher is part of this package. Both
+          are product surfaces rather than chrome — one opens an assistant this
+          shell knows nothing about, the other lists applications only the host
+          can enumerate — so both arrive as props. */}
       <TopNavActions>
-        {/* The assistant button and the application launcher are NOT part of
-            this package. Both are product surfaces rather than chrome — one
-            opens an assistant this shell knows nothing about, the other lists
-            applications only the host can enumerate. Pass your own through
-            `actions` if you want controls here. */}
-        {actions}
-        <NotificationBell unreadCount={unreadCount} onOpen={onOpenNotifications} />
-        <ProfileMenu
-          profile={profile}
-          onOpenProfile={() => onNavigate('profile')}
-          preference={preference}
-          onPreferenceChange={onPreferenceChange}
-        />
+        {assistant && <div className="app-topbar__assistant">{assistant}</div>}
+        <div className="app-topbar__icons">
+          {actions}
+          <NotificationBell unreadCount={unreadCount} onOpen={onOpenNotifications} />
+          <ProfileMenu
+            profile={profile}
+            onOpenProfile={() => onNavigate('profile')}
+            preference={preference}
+            onPreferenceChange={onPreferenceChange}
+          />
+        </div>
       </TopNavActions>
     </TopNav>
   )

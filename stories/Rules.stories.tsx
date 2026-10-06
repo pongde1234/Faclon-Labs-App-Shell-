@@ -62,11 +62,11 @@ const WRONG_ICON_SIZES: NavItem[] = [
 ]
 
 /**
- * THE ICON IS 14px, WHATEVER YOU PASS.
+ * THE ICON IS 16px, WHATEVER YOU PASS.
  *
- * All four rows below ask for a different glyph size. All four render at 14px
- * inside the SDK's 16px slot, so every label still starts at the same x and the
- * rail is still 240px.
+ * All four rows below ask for a different glyph size. All four render at 16px,
+ * filling the SDK's 16px slot, so every label still starts at the same x and
+ * the rail is still 240px.
  *
  * The clamp is CSS on the icon slot's `> svg`. It works because icon libraries
  * set width/height as presentation ATTRIBUTES, which CSS beats without
@@ -212,15 +212,16 @@ export const Expanded: Story = {
 }
 
 /**
- * COLLAPSED — 48px. The same rail, and four things change at once:
+ * COLLAPSED — 48px. The same rail, and three things change at once:
  *
  *   the LOGO does not move          it is the rail's fixed point
  *   labels disappear                the SDK hides them
  *   the trailing slot disappears    and a DOT replaces a count or an alert —
  *                                   but NOT a word, because "Beta" is a label
  *                                   and not state worth surfacing in 48px
- *   the section is FORCED OPEN      folded it would be a hairline with no
- *                                   affordance to unfold it, stranding its rows
+ *
+ * A section's rows are all still here. Nothing is forced open, because nothing
+ * folds — the section label is a caption at either width.
  *
  * Hover any row for its label — with the count appended, since the dot says
  * THAT there is something but not what.

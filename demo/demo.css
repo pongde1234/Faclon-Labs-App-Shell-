@@ -1,0 +1,107 @@
+/**
+ * The demo's own CSS. NOT part of either package.
+ *
+ * Deliberately thin, and deliberately FREE OF OUTER MARGINS: every gap between
+ * blocks on the page comes from the shell's content container, not from here.
+ * That is the property the demo is meant to demonstrate, so breaking it here
+ * would make the demo lie.
+ *
+ * None of it is a SURFACE. The page's surfaces are all SDK components — Card,
+ * Alert, the chart's own wrapper. What is left is:
+ *
+ *   .page-title         the page heading's type
+ *   .demo-grid          LAYOUT. Arranging cards is the page author's job; the
+ *                       SDK ships no layout primitive for it
+ *   .demo-metric-value  the big number on a stat tile
+ *   .demo-text          prose inside a CardBody
+ *   .alert-*            the rows inside the Recent alerts card
+ *
+ * The assistant glyph's gradient used to live here too — `.ai-icon` and
+ * `.svg-defs`, plus an <AiGradientDefs /> that had to render the paint server
+ * they pointed at. The Bruce AI mark carries its own gradients inside its own
+ * <svg>, so all three are gone.
+ *
+ * EVERY VALUE IS AN FDS TOKEN, and the literal fallbacks are gone with the raw
+ * numbers. This file used to carry `16px`, `13px`, `#101828` and friends, with
+ * hexes written beside each colour "so the page still reads if a token is
+ * missing" — but fds is a peer dependency and its stylesheet is imported in
+ * main.tsx, so a missing token means a broken install, not a page to rescue.
+ * The fallbacks were hiding that, and one of them was propping up
+ * `--text-neutral-default`, which is design-sdk's name and does NOT exist in
+ * fds — the hex was doing all the work. It is `--text-neutral-normal` now.
+ */
+
+.page-title {
+  margin: 0;
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-50);
+  color: var(--text-neutral-normal);
+}
+
+/* Four across, collapsing on narrow viewports. `auto-fit` rather than a fixed
+   count, so the demo does not need breakpoints of its own. The 200px floor is
+   a LAYOUT threshold, not a spacing step — there is no token for "the width at
+   which four tiles stop fitting", and rounding it to one would be a worse lie
+   than leaving it as the measurement it is. */
+.demo-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--spacing-16);
+}
+
+.demo-metric-value {
+  margin: 0;
+  /* The ramp steps 20 → 24 and the tile used to sit at 22, between them. Rounded
+     DOWN: the figure is already the loudest thing on the tile, and 24 next to a
+     12px label reads as a headline rather than a number. */
+  font-size: var(--font-size-500);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: var(--letter-spacing-50);
+  color: var(--text-neutral-normal);
+}
+
+.demo-text {
+  margin: 0;
+  font-size: var(--font-size-100);
+  line-height: var(--line-height-200);
+  color: var(--text-neutral-subtle);
+}
+
+.demo-text code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  /* Relative on purpose: inline code should track whatever text it sits in
+     rather than pin itself to a step of the ramp. */
+  font-size: 0.92em;
+  padding: var(--spacing-2) var(--spacing-4);
+  border-radius: var(--radius-s);
+  background: var(--background-surface-subtle);
+}
+
+/* The rows inside Recent alerts. A list, not a table: there is one column of
+   meaning here, and a table would promise columns that do not exist. */
+.alert-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-12);
+}
+
+.alert-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+}
+
+.alert-row-title {
+  font-size: var(--font-size-100);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-neutral-normal);
+}
+
+.alert-row-meta {
+  font-size: var(--font-size-50);
+  color: var(--text-neutral-subtle);
+}

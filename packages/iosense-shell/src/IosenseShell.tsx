@@ -34,11 +34,25 @@ export interface IosenseShellProps {
   onOpenNotifications: () => void
 
   /**
-   * Extra top-bar controls, to the LEFT of the bell and the avatar.
+   * The assistant — the top bar's SECOND container, between the trail and the
+   * icons.
    *
-   * This is where an application launcher or an assistant button goes. Neither
-   * ships: one lists applications only the host can enumerate, the other opens
-   * an assistant this package knows nothing about.
+   * Its own slot because it is a labelled button rather than an icon, and it
+   * sits flush against the icon group with no gap. Put it in `actions` instead
+   * and it joins the icons, taking their 6px spacing.
+   *
+   * Nothing ships: what the assistant is, and whether there is one, is the
+   * product's business.
+   */
+  assistant?: ReactNode
+
+  /**
+   * Extra top-bar ICONS, to the LEFT of the bell and the avatar, inside the
+   * same container as them.
+   *
+   * This is where an application launcher goes. It does not ship — it lists
+   * applications only the host can enumerate. Anything added here later lines
+   * up with the bell and the avatar automatically.
    */
   actions?: ReactNode
 
@@ -115,6 +129,7 @@ export function IosenseShell({
   profile,
   unreadCount,
   onOpenNotifications,
+  assistant,
   actions,
   logo,
   workspace,
@@ -242,6 +257,7 @@ export function IosenseShell({
           onPreferenceChange={setPreference}
           unreadCount={unreadCount}
           onOpenNotifications={onOpenNotifications}
+          assistant={assistant}
           actions={actions}
           isPinned={isPinned}
           isMobile={isMobile}

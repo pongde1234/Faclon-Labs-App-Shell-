@@ -22,7 +22,7 @@
   "defaults": {
     "items": "[] — an empty rail. That is the export: the chrome, not our content.",
     "tone": "'info' for a plain quantity (Neutral). 'alert' only when the number ITSELF is the bad news (Negative + Intense). 'label' for a word like Beta (Notice, and no collapsed dot).",
-    "defaultOpenGroups": "Every section id, no accordion. A folded section in a fresh install is a hairline with no affordance to unfold it and it strands every row inside; a folded accordion still shows its parent row.",
+    "defaultOpenGroups": "Nothing, and it means ACCORDIONS only. Sections do not fold, so there is nothing to pre-open; a folded accordion still shows its parent row, so starting closed costs nothing.",
     "icon size": "NAV_ICON_SIZE (14). The SDK's icon slot stays 16px; 14 is the drawn size inside it. Mixing 14 and 16 in one rail makes the icon column look ragged."
   },
   "propRules": [
@@ -101,7 +101,7 @@
   "antiPatterns": [
     {
       "pattern": "Looking for a sample nav to import.",
-      "why": "There is none anywhere: not exported, and not rendered by the demo either. A shell has no opinion about what a product pages are. What it does have an opinion about is what happens once you pass some, and that is documented rather than demonstrated.",
+      "why": "The package exports none. A shell has no opinion about what a product pages are. The iosense rows the demo renders are in demo/iosenseNav.tsx, which is not installed with the package — copying them would put Zomato and Steam Trap into an app that is not iosense.",
       "instead": "Write your own NavItem[] from the shapes in the examples below, and read STORY.md 1.4 for what the rail will do with it."
     },
     {
@@ -126,7 +126,7 @@
     },
     {
       "pattern": "Importing a sample nav from the package.",
-      "why": "There is none anywhere: not exported, and not rendered by the demo either — the demo is the bare chrome. A shell has no opinion about what a product pages are. What it DOES have an opinion about is what happens once you pass some, and that is documented rather than demonstrated.",
+      "why": "There is none to import. A shell has no opinion about what a product pages are. The demo's rail is filled from demo/iosenseNav.tsx — the host's side of the line, and not shipped — which is exactly the arrangement the package asks you to copy: your rows, its behaviour.",
       "instead": "Write your own NavItem[] from the shapes in the examples below, and read STORY.md 1.4 for what the rail will do with it."
     },
     {
@@ -162,8 +162,8 @@
     "rowHeight": "32px, and it is a consequence of the above rather than a separate rule. Nothing a host passes may change it."
   },
   "variants": {
-    "expanded": "The 240px panel. Header shows logo + org name; a row is [icon] Label [trailing slot]; a section shows its label and can be folded; an accordion unfolds IN PLACE below its parent. Tooltips appear only when a label is clipped.",
-    "collapsed": "The 48px strip. The LOGO DOES NOT MOVE — it is the rail fixed point. Labels and the trailing slot are hidden; a 6px dot on the icon replaces a count or an alert but NOT a word, because a label like Beta is not state worth surfacing in 48px. An accordion opens a FLYOUT beside the strip instead of unfolding. A section is FORCED OPEN — folded it would be a hairline with no affordance to unfold it, stranding every row inside. Every row gets a tooltip, and it quotes the badge the dot stands in for.",
+    "expanded": "The 240px panel. Header shows logo + org name; a row is [icon] Label [trailing slot]; a section shows a 12px medium caption and then its rows, and does NOT fold; an accordion unfolds IN PLACE below its parent. Tooltips appear only when a label is clipped.",
+    "collapsed": "The 48px strip. The LOGO DOES NOT MOVE — it is the rail fixed point. Labels and the trailing slot are hidden; a 6px dot on the icon replaces a count or an alert but NOT a word, because a label like Beta is not state worth surfacing in 48px. An accordion opens a FLYOUT beside the strip instead of unfolding. A section shows its rows here as it does at full width — it does not fold at either width, so there is no collapsed-state exception. Every row gets a tooltip, and it quotes the badge the dot stands in for.",
     "peeked": "THE THIRD STATE, and the one most often missed. Hovering the collapsed rail draws the panel at 240px as an OVERLAY over a 48px footprint, so nothing to its right moves. Open after 150ms, close after 100ms. Only PINNING sets data-sidenav-pinned and reflows the page. Never key behaviour on isPinned meaning open: during a peek the rail is expanded and not pinned, and anything that assumes otherwise is wrong for the whole hover.",
     "rowStates": "default transparent + secondary ink; hover --background-gray-hover-light; pressed --background-gray-default; active --background-gray-default + primary ink (the ICON takes primary ink too); active+hover --background-gray-hover-dark so an active row still answers the pointer. The active row keeps font-weight 400 — the SDK bolds it and that is overridden, because the row is already marked by background and ink and bolding reflows the label as you navigate. Transitions are background-color and color at --fds-duration-quick and width at --fds-duration-moderate, never all. All of this is the package: a host supplies no colours."
   }

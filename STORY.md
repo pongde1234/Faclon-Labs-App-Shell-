@@ -41,12 +41,14 @@ The side nav has three containers of its own — header, content, footer.
 
 # 1. The side nav
 
-240px pinned, 48px collapsed. On hover it **peeks**: the panel widens to 240px as
-an overlay while the 48px footprint stays put, so the page does not move. Only a
-click on the top bar's toggle pins it, and only pinning reflows the content.
+240px pinned, 48px collapsed. **Hover does nothing** — the rail opens only when
+asked, from the top bar's toggle or Ctrl/Cmd+B, and only pinning reflows the
+content.
 
-Open delay 150ms, close delay 100ms — crossing the rail on the way somewhere
-else does nothing, but a panel that lingers after you have left feels stuck.
+It still **peeks** for the keyboard: when focus enters a collapsed rail the
+panel widens to 240px as an overlay while the 48px footprint stays put, so the
+page does not move. Without it, tabbing in means working through sixteen
+unlabelled glyphs. Open delay 150ms, close 100ms.
 
 Three containers, in order.
 
@@ -138,12 +140,21 @@ See `Side nav/Rules > Collapsed` for both behaviours side by side.
 
 ### (c) Section — a labelled group that hides and unhides its entities
 
-A hairline label with a chevron, over a set of rows. Clicking the label folds
-the whole set away.
+A small caption over a set of rows. **It does not fold, and it is not a
+control** — no chevron, no hover fill, no focus ring.
 
-**It is force-expanded while the rail is collapsed.** A folded section in the
-48px strip would be a hairline with no affordance to unfold it, and it would
-strand every icon inside it.
+**It used to fold, and that was dropped.** Folding a section only ever hid rows
+the user still had to reach, and the control had to be force-disabled in the
+48px strip anyway, where a folded section is a hairline with no affordance to
+unfold it and strands every icon inside. A control that is live at one width
+and inert at the other is worse than no control. Use an **accordion** for
+something that folds: its parent row stays on screen.
+
+**The label is 12px medium**, against the rows' 14px regular. Smaller so a
+section name does not compete with the rows under it, medium so it still reads
+as a heading rather than as faded body text. Both are tokens —
+`--font-size-50` and `--font-weight-medium`; the colour is the SDK's own
+`--text-gray-tertiary`, inherited rather than restated.
 
 A section is never a breadcrumb ancestor — it groups rows visually; it is not
 above them.
@@ -155,16 +166,15 @@ swap.
 **What the client changes.** The rows themselves — id, label, icon, badge — and
 which of them are grouped, nested or sectioned.
 
-> **NO ROWS EXIST ANYWHERE IN THIS REPO.** `AppSideNav` takes `items: NavItem[]`
-> and renders **nothing** by default; the package exports no sample, and the demo
-> renders the bare chrome rather than inventing rows to fill it. The 22 iosense
-> pages that used to be here are deleted.
+> **NO ROWS ARE EXPORTED.** `AppSideNav` takes `items: NavItem[]` and renders
+> **nothing** by default. The 22 iosense pages are in the repo — the demo shows
+> them — but they sit in `demo/iosenseNav.tsx`, on the host's side of the line,
+> and the package ships no sample of its own.
 >
-> That is why this section reads the way it does. The behaviour below is not
-> demonstrated anywhere you can click except the stories — it is **specified**
-> here, contracted in `guards/NavItems.guard.json`, and exercised in
-> `stories/SideNav.stories.tsx` and `stories/Rules.stories.tsx` against fixtures
-> that live with the stories.
+> That is why this section reads the way it does. The behaviour below is
+> **specified** here rather than inferred from the demo's rows, contracted in
+> `guards/NavItems.guard.json`, and exercised in `stories/SideNav.stories.tsx`
+> and `stories/Rules.stories.tsx` against fixtures that live with the stories.
 
 ### The fixed rules
 
@@ -256,34 +266,37 @@ Two rules there are load-bearing and easy to get wrong:
 
 - **The logo never shifts.** It sits in the 48px header in both states, so the
   rail's top-left is a fixed point while everything under it changes.
-- **A section is forced open when collapsed.** Folded, it would be a hairline
-  with no affordance to unfold it, and every icon inside would be stranded.
+- **A section always shows its rows**, at either width. It no longer folds at
+  all, so there is no collapsed-state exception left to make.
 
-### The third state: hover-peek
+### The third state: the keyboard peek
 
-Not two states — three. **Peek is a hover, and it is not the same as pinned.**
+Not two states — three. **Peek is not the same as pinned.**
 
 | | Pinned | Peeked | Collapsed |
 |---|---|---|---|
 | Panel drawn at | 240px | **240px** | 48px |
 | Footprint | 240px | **48px** | 48px |
 | Page content | offset | **does not move** | offset |
-| Set by | the top bar's toggle | hovering the rail | the toggle |
+| Set by | the top bar's toggle | focus entering the rail | the toggle |
 
 A peek widens `.fds-sidenav__inner` as an **overlay** over a 48px footprint.
 Only pinning sets `data-sidenav-pinned`, and only that reflows the page.
 
-Open after **150ms**, close after **100ms** — crossing the rail on the way
-somewhere else does nothing, but a panel that lingers after you have left feels
-stuck rather than forgiving.
+**Hover used to peek it open and no longer does.** Moving the mouse across the
+strip now leaves it alone; the rail expands only when the user asks for it, or
+when focus lands inside it. Open after **150ms**, close after **100ms** —
+tabbing through still touches each row on the way past, and an instant expand on
+the first of them is a flash.
 
 > **Never key your own behaviour on `isPinned` meaning "open".** During a peek
-> the rail is expanded and not pinned, so anything that does is wrong for the
-> whole duration of the hover. That bug is why the peek is owned in React at
+> the rail is expanded and not pinned, so anything that does is wrong for as
+> long as focus is inside it. That bug is why the peek is owned in React at
 > all: the SDK sets `data-hovered` inside its own DOM where React cannot see it,
 > so the component believed it was a 48px strip while the user looked at a 240px
 > panel — tooltips fired on rows whose labels were plainly readable, and the
-> organisation name stayed hidden.
+> organisation name stayed hidden. Both state objects still strip
+> `data-hovered`, which is also what keeps the SDK's own hover-expand off.
 
 ### Row states
 
@@ -863,11 +876,10 @@ rendering a nav row *outside* the rail, which nobody has asked for yet.
 
 **One deliberate behaviour change.** First-visit defaults used to be
 `['workflows', 'connect']`, which were iosense's own ids. The rule is now
-**every section open, every accordion closed** — a folded section in a fresh
-install is a hairline label with no affordance to unfold it and it strands every
-row inside, whereas a folded accordion still shows its parent row. Override with
-`defaultOpenGroups`. Existing users keep whatever they had; this only affects a
-first run.
+**nothing open on a first visit**: sections do not fold, so there is nothing to
+pre-open, and a folded accordion still shows its parent row. Override with
+`defaultOpenGroups`, which now only means accordions. Existing users keep
+whatever they had; this only affects a first run.
 
 **Order of work from here:**
 

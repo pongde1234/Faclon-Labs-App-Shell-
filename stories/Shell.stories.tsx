@@ -146,9 +146,9 @@ export const Branded: Story = {
  * Every row type at once: badges of both kinds, two accordions and a section.
  *
  * These rows are a FIXTURE, invented for the story and living beside it. No nav
- * ships in the package and none is rendered by the demo either — the demo is the
- * bare chrome. Stories are the only place in this repo where the rail has rows,
- * because a story is where a behaviour is meant to be isolated.
+ * ships in the package. The demo has rows of its own — the iosense product's —
+ * but a story wants a small hand-made set instead, because a 22-row rail buries
+ * the one behaviour the story is meant to isolate.
  */
 export const EveryRowType: Story = {
   render: () => (

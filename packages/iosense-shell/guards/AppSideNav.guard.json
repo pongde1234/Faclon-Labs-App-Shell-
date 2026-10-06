@@ -2,7 +2,7 @@
   "$schema": "./guard.schema.json",
   "component": "AppSideNav",
   "import": "@faclon-labs/iosense-shell",
-  "purpose": "The product's navigation rail: a 240px panel that collapses to a 48px icon strip, peeks open on hover, and carries nested groups, flyouts and badges. Built on the SDK's SideNavBar.",
+  "purpose": "The product's navigation rail: a 240px panel that collapses to a 48px icon strip, peeks open when focus enters it (hover does NOT open it), and carries nested groups, flyouts and badges. Built on the SDK's SideNavBar.",
   "useInstead": [
     {
       "when": "you want a shell with no design-system dependency",
@@ -28,7 +28,7 @@
       "content",
       "mobile"
     ],
-    "beforeTheRules": "There are THREE states, not two: pinned open, peeked open, and collapsed. Pinned is a click and moves the page; peeked is a hover and floats over it. Conflating them is the mistake this component was rewritten to avoid.",
+    "beforeTheRules": "There are THREE states, not two: pinned open, peeked open, and collapsed. Pinned is a click and moves the page; peeked is keyboard focus entering the rail and floats over it. HOVER DOES NOTHING — the pointer handlers were removed. Conflating them is the mistake this component was rewritten to avoid.",
     "rules": [
       {
         "stage": "state",
@@ -39,7 +39,7 @@
       },
       {
         "stage": "hover",
-        "if": "you are tempted to let the SDK handle the hover peek",
+        "if": "you are tempted to let the SDK handle the peek",
         "then": "do not — this component strips the SDK's `data-hovered` in BOTH states and drives the peek itself",
         "because": "the SDK sets that attribute inside its own DOM, where React cannot see it. During an SDK-driven peek the component still believed it was a 48px strip while the user looked at a 240px panel: tooltips fired on readable labels, nested groups opened flyouts beside an already-wide panel, and the organisation name stayed hidden",
         "certainty": "high"
@@ -89,7 +89,7 @@
   "accessibility": {
     "keyboard": "Tab reaches every row. Expand triggers are buttons; navigation rows are links. Focus entering a collapsed rail peeks it open so the labels are readable — without that, a keyboard user gets sixteen unlabelled glyphs.",
     "aria": "The current row carries aria-current=\"page\". Expandable rows carry aria-expanded and an aria-controls that resolves. Collapsed, the parent row stands in for whichever child is current, or the strip would mark nothing at all.",
-    "notes": "Tooltips appear ONLY when a label is unreadable — the 48px strip, or an expanded label truncated by an ellipsis. Never when the text is right there. Since hovering a collapsed row now peeks the rail open, the collapsed-rail tooltip is in practice reserved for truncation."
+    "notes": "Tooltips appear ONLY when a label is unreadable — the 48px strip, or an expanded label truncated by an ellipsis. Never when the text is right there. Hover no longer peeks the rail open, so the collapsed-rail tooltip is the only thing naming a row under the pointer and carries its full weight again."
   },
   "composition": {
     "childrenContract": "None. The nav tree is defined inside this component. `workspace` is the only content slot — the organisation row in the header.",
@@ -99,7 +99,7 @@
     {
       "dont": "Keying behaviour on `isPinned` to mean 'the rail is open'",
       "do": "Key it on the derived open state, or on data-state=\"expanded\" in CSS",
-      "why": "isPinned is false during a hover peek, so every such rule is wrong for exactly the case the peek exists to serve"
+      "why": "isPinned is false during a peek, so every such rule is wrong for exactly the case the peek exists to serve"
     },
     {
       "dont": "Letting the SDK's own hover expand the rail",

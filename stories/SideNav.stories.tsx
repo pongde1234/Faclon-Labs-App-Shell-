@@ -27,7 +27,7 @@ const meta = {
     docs: {
       description: {
         component:
-          'The rail ships EMPTY. What the package provides is the behaviour — hover peek, ' +
+          'The rail ships EMPTY. What the package provides is the behaviour — the keyboard peek, ' +
           'the tooltip that only fires on an unreadable label, the accordion that opens ' +
           'itself on a deep link, the flyout in the 48px strip. The rows are data you pass.',
       },
@@ -103,8 +103,9 @@ export const AccordionOpensForActiveChild: Story = {
 }
 
 /**
- * §1.2(c) — a section: a labelled group whose label folds it away. Click
- * "Connect" to fold it.
+ * §1.2(c) — a section: a 12px medium caption over a group of rows. "Connect" is not a
+ * control — no chevron, no hover, nothing to click. It used to fold; see the
+ * note in navItems.ts for why that went.
  */
 export const Sections: Story = {
   args: { items: SECTION_ROWS },
@@ -115,7 +116,8 @@ export const Sections: Story = {
  * alert, and hovering a row gives you the label — with the number appended,
  * since the dot says THAT there is something but not what.
  *
- * Hover the rail itself and it peeks open, without moving anything to its right.
+ * Hover does NOT open it — that was removed. Tab into it and it peeks open for
+ * the keyboard, without moving anything to its right.
  */
 export const Collapsed: Story = {
   args: { items: BADGED_ROWS, isPinned: false },
@@ -133,11 +135,11 @@ export const CollapsedFlyout: Story = {
 }
 
 /**
- * A section is FORCE-EXPANDED in the strip, even if you folded it while open.
- * A folded section here would be a hairline with no affordance to unfold it,
- * and it would strand every icon inside.
+ * A section in the strip. Its rows are all here, the same as at full width —
+ * there is no folded state to force open any more, which is half the reason
+ * folding went: the control could never be live at both widths.
  */
-export const CollapsedSectionStaysOpen: Story = {
+export const CollapsedSection: Story = {
   args: { items: SECTION_ROWS, isPinned: false },
 }
 

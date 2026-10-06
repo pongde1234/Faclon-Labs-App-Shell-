@@ -17,9 +17,16 @@ import { IosenseDemo } from './IosenseDemo'
 import '@faclon-labs/design-sdk/styles.css'
 import '@faclon-labs/fds/styles.css'
 import '@faclon-labs/iosense-shell/theme-overrides.css'
+import './demo.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    {/* An <AiGradientDefs /> used to sit here, outside the shell — a bare
+        <svg><defs> holding the paint server the old assistant glyph stroked
+        itself with. It had to be outside, because every direct child of the
+        content container takes the 16px gap even when it draws nothing. The
+        Bruce AI mark defines its gradients inside its own <svg>, so there is
+        nothing left to hoist. */}
     <IosenseDemo />
   </StrictMode>,
 )

@@ -74,9 +74,14 @@ const CLOSED_STATE = { 'data-state': 'collapsed', 'data-hovered': undefined } as
 >
 
 /**
- * Hover intent for the peek. Opening waits so that crossing the rail on the way
- * somewhere else does nothing; closing is quick, because a panel that lingers
- * after you have left feels stuck rather than forgiving.
+ * Timing for the peek, which is now a KEYBOARD affordance only — hover no
+ * longer opens the rail.
+ *
+ * The open delay was hover intent: crossing the rail on the way somewhere else
+ * should not expand it. Focus has no such problem, so the delay buys little
+ * now; it is kept because tabbing THROUGH a collapsed rail still briefly lands
+ * on each row, and an instant expand on the first of them is a flash. Closing
+ * stays quick — a panel that lingers after focus has gone feels stuck.
  */
 const PEEK_OPEN_MS = 150
 const PEEK_CLOSE_MS = 100
@@ -196,10 +201,11 @@ export interface AppSideNavProps {
    * not its contents.
    *
    * Three shapes, all in `navItems.ts`: a plain entity, an accordion (a row
-   * with `children`), and a section (`kind: 'section'`, a labelled group that
-   * folds).
+   * with `children`, which folds), and a section (`kind: 'section'`, a labelled
+   * group that does not).
    *
-   * NOTHING IN THIS REPO RENDERS ROWS — not the package, not the demo. What the
+   * THE PACKAGE EXPORTS NO ROWS. The demo renders its own, from
+   * demo/iosenseNav.tsx. What the
    * rail does with them is specified in STORY.md §1.2 and §1.4, contracted in
    * guards/NavItems.guard.json, and exercised in stories/SideNav.stories.tsx
    * and stories/Rules.stories.tsx against fixtures that live with the stories.
@@ -238,14 +244,13 @@ export interface AppSideNavProps {
   footer?: ReactNode
 
   /**
-   * Which accordions and sections are unfolded on a FIRST visit, before the
-   * user has expressed a preference. Afterwards their choice is remembered and
-   * this is ignored.
+   * Which **accordions** are unfolded on a FIRST visit, before the user has
+   * expressed a preference. Afterwards their choice is remembered and this is
+   * ignored.
    *
-   * Defaults to every **section** id and no accordion. A folded section in a
-   * fresh install is a hairline label with no affordance to unfold it and it
-   * strands every row inside it; a folded accordion still shows its parent row,
-   * so it costs nothing.
+   * Defaults to none. Sections are not in this at all any more — they do not
+   * fold, so there is nothing to pre-open; a folded accordion still shows its
+   * parent row, so starting closed costs nothing.
    */
   defaultOpenGroups?: string[]
 }
@@ -272,24 +277,31 @@ const OPEN_GROUPS_KEY = 'iosense:sidenav-open-groups'
 /**
  * Unfolded on a first visit — an accordion's `defaultValue`, for the rail.
  *
- * Every SECTION and no accordion, unless the host says otherwise. A folded
- * section in a fresh install is a hairline with no affordance to unfold it and
- * it strands every row inside; a folded accordion still shows its parent row.
+ * NOTHING, unless the host says otherwise. This used to return every section
+ * id, because a folded section stranded the rows inside it; sections no longer
+ * fold at all, so there is nothing to pre-open. A folded accordion still shows
+ * its parent row, so it costs nothing and starts closed.
+ *
+ * Kept as a function rather than inlined as `[]`: it is the one place the
+ * first-visit rule is written down, and a host overriding `defaultOpenGroups`
+ * is reading this to know what it is overriding.
  */
-const defaultOpenFor = (items: NavItem[]) =>
-  items.filter(isSection).map((section) => section.id)
+const defaultOpenFor = (_items: NavItem[]): string[] => []
 
 /**
- * Which collapsible sections are unfolded, remembered across reloads.
+ * Which accordions are unfolded, remembered across reloads.
  *
- * One Set rather than a boolean per section, because the answer is always "which
- * of these are open" and it serialises as-is. Sections are independent — opening
+ * One Set rather than a boolean per group, because the answer is always "which
+ * of these are open" and it serialises as-is. They are independent — opening
  * one never closes another, the accordion's `multiple` mode.
+ *
+ * A stored entry from before sections stopped folding may still hold section
+ * ids. Harmless: nothing reads them now, and the next toggle rewrites the key.
  */
 function useOpenGroups(fallback: string[]) {
   // Read once, on mount. `fallback` is only the FIRST-VISIT answer, so it is
   // deliberately not a dependency — recomputing it when the items array
-  // identity changes would re-open sections the user had just folded.
+  // identity changes would re-open accordions the user had just folded.
   const [openGroups, setOpenGroups] = useState<Set<string>>(() => {
     try {
       const stored = localStorage.getItem(OPEN_GROUPS_KEY)
@@ -313,7 +325,7 @@ function useOpenGroups(fallback: string[]) {
   }, [])
 
   // Returns the same Set when the id is already open, so navigating inside a
-  // section that is already unfolded doesn't re-render the rail.
+  // accordion that is already unfolded doesn't re-render the rail.
   const open = useCallback((id: string) => {
     setOpenGroups((prev) => (prev.has(id) ? prev : new Set(prev).add(id)))
   }, [])
@@ -428,9 +440,36 @@ function useLabelTruncated() {
 }
 
 /** One nav row: icon + label, tooltip when collapsed or clipped. */
+/**
+ * THE ROW'S TEXT, WEARING ONE OF THE SYSTEM'S NAMED TYPE STYLES.
+ *
+ * `BodyLargeMedium` and `BodyLargeRegular` are the design system's own styles —
+ * size, leading, weight and tracking declared together, in one place. Applying
+ * the class is the point: this file then states no type of its own, so a change
+ * to the style carries here without anyone editing a stylesheet.
+ *
+ * TWO THINGS MAKE THIS THE ONLY PLACE IT CAN GO.
+ *
+ * The class cannot sit on the BUTTON: the SDK's `.fds-sidenav-menu-button`
+ * rule and the style's rule are both single-class, and the button's is later in
+ * the same stylesheet — so it would win and the style would do nothing. On the
+ * label span nothing competes, because the SDK sets type on the button and an
+ * element's own class always beats what it inherits.
+ *
+ * And the span has to be built here, because `SideNavBarMenuButton` types
+ * `label` as `string`. It RENDERS it as a child — `<span class="…__label">
+ * {label}</span>` — so a node arrives in the DOM intact; the type is narrower
+ * than the implementation. Hence the cast, which is deliberately confined to
+ * this one function rather than spread across the call sites. If the SDK ever
+ * widens `label` to `ReactNode`, delete the cast and nothing else changes.
+ */
+const styledLabel = (text: string, style: string) =>
+  (<span className={style}>{text}</span>) as unknown as string
+
 function NavRow({
   icon,
   label,
+  textStyle = 'BodyLargeMedium',
   isActive,
   isCollapsed,
   onClick,
@@ -442,6 +481,12 @@ function NavRow({
 }: {
   icon: React.ReactNode
   label: string
+  /**
+   * Which of the system's named type styles the label wears. Defaults to the
+   * entity's — pass `BodyLargeRegular` for a nested row, which is the one place
+   * depth is expressed, since every row keeps the same size.
+   */
+  textStyle?: string
   isActive?: boolean
   isCollapsed: boolean
   onClick?: () => void
@@ -462,10 +507,26 @@ function NavRow({
         <SideNavBarMenuButton
           ref={ref}
           icon={icon}
-          label={label}
+          label={styledLabel(label, textStyle)}
           isActive={isActive}
           onClick={onClick}
           trailing={trailing}
+          /* THE ROW'S NAME IN THE 48px STRIP.
+             The SDK builds the button's accessible name out of its children,
+             and collapsed it hides the label and the trailing slot with
+             `visibility: hidden` — which takes them out of the accessibility
+             tree, not just out of sight. The icon is an unlabelled <svg>, so
+             the button is left with NO NAME AT ALL and a screen reader reads
+             it as just "button".
+             The tooltip does not rescue it: fds's Tooltip wires
+             `aria-describedby`, which is a DESCRIPTION. A description cannot
+             stand in for a name.
+             So the name is stated explicitly, and only while collapsed —
+             expanded, the visible label is the name, and an aria-label there
+             would override the badge out of it ("Finance 12" becoming
+             "Finance"). `isCollapsed` is already false during a hover peek,
+             which is correct: the label is on screen then. */
+          aria-label={isCollapsed ? tooltip : undefined}
         />
       </RailTooltip>
     </SideNavBarMenuItem>
@@ -541,12 +602,18 @@ function NestedNavItem({
   const button = (
     <SideNavBarMenuButton
       icon={item.icon}
-      label={item.label}
+      // An accordion's parent row is an ENTITY — it sits at the top level and
+      // takes the entity style; only its children step down to regular.
+      label={styledLabel(item.label, 'BodyLargeMedium')}
       // Collapsed, the child rows are display:none, so the parent stands in for
       // whichever of them is current — otherwise the strip marks NOTHING while
       // you sit on a child page. Expanded, the tree shows the real child and
       // containment is already legible, so the parent stays unmarked.
       isActive={isCollapsed && childActive}
+      // Same naming problem as a plain row, same fix — see NavRow. Collapsed,
+      // this button's label is out of the accessibility tree and the glyph
+      // names nothing, so the name is stated.
+      aria-label={isCollapsed ? item.label : undefined}
       {...(isCollapsed
         ? {}
         : { 'aria-expanded': expanded, onClick: () => onToggle(item.id) })}
@@ -563,7 +630,11 @@ function NestedNavItem({
   return (
     <SideNavBarMenuItem
       className="app-sidenav__group"
-      data-has-flyout="true"
+      // `data-has-flyout` used to sit here. Its only reader was the corner tick
+      // drawn on a collapsed accordion's icon — "there is more behind this" —
+      // and that is gone, so the attribute went with it rather than staying as
+      // markup nothing looks at. `data-flyout-id` stays: focus is restored
+      // through it after the panel closes (see the querySelector above).
       data-flyout-id={item.id}
     >
       {isCollapsed ? (
@@ -603,6 +674,9 @@ function NestedNavItem({
             className={'isRecord' in child && child.isRecord ? 'app-sidenav__sub-item--record' : undefined}
             icon={child.icon}
             label={child.label}
+            // The one step down in the rail: same size, lighter weight. The
+            // rows are already indented, so size would say it twice.
+            textStyle="BodyLargeRegular"
             isActive={activeId === child.id}
             // Never collapsed in practice — the sub-list is hidden in the icon
             // strip — so their tooltip is purely the clipped-label case.
@@ -616,48 +690,40 @@ function NestedNavItem({
 }
 
 /**
- * A labelled section whose label is also its disclosure control — clicking
- * "Connect" folds the section away, like the nested Workflows group.
+ * A labelled section: the name, then its rows. NOT a disclosure control.
  *
- * The SDK's GroupLabel renders a <div> (so a <button> inside is valid) whose
- * text span is `pointer-events: none` while the rail is collapsed, so the
- * control is only live once the rail is open.
+ * IT DOES NOT FOLD, deliberately. The label used to be a button that folded the
+ * section away, and the behaviour never paid for itself: a section is a
+ * grouping, not a destination, so folding one only ever hid rows the user still
+ * had to reach, and the control had to be force-disabled in the 48px strip
+ * anyway — where a folded section is a hairline with no affordance to unfold it
+ * and strands every icon inside. One rail that always shows its rows beats a
+ * control that is live at one width and inert at the other.
  *
- * Folding only applies to the open rail: in the 48px strip the section is forced
- * back open, because the label there is just a hairline with no affordance to
- * unfold it again, and a folded section would strand every icon inside it.
+ * ACCORDIONS STILL FOLD. The difference is that an accordion's parent row is
+ * itself a thing — a page or a toggle that stays on screen — so folding it hides
+ * nothing you cannot get back from the row still in front of you.
  */
-function NavGroup({
-  label,
-  children,
-  isOpen,
-  onToggle,
-  isRailCollapsed,
-}: {
-  label: string
-  children: React.ReactNode
-  isOpen: boolean
-  onToggle: () => void
-  isRailCollapsed: boolean
-}) {
-  const expanded = isOpen || isRailCollapsed
-
+function NavGroup({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <SideNavBarGroup>
       <SideNavBarGroupLabel>
-        <button
-          type="button"
-          className="app-sidenav__group-label"
-          aria-expanded={isOpen}
-          onClick={onToggle}
-        >
-          {label}
-          <ChevronDown size={14} className="app-sidenav__group-chevron" aria-hidden="true" />
-        </button>
+        {/* `BodyXSmallMedium` is the SDK's OWN named type style — 10px / its
+            matching leading / medium — applied as the class rather than
+            re-declared property by property in theme-overrides.css. The local
+            class next to it carries only layout and the uppercasing, so there
+            is one owner for the type and one for the shape.
+
+            It wins because it sits on this span: the SDK styles the PARENT
+            (`__text`), and an element's own class beats anything inherited. */}
+        <span className="app-sidenav__group-label BodyXSmallMedium">{label}</span>
       </SideNavBarGroupLabel>
-      <CollapsibleMenu isOpen={expanded} menuClassName="app-sidenav__group-body">
-        {children}
-      </CollapsibleMenu>
+      {/* The same <menu> the collapsible wrapper used to render, kept because
+          the SDK's menu owns the row-to-row spacing — dropping it would put a
+          gap between every pair of rows in a section and nowhere else. Its
+          `app-sidenav__group-body` class is not kept: nothing styled it once
+          the collapsible box around it went. */}
+      <SideNavBarMenu>{children}</SideNavBarMenu>
     </SideNavBarGroup>
   )
 }
@@ -690,8 +756,12 @@ export function AppSideNav({
   const [openFlyout, setOpenFlyout] = useState<string | null>(null)
 
   /**
-   * The hover preview, owned here rather than by the SDK — see the note on
-   * CLOSED_STATE for why that ownership is the point.
+   * The peek, owned here rather than by the SDK — see the note on CLOSED_STATE
+   * for why that ownership is the point.
+   *
+   * KEYBOARD ONLY now. Hover used to open it; it does not. What is left expands
+   * the rail when focus enters a collapsed one, so a keyboard user does not
+   * have to work through sixteen unlabelled glyphs.
    *
    * A pinned rail has nothing to preview, and the mobile drawer renders this
    * component with `isPinned`, so that one condition disables the peek in both
@@ -750,19 +820,34 @@ export function AppSideNav({
           Only the reserved footprint still needs an override (theme-overrides.css). */}
       <SideNavBar
         {...(isOpen ? OPEN_STATE : CLOSED_STATE)}
-        // `pointerType` rather than a hover media query: on touch,
-        // pointerenter arrives with the tap meant to follow a link and no
-        // leave ever comes, so the rail would stay peeked open.
-        onPointerEnter={(e) => {
-          if (!isPinned && e.pointerType === 'mouse') schedulePeek(true)
+        /* HOVER NO LONGER OPENS THE RAIL. `onPointerEnter` / `onPointerLeave`
+           used to schedule a peek here, so moving the mouse across the strip
+           expanded it over the page. The rail now opens only when the user
+           asks: the top bar's toggle, or Ctrl/Cmd+B.
+
+           The SDK's own hover-expand stays off too, and was never doing the
+           work — both state objects above strip its `data-hovered`, so its
+           `[data-hovered='true']` rules have nothing to match. Removing the
+           handlers is therefore the whole change; nothing has to be suppressed
+           in CSS. */
+        /* KEYBOARD ONLY, and `:focus-visible` is what draws that line.
+           Without it someone tabbing into a collapsed rail gets sixteen
+           unlabelled glyphs — but a MOUSE CLICK focuses the row too, so this
+           handler used to expand the rail whenever anyone clicked an icon in
+           the strip. The rail is opened by its toggle, not by using it.
+
+           `:focus-visible` is the browser's own answer to "should this focus be
+           announced": true for Tab, false for a pointer press on a button. So
+           the affordance survives for the keyboard and disappears for the
+           mouse, without us guessing at input modality ourselves.
+
+           Capture phase, because focus lands on a descendant, never on the
+           panel. */
+        onFocusCapture={(e) => {
+          if (isPinned) return
+          if (!(e.target as HTMLElement).matches(':focus-visible')) return
+          schedulePeek(true)
         }}
-        onPointerLeave={(e) => {
-          if (e.pointerType === 'mouse') schedulePeek(false)
-        }}
-        // Keyboard parity. Without it someone tabbing into a collapsed rail
-        // gets sixteen unlabelled glyphs. Capture phase, because focus lands
-        // on a descendant and never on the panel itself.
-        onFocusCapture={() => { if (!isPinned) schedulePeek(true) }}
         onBlurCapture={(e) => {
           if (!e.currentTarget.contains(e.relatedTarget as Node | null)) schedulePeek(false)
         }}
@@ -807,13 +892,7 @@ export function AppSideNav({
                 gap between every pair of rows. */}
             {blocks.map((block) =>
               block.kind === 'section' ? (
-                <NavGroup
-                  key={block.section.id}
-                  label={block.section.label}
-                  isOpen={openGroups.has(block.section.id)}
-                  onToggle={() => toggleGroup(block.section.id)}
-                  isRailCollapsed={!isPinned}
-                >
+                <NavGroup key={block.section.id} label={block.section.label}>
                   {block.section.items.map((item) => (
                     <NavRow
                       key={item.id}

@@ -35,8 +35,10 @@ export type { NavItem, NavEntity, NavAccordion, NavSection, NavBadge, NavTone } 
 // carry were the iosense product's own, and a package that exported them would
 // put them into every install that forgot to pass its own.
 //
-// The demo does not render rows either — it is the bare chrome. The rail's
-// behaviour is written down instead of demonstrated:
+// The demo DOES render rows, and they are its own: demo/iosenseNav.tsx, a file
+// no consumer installs. That is the arrangement this package asks of you —
+// the rows live in the host, the behaviour lives here. The behaviour is also
+// written down rather than left to the demo:
 //   STORY.md §1.2 and §1.4        specify it
 //   guards/NavItems.guard.json   contracts it
 //   stories/SideNav + Rules      exercise it, against their own fixtures
@@ -50,6 +52,11 @@ export { AppTopBar } from './AppTopBar'
 export type { Crumb, AppTopBarProps } from './AppTopBar'
 export { AppNavDrawer } from './AppNavDrawer'
 export { NotificationBell } from './NotificationBell'
+// The launcher PANEL — the grid, the tile and the focus handling. The apps
+// themselves do not ship: only the host can enumerate which applications exist
+// and which this user may open, so they arrive as a prop.
+export { AppLauncher } from './AppLauncher'
+export type { LauncherApp } from './AppLauncher'
 export { ProfileMenu } from './ProfileMenu'
 export { WorkspaceLabel } from './WorkspaceSwitcher'
 

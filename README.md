@@ -51,7 +51,9 @@ packages/
                     SideNavLink, Breadcrumb, tokens.css, guards/
   iosense-shell/    the product chrome. IosenseShell, AppSideNav, AppTopBar,
                     the menus, navItems.ts, theme-overrides.css, guards/
-demo/               a runnable consumer — imports the packages BY NAME
+demo/               a runnable consumer — imports the packages BY NAME.
+                    iosenseNav.tsx holds the product's 22 rows: the host's
+                    content, which is why it is here and not in a package
 stories/            one story file per section of STORY.md
 STORY.md            the structure document: what each part is, what ships
                     fixed, and what you can change

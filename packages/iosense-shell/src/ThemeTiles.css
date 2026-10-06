@@ -16,7 +16,7 @@
    this reads as the same kind of field as the rest of the system. */
 .theme-tiles__legend {
   padding: 0;
-  margin-bottom: var(--spacing-03);
+  margin-bottom: var(--spacing-8);
   color: var(--text-gray-primary);
   font-size: var(--font-size-200);
   font-weight: var(--font-weight-500);
@@ -26,19 +26,22 @@
 .theme-tiles__row {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--spacing-03);
+  gap: var(--spacing-8);
 }
 
 .theme-tiles__tile {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-02);
+  gap: var(--spacing-4);
   cursor: pointer;
   min-width: 0;
 }
 
 /* Clipped, NOT display:none — the input has to stay in the a11y tree and on the
-   keyboard. This is the standard visually-hidden recipe. */
+   keyboard. This is the standard visually-hidden recipe, and its 1px is a
+   LITERAL on purpose: it was `--border-width-thin`, which is the same 1px but
+   belongs to the border ramp. Retuning that ramp would silently resize an
+   accessibility affordance that has nothing to do with borders. */
 .theme-tiles__input {
   position: absolute;
   width: 1px;
@@ -58,7 +61,7 @@
   aspect-ratio: 4 / 3;
   overflow: hidden;
   border-radius: var(--global-border-radius-medium);
-  border: 1px solid var(--border-gray-subtle);
+  border: var(--border-width-thin) solid var(--border-neutral-default);
   transition:
     border-color var(--fds-duration-quick) var(--fds-easing-standard),
     box-shadow var(--fds-duration-quick) var(--fds-easing-standard);
@@ -67,17 +70,22 @@
 /* Selected and focus rings are drawn on the PREVIEW, because the input it
    belongs to is clipped to a pixel and cannot show one itself. */
 .theme-tiles__input:checked + .theme-tiles__preview {
-  border-color: var(--border-brand-default, var(--text-brand-default));
-  box-shadow: 0 0 0 2px var(--border-brand-default, var(--text-brand-default));
+  border-color: var(--border-brand-default);
+  box-shadow: 0 0 0 var(--spacing-2) var(--border-brand-default);
 }
 
+/* fds's own composite ring, the same one the launcher tiles and the profile
+   trigger use. This was a 2px outline in `--border-focused-default` — a
+   design-sdk-only token (fds calls it `--border-focused`) that resolves to a
+   24%-alpha wash, so the ring was nearly invisible on the tile it was meant to
+   mark. The composite draws an inner ring in the surface colour and the brand
+   ring outside it, which reads on any of the three tile grounds. */
 .theme-tiles__input:focus-visible + .theme-tiles__preview {
-  outline: 2px solid var(--border-focused-default);
-  outline-offset: 2px;
+  box-shadow: var(--focus-ring-shadow);
 }
 
 .theme-tiles__tile:hover .theme-tiles__preview {
-  border-color: var(--border-gray-default, var(--border-gray-subtle));
+  border-color: var(--border-gray-default, var(--border-neutral-default));
 }
 
 /* ---- the miniature itself ---- */
@@ -135,14 +143,14 @@
   gap: 12%;
   height: 100%;
   padding: 12%;
-  border-radius: 2px;
+  border-radius: var(--radius-xs);
   background: var(--card);
 }
 
 .theme-tiles__bar {
-  height: 2px;
+  height: var(--spacing-2);
   width: 55%;
-  border-radius: 1px;
+  border-radius: var(--radius-xs);
   background: var(--ink);
 }
 

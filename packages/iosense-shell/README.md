@@ -83,12 +83,12 @@ export default function App() {
 **The rail ships empty.** This package is the chrome's *behaviour*, not its
 contents — and none of that behaviour depends on which rows are in it:
 
-- hover peek at 150/100ms that widens the panel **without moving the page**
+- a keyboard peek at 150/100ms that widens the panel **without moving the page** — hover does not open it
 - a tooltip only when a label is genuinely unreadable — the 48px strip, or an ellipsis
 - an accordion that opens itself when a child becomes active, so a deep link never lands hidden
 - a flyout beside the strip when there is nowhere to unfold into
 - a badge that becomes a dot on the icon when the rail collapses
-- a section that force-expands while collapsed, because a folded one there is a hairline that strands its icons
+- a section that always shows its rows — the label is a caption, not a control
 
 Three row shapes:
 
@@ -96,17 +96,19 @@ Three row shapes:
 |---|---|---|
 | **Entity** | `{ id, label, icon, badge? }` | the plain row |
 | **Accordion** | `{ id, label, icon, children: [] }` | the parent row *is* the toggle; only accordions appear in the breadcrumb trail |
-| **Section** | `{ kind: 'section', id, label, items: [] }` | a labelled group that folds; **never** a breadcrumb ancestor |
+| **Section** | `{ kind: 'section', id, label, items: [] }` | a labelled group; the label is a caption, it does **not** fold; **never** a breadcrumb ancestor |
 
 The trailing `badge` is either a **Counter** (a quantity — `{ kind: 'count', value: 12, tone: 'info' }`)
 or a **Badge** (a word — `{ kind: 'word', label: 'Beta', tone: 'label' }`). Not a
 Chip: Chip renders a `<button>` and the row is already a `<button>`.
 
-**No sample nav is exported, and none exists anywhere in the repo.** A shell has
-no opinion about what your pages are, and the demo renders the bare chrome — an
-empty rail — rather than inventing rows to fill it.
+**No sample nav is exported.** A shell has no opinion about what your pages are.
+The demo does render a full rail — the iosense product's 22 pages — but from
+`demo/iosenseNav.tsx`, a file in the repo that no consumer installs. That split
+is the arrangement this package asks of you: the rows are yours, the behaviour
+is ours.
 
-What the rail *does* with the rows you pass is written down instead:
+What the rail *does* with the rows you pass is also written down:
 [STORY.md](../../STORY.md) §1.2 and §1.4 specify it, `guards/NavItems.guard.json`
 contracts it, and `stories/SideNav.stories.tsx` and `stories/Rules.stories.tsx`
 exercise every case against their own fixtures.
@@ -198,7 +200,7 @@ Fonts are the host's: the product uses Inter (`@fontsource/inter` 400/500/600/70
 
 ```
 IosenseShell.tsx    the assembly — rail + bar + drawer + content sheet
-AppSideNav.tsx      the rail — nested groups, flyouts, badges, hover peek
+AppSideNav.tsx      the rail — nested groups, flyouts, badges, keyboard peek
 navItems.ts         the nav DATA MODEL — entity / accordion / section
 (no sample nav ships — the demo has a placeholder one)
 AppTopBar.tsx       breadcrumbs, notifications, profile
@@ -274,23 +276,35 @@ Full rationale in [STORY.md](STORY.md) §3.
 
 ## Deliberately NOT exported
 
-- **The application launcher** (the grid of apps) and **the assistant button**.
-  Both are product surfaces rather than chrome: one opens an assistant this
-  package knows nothing about, the other lists applications only the host can
-  enumerate. `AppTopBar` takes an `actions` slot instead — pass your own.
+- **The applications themselves**, and **the assistant button**. Which products
+  exist and which a given user may open is something only the host can answer,
+  and the assistant opens something this package knows nothing about. The
+  launcher *panel* does ship — see below — but its `apps` are a prop, and the
+  assistant arrives whole through the top bar's `assistant` slot.
 
 ## Behaviour worth knowing
 
-- **The rail peeks on hover and pins on click**, and the two are different
-  states. A peek widens `.fds-sidenav__inner` over the page while the footprint
-  stays 48px, so the content does not move. Only pinning sets
+- **The launcher grid caps at 8 apps.** Past that it shows the first eight and a
+  ninth **More** tile that calls `onShowAll` — eight plus one is three full rows,
+  so the panel keeps one shape whether you have nine applications or ninety. The
+  cap is absolute: nine apps show eight and hide one, rather than special-casing
+  the row that happens to fit. Order is your priority signal — the launcher never
+  reorders. **Omit `onShowAll` and nothing is capped**, because hiding apps behind
+  a tile that leads nowhere would make them unreachable.
+
+- **Hover does not open the rail.** It opens from the top bar's toggle or
+  Ctrl/Cmd+B, and peeks open when focus enters it from the keyboard — three
+  states, not two. A peek widens `.fds-sidenav__inner` over the page while the
+  footprint stays 48px, so the content does not move. Only pinning sets
   `data-sidenav-pinned`, which is what widens the footprint and reflows the page.
 - **The peek is owned in React, not by the SDK.** Both state objects strip the
   SDK's own `data-hovered` and a peek is expressed as `data-state="expanded"`.
   Without that the component could not know it was expanded, and every
-  behaviour keyed on `isPinned` was wrong during a hover — tooltips fired on
+  behaviour keyed on `isPinned` was wrong while it was — tooltips fired on
   rows whose labels were plainly readable, and the organisation name stayed
-  hidden.
+  hidden. Stripping `data-hovered` is also what keeps the SDK's own
+  hover-to-expand off, so removing our pointer handlers was enough to stop
+  hover opening the rail — nothing had to be suppressed in CSS.
 - **Tooltips appear only when a label is unreadable** — the 48px strip, or an
   expanded label truncated by an ellipsis. Never when the text is right there.
 - **The collapse control lives in the top bar, not the rail.** A control that

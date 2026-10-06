@@ -6,19 +6,19 @@ import type { ReactNode } from 'react'
  * cannot break the column.
  *
  *   icon slot   16px, the SDK's
- *   glyph       14px, drawn inside it — clamped, see theme-overrides.css
+ *   glyph       16px, filling it — clamped, see theme-overrides.css
  *   label       14px / 400 / --line-height-200, one step above the SDK default
- *   group label 12px, one step below the base, so the hierarchy reads
+ *   group label 10px medium uppercase, so the hierarchy reads
  *
- * The glyph is 14 rather than 16 so icons read lighter WITHOUT moving the icon
- * column: the slot stays 16, so every label starts at the same x whatever the
- * glyph does.
+ * The glyph FILLS the slot. It was 14 for a while, so icons read lighter inside
+ * it; either way the icon column does not move, because the SLOT is what every
+ * label starts after — that is the point of giving it a fixed size.
  *
- * Use this constant in your nav data. Mixing 14 and 16 across rows makes the
- * icon column look ragged — and if you pass something else entirely, the CSS
- * clamps it back rather than letting one row set the rail's width.
+ * Use this constant in your nav data. Mixing sizes across rows makes the icon
+ * column look ragged — and if you pass something else entirely, the CSS clamps
+ * it back rather than letting one row set the rail's width.
  */
-export const NAV_ICON_SIZE = 14
+export const NAV_ICON_SIZE = 16
 
 /**
  * The rail's data model.
@@ -29,8 +29,9 @@ export const NAV_ICON_SIZE = 14
  * dot when collapsed. None of that depends on WHICH rows are in it. So the rows
  * are data the host supplies, and the package ships the behaviour.
  *
- * NO SAMPLE NAV EXISTS ANYWHERE IN THIS REPO — not exported, and not rendered
- * by the demo either. A shell has no opinion about what a product's pages are.
+ * NO SAMPLE NAV IS EXPORTED FROM THIS PACKAGE. A shell has no opinion about
+ * what a product's pages are. The iosense rows exist in the repo — the demo
+ * renders them — but they live in demo/iosenseNav.tsx, which nobody installs.
  *
  * What it DOES have an opinion about is what happens once you pass some, and
  * that is written down rather than demonstrated: STORY.md §1.2 and §1.4 specify it, guards/NavItems.guard.json contracts it, and stories/SideNav.stories.tsx and stories/Rules.stories.tsx exercise it against their own fixtures.
@@ -102,11 +103,16 @@ export interface NavAccordion {
 }
 
 /**
- * A labelled section that folds its rows away — the label is the control.
+ * A labelled group of rows: the name, then the rows. It does NOT fold.
  *
- * Forced open while the rail is collapsed: a folded section in the 48px strip
- * is a hairline with no affordance to unfold it, and it would strand every icon
- * inside it.
+ * The label used to be a disclosure control. It is a caption now — folding a
+ * section only ever hid rows the user still had to reach, and the control had
+ * to be force-disabled in the 48px strip anyway, where a folded section is a
+ * hairline with no affordance to unfold it. A control that is live at one
+ * width and inert at the other is worse than no control.
+ *
+ * Use an ACCORDION for something that folds: its parent row stays on screen,
+ * so folding it hides nothing you cannot get back.
  *
  * A section does NOT appear in the breadcrumb trail. It groups rows visually;
  * it is not an ancestor of them.

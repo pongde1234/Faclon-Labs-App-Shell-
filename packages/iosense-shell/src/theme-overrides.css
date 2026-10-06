@@ -76,22 +76,22 @@ body {
    * chips, menus) and every local stylesheet reading these tokens is squared off at
    * once. Only circles (50%) and hairlines are untouched.
    */
-  --global-border-radius-small: 4px;
-  --global-border-radius-medium: 8px;
-  --global-border-radius-large: 8px;
-  --global-border-radius-xlarge: 8px;
-  --global-border-radius-2xlarge: 8px;
+  --global-border-radius-small: var(--radius-s);
+  --global-border-radius-medium: var(--radius-m);
+  --global-border-radius-large: var(--radius-m);
+  --global-border-radius-xlarge: var(--radius-m);
+  --global-border-radius-2xlarge: var(--radius-m);
   /* Pills/chips: capped to the same 8px ceiling instead of a full 1000px pill. */
-  --global-border-radius-max: 8px;
+  --global-border-radius-max: var(--radius-m);
 
   /**
    * The gap between cards, and between the stacked sections of a page — one
    * number for both, so a page reads on a single rhythm rather than one spacing
    * across a row and another down it.
    *
-   * Named rather than written as `var(--spacing-04)` at 31 call sites, because
+   * Named rather than written as `var(--spacing-12)` at 31 call sites, because
    * those 31 are a DECISION (how far apart do cards sit?) and the rest of the
-   * spacing-03 uses in the app are not — they are gaps inside toolbars, chip
+   * spacing-8 uses in the app are not — they are gaps inside toolbars, chip
    * rows and card internals, which must not move when this does.
    *
    * It sits under the page's own 16px gutter on purpose: the frame around the
@@ -100,7 +100,7 @@ body {
    * without raising the gutter too, and the gutter is pinned at 16 by the top
    * bar's alignment.
    */
-  --app-card-gap: var(--spacing-04);
+  --app-card-gap: var(--spacing-12);
 
   /**
    * The one inset edge of the shell. Left and bottom are flush to the window
@@ -113,7 +113,63 @@ body {
    * on the same right edge, and the top bar's actions are aligned to the page
    * content inside it — change one without the other and both break.
    */
-  --app-sheet-inset: var(--spacing-03);
+  --app-sheet-inset: var(--spacing-8);
+
+  /**
+   * The rail glyph, and the CSS half of NAV_ICON_SIZE (16) in navItems.ts.
+   * Both are the same number stated twice — this clamps what the host draws, so
+   * changing one alone silently rewrites every host's icon.
+   *
+   * IT FILLS THE SLOT. design-sdk's icon slot is 16×16, and the glyph was 14 so
+   * that icons read lighter inside it. At 16 they fill it. The icon column does
+   * not move either way: the SLOT sets where every label starts, not the glyph,
+   * which is the whole reason the slot is a fixed size.
+   *
+   * NAMED, AND NAMED `--app-*`, because the clamp below used to read
+   * `var(--shell-nav-icon-size, 14px)` — and `--shell-*` is the OTHER package's
+   * namespace: `@faclon-labs/app-shell` defines `--shell-nav-icon-size: 24px`
+   * in its own tokens.css. Nothing loads both stylesheets today, so the var
+   * never resolved and the fallback quietly did the work. The moment anything
+   * did load both, every rail glyph would jump to 24 and the icon column would
+   * break — the exact failure this clamp exists to prevent.
+   *
+   * 16 is a real fds step, so this is one token rather than the composed
+   * `calc(--spacing-12 + --spacing-2)` the 14px value needed.
+   */
+  --app-nav-icon-size: var(--spacing-16);
+
+  /**
+   * THE SDK'S SPACING RAMP, REPOINTED AT FDS'S.
+   *
+   * Our own CSS no longer names `--spacing-0N` anywhere. design-sdk's compiled
+   * stylesheet names it 551 times — every gap, padding and inset in SideNavBar,
+   * TopNav, Card, Popover, Table and the rest — and that file ships prebuilt, so
+   * those rules cannot be edited and are far too many to restate here.
+   *
+   * So the ramp itself is redirected. Each SDK step becomes an alias of the fds
+   * step with the same value, which means every one of those 551 rules now
+   * resolves through an fds token instead of a design-sdk one, from a single
+   * block, with no rule duplicated and nothing overridden.
+   *
+   * THE VALUES ARE UNCHANGED — the two ramps agree at every step the SDK
+   * defines, so this is a change of SOURCE, not of size. The one exception is
+   * the last: the SDK's 40px step has no fds equivalent (fds goes 36 → 48), so
+   * it is composed, exactly as `--app-nav-icon-size` is above.
+   *
+   * WHAT THIS DOES NOT DO: devtools still shows `var(--spacing-03)` in a rule
+   * design-sdk authored, because that is the text of their rule. What changed is
+   * where the value behind it comes from.
+   */
+  --spacing-00: var(--spacing-0);
+  --spacing-01: var(--spacing-2);
+  --spacing-02: var(--spacing-4);
+  --spacing-03: var(--spacing-8);
+  --spacing-04: var(--spacing-12);
+  --spacing-05: var(--spacing-16);
+  --spacing-06: var(--spacing-20);
+  --spacing-07: var(--spacing-24);
+  --spacing-08: var(--spacing-32);
+  --spacing-09: calc(var(--spacing-32) + var(--spacing-8));
 }
 
 /* ---- Cross-package token conflict: fds borders in dark ---------------------
@@ -154,9 +210,10 @@ body {
  * scale, and it is why the sheet keeps a hairline in BOTH themes: the border is
  * what makes the panel edge read, not the tone gap.
  */
-.fds-app-shell {
-  background: var(--background-surface-subtle);
-}
+/* No rule here. `.fds-app-shell` already sets exactly this background itself —
+   `background: var(--background-surface-subtle)` — so restating it was a copy
+   that could only ever drift. The scale above is still what the shell uses; it
+   just comes from the component rather than from us. */
 
 /* <main> is the scroll container, and a panel that RUNS OFF the bottom of the
    window rather than floating clear of it: rounded and bordered on the top and
@@ -174,13 +231,13 @@ body {
      one right edge. It no longer matches the popup drawer's 16px: with the
      left and bottom edges flush, a 16px gutter on the remaining side read as a
      stray margin rather than a frame. */
-  margin: var(--spacing-04) var(--app-sheet-inset) 0 0;
+  margin: var(--spacing-12) var(--app-sheet-inset) 0 0;
   border-radius: var(--global-border-radius-xlarge) var(--global-border-radius-xlarge)
     0 0;
   background: var(--background-surface-moderate);
   /* No bottom border: the edge is off-screen, and a hairline pinned to the
      window's last pixel reads as a stray rule rather than a panel edge. */
-  border: 1px solid var(--border-gray-subtle);
+  border: var(--border-width-thin) solid var(--border-neutral-default);
   border-bottom: 0;
   /* No gutter: <main> no longer scrolls (the inner .app-main-scroll does) and
      its bar is an overlay that costs no width. `overflow: hidden` still makes
@@ -257,16 +314,20 @@ body {
  * without re-declaring the rule.
  */
 .app-main-scroll {
-  /* The literal fallbacks are load-bearing, not belt-and-braces. `--spacing-05`
-     is defined ONLY by `@faclon-labs/design-sdk/styles.css`; a consumer who
-     imports fds's stylesheet and this one but not the SDK's gets an undefined
-     var, which makes the whole declaration invalid and drops the inset to 0 —
-     silently, and looking exactly like a shell that was never given any
-     padding. Measured: it is how the content sheet lost its 16px. */
-  --shell-content-pad: var(--spacing-05, 16px);
+  /* The literal fallbacks are load-bearing, not belt-and-braces. A consumer who
+     imports this stylesheet without the one that DEFINES the token gets an
+     undefined var, which makes the whole declaration invalid and drops the
+     inset to 0 — silently, and looking exactly like a shell that was never
+     given any padding. Measured: it is how the content sheet lost its 16px.
+
+     The token is fds's `--spacing-16` now; it was design-sdk's `--spacing-05`,
+     the same 16px off the other system's ramp. Both are peer dependencies, so
+     either should be present — the fallback is insurance against the install
+     that forgets one, and is cheap enough to keep whichever ramp is named. */
+  --shell-content-pad: var(--spacing-16, 16px);
   /* The gap between blocks. A DEFAULT, not a law — override it on the element
      or anywhere above it when a page genuinely wants a different density. */
-  --shell-content-gap: var(--spacing-05, 16px);
+  --shell-content-gap: var(--spacing-16, 16px);
 
   flex: 1 1 auto;
   min-height: 0;
@@ -324,24 +385,24 @@ body {
 .ds-scroll__bar--y {
   top: 0;
   bottom: 0;
-  right: var(--spacing-01);
-  width: 5px;
+  right: var(--spacing-2);
+  width: var(--spacing-4);
 }
 
 .ds-scroll__bar--x {
   left: 0;
   right: 0;
-  bottom: var(--spacing-01);
-  height: 5px;
+  bottom: var(--spacing-2);
+  height: var(--spacing-4);
 }
 
 /* With both axes live, each bar stops short so they do not cross in the corner. */
 .ds-scroll__bar--y[data-has-cross='true'] {
-  bottom: 9px;
+  bottom: var(--spacing-8);
 }
 
 .ds-scroll__bar--x[data-has-cross='true'] {
-  right: 9px;
+  right: var(--spacing-8);
 }
 
 .ds-scroll__thumb {
@@ -349,7 +410,7 @@ body {
   border-radius: var(--global-border-radius-max);
   /* Semantic, so it flips with the theme — a --global-* ink would be fixed and
      disappear on the dark surface. */
-  background: var(--text-gray-tertiary);
+  background: var(--scrollbar-thumb);
   pointer-events: auto;
   cursor: default;
   /* Hidden until it is wanted — see the reveal rule below. */
@@ -382,7 +443,7 @@ body {
 
 .ds-scroll__thumb:hover,
 .ds-scroll__thumb[data-dragging='true'] {
-  background: var(--text-gray-secondary);
+  background: var(--scrollbar-thumb-hover);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -424,8 +485,8 @@ body {
      `--global-neutral-gray-*` inks: those are theme-INVARIANT, so a dark ink
      would vanish on a dark surface, the same trap that killed the dividers. */
   .fds-scrollbar::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: var(--spacing-8);
+    height: var(--spacing-8);
   }
 
   .fds-scrollbar::-webkit-scrollbar-thumb {
@@ -441,18 +502,79 @@ body {
 /* The SDK fixes the bar at 56px. 48px matches the rail header's own height, so
    the brand tile and the bar's contents sit on one line across the top. */
 :root {
-  --app-topbar-h: 48px;
+  --app-topbar-h: var(--spacing-48);
 }
 
 .fds-topnav {
   height: var(--app-topbar-h);
 }
 
+/* ---- The top bar's three containers ------------------------------------
+ *
+ *   1  TopNavContent      the rail toggle and the trail
+ *   2  .app-topbar__assistant   the assistant — one labelled button
+ *   3  .app-topbar__icons       every icon: launcher, bell, avatar, and
+ *                               whatever is added later
+ *
+ * TWO DIFFERENT GAPS, which is the whole reason 2 and 3 are separate elements
+ * rather than one row of controls: a flex row has exactly one `gap`, so the
+ * assistant could not sit flush against the icons while the icons stayed 6px
+ * apart from each other.
+ *
+ * ZERO between the assistant and the icons. The assistant is a labelled ghost
+ * button, so it already carries its own padding out to its edge — adding a gap
+ * on top of that would read as a bigger step than the one between the icons,
+ * and the two groups would stop looking like one cluster. */
+.fds-topnav__actions {
+  gap: var(--spacing-0);
+}
+
+.app-topbar__assistant,
+.app-topbar__icons {
+  display: flex;
+  align-items: center;
+}
+
+/* 6px inside the icon group — tighter than the SDK's 8px default, because
+   these are bare glyphs with no border or fill to separate them. */
+.app-topbar__icons {
+  gap: var(--spacing-6);
+}
+
+/* A TOP-BAR ICON STAYS LIT WHILE ITS PANEL IS OPEN.
+ *
+ * Without this the launcher's grip button returns to rest the moment the
+ * pointer leaves it, so an open panel floats with nothing connecting it to the
+ * control that opened it — and on a click-opened popover the pointer leaves
+ * immediately, which is every time.
+ *
+ * `aria-expanded` is the state, not a class of ours: Popover clones its trigger
+ * through floating-ui's `getReferenceProps()`, and `useRole` puts
+ * `aria-expanded` on it for exactly this. So the open state is read from the
+ * accessibility tree rather than mirrored into React — there is no second copy
+ * to fall out of step, and any other panel wired to a top-bar icon gets the
+ * same treatment for free.
+ *
+ * BOTH HALVES MOVE, the same way a selected nav row's do. The fill goes one
+ * step past fds's own hover (`--background-interaction-highlighted`), so "open"
+ * reads as more committed than "pointer is here"; and the ink goes to the top
+ * of the ladder, because a lit container under a muted glyph reads as a
+ * half-pressed button rather than an open one.
+ *
+ * `--text-neutral-normal` is fds's strongest ink — the same role the rail's
+ * selected row calls `--text-gray-primary`. The IconButton's own ladder is
+ * muted at rest and subtle on hover, so this is the step above both: at rest
+ * muted, hovered subtle, OPEN normal. */
+.app-topbar__icons .ds-icon-btn[aria-expanded='true'] {
+  background: var(--background-interaction-selected);
+  color: var(--text-neutral-normal);
+}
+
 
 /**
  * Search inputs sit level with the controls beside them.
  *
- * TextInput is a flex COLUMN with `gap: var(--spacing-02)` and always renders a
+ * TextInput is a flex COLUMN with `gap: var(--spacing-4)` and always renders a
  * `.fds-field-header` above the field, even with no label — the header collapses
  * to 0px but the 4px gap still applies. That makes the wrapper 40px around a
  * 36px field, so a row using `align-items: center` drops the field 2px below a
@@ -467,18 +589,21 @@ body {
   gap: 0;
 }
 
-/* Flat surfaces — no elevation, a light hairline border instead of a shadow.
-   Internal rules (card header / footer dividers, table row dividers) are
-   separators and stay as-is.
+/* Chart and ListCard used to be repainted here with a single shared border —
+   `--border-neutral-default` on both — plus a `box-shadow: none`.
+   All three declarations are gone, and each component keeps its own:
 
-   Card and Table are absent deliberately: both are flat by fds's own ruling —
-   border + radius, never a shadow — so listing them here would only repaint
-   their borders with a design-sdk token. The rest are still design-sdk. */
-.fds-chart,
-.fds-list-card {
-  border: 1px solid var(--border-gray-subtle);
-  box-shadow: none;
-}
+     .fds-chart      border: 1px solid var(--border-gray-muted)
+     .fds-list-card  border: 1px solid var(--border-gray-default)
+
+   They were never the same colour to begin with, so one shared value could not
+   be right for both: it left Chart within 2 per channel of its default and
+   lightened ListCard by 22, in the opposite direction from everything else.
+   The `box-shadow: none` was a no-op — neither base rule carries a shadow; the
+   only shadows are on `:focus-visible`, which is more specific and unaffected.
+
+   Card and Table were already absent for the same reason, so the whole family
+   is now on its own defaults. */
 
 /* ---- Rail footer actions ----------------------------------------------- */
 
@@ -489,15 +614,15 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-01);
-  padding: var(--spacing-02) 0;
+  gap: var(--spacing-2);
+  padding: var(--spacing-4) 0;
 }
 
 [data-state='expanded'] .app-sidenav__actions {
   flex-direction: row;
   flex-wrap: wrap;
   justify-content: flex-start;
-  padding: var(--spacing-02) var(--spacing-03);
+  padding: var(--spacing-4) var(--spacing-8);
 }
 
 /* ---- Nav item states ----------------------------------------------------
@@ -517,17 +642,33 @@ body {
   background: var(--background-gray-default);
 }
 
-.fds-sidenav .fds-sidenav-menu-button--active {
-  background: var(--background-gray-default);
+/* ---- A ROW'S INK: secondary at rest, primary when it is the page ----------
+ *
+ * Icon and label move together — same step, both states.
+ *
+ * ONLY THE ICON IS STATED. The SDK already puts the label at
+ * `--text-gray-secondary` and lifts it to `--text-gray-primary` on `--active`,
+ * so the label needs nothing from us. (A `:not(--active)` rule briefly lived
+ * here while the resting ink was tertiary; at secondary it would only restate
+ * the SDK's own value, so it is gone.)
+ *
+ * THE ICON IS DIFFERENT: the SDK pins `__icon` to `--text-gray-primary` in its
+ * base rule and never changes it, so out of the box every glyph in the rail sat
+ * at full strength whether you were on that page or not — the icon column read
+ * as twenty equally important things while only the label dimmed. These two
+ * rules put it on the same two steps the label already uses.
+ *
+ * The ACTIVE row's background is still the SDK's own and is not restated. */
+.fds-sidenav-menu-button__icon {
+  color: var(--text-gray-secondary);
+}
+
+.fds-sidenav-menu-button--active .fds-sidenav-menu-button__icon {
   color: var(--text-gray-primary);
 }
 
 .fds-sidenav .fds-sidenav-menu-button--active:hover {
   background: var(--background-gray-hover-dark);
-}
-
-.fds-sidenav-menu-button--active .fds-sidenav-menu-button__icon {
-  color: var(--text-gray-primary);
 }
 
 /**
@@ -606,8 +747,8 @@ body {
  * unitless 0 would invalidate the expression.
  */
 .fds-sidenav-provider {
-  --fds-sidenav-margin: 0px;
-  --fds-sidenav-radius: 0px;
+  --fds-sidenav-margin: var(--spacing-0);
+  --fds-sidenav-radius: var(--spacing-0);
 }
 
 /* Drop the rail's inset hairline — the SDK draws it as an inset box-shadow on
@@ -632,32 +773,37 @@ body {
 /**
  * ---- The classic Faclon brand theme ------------------------------------
  *
- * Brand chrome on a neutral CONTENT area: the rail and the canvas around the
- * content sheet both become gray-light-1300 near-black, while the sheet, cards, tables and
- * charts keep their light surfaces. `[data-theme=brand]` never matches the SDK's
- * `[data-theme=dark]`, so every page token still falls back to its `:root` light
- * value and the data keeps the contrast it was designed for.
+ * Brand chrome on a LIGHT content area: the rail and the top bar go dark while
+ * the sheet, cards, tables and charts keep their light surfaces. That split is
+ * the whole theme — `[data-theme=brand]` never matches the SDK's
+ * `[data-theme=dark]`, so every page token still falls back to its `:root`
+ * light value and the data keeps the contrast it was designed for.
  *
- * This mirrors the SDK's own `.fds-sidenav-provider[data-theme=dark]`, which
- * re-skins the rail through exactly these tokens. The rail is handed theme="Dark"
- * (SideNavBarTheme has no 'Brand'), so that block applies first and this one
- * retints it — (0,3,0) over the SDK's (0,2,0).
+ * THE CHROME IS DARK MODE'S CHROME, token for token. It used to be its own
+ * palette — a #050505 ground with white-alpha washes and a #D5D6D7 text ramp,
+ * each value measured against that ground. Two palettes meant two sets of
+ * contrast decisions to keep in step, and a change to one silently left the
+ * other behind. The list below is design-sdk's and fds's own dark values,
+ * copied verbatim, so Classic and Dark now differ only in where they apply.
+ *
+ * WHY COPIED RATHER THAN INHERITED. The rail is handed theme=Dark
+ * (SideNavBarTheme has no 'Brand'), so `.fds-sidenav-provider[data-theme=dark]`
+ * already supplies nine of these. But it does NOT supply
+ * `--background-surface-subtle`, which is what this app paints the rail from,
+ * and the top bar has no nested dark scope at all — design-sdk declares its
+ * dark tokens under `:root[data-theme=dark]`, which brand by definition does
+ * not match. So the values have to be stated. One block for both surfaces, so
+ * there is one list to keep rather than two.
  *
  * Scoped to `.app-sidenav-theme` — the class AppSideNav puts on its OWN nested
  * provider — and never to `.fds-sidenav-provider`. AppShell renders a provider
- * of its own, and it is the SAME ELEMENT as `.fds-app-shell`: targeting the bare
- * class sets these tokens on the whole app and turns the page canvas charcoal too.
+ * of its own, and it is the SAME ELEMENT as `.fds-app-shell`: targeting the
+ * bare class would set these on the whole app and turn the page canvas dark.
  *
- * The second selector covers nested elements that carry their own `data-theme`.
- * `.fds-sidenav` inside the provider is stamped "dark", and fds's dark block is
- * `[data-theme='dark']` — so without it, fds re-points every token one level
- * below this rule and the charcoal never reaches `.fds-sidenav__inner`.
- *
- * Note it is `surface-subtle`, not the `surface-moderate` the SDK's dark provider
- * retints: this app paints the rail from the canvas token (see the rule above),
- * so overriding the SDK's choice would do nothing.
- *
- * Every value is measured against the #050505 ground (luminance 0.0015).
+ * The second selector covers nested elements that carry their own
+ * `data-theme`: `.fds-sidenav` inside the provider is stamped dark, and fds's
+ * dark block is `[data-theme='dark']` — without it fds re-points every token
+ * one level below this rule and the colour never reaches `.fds-sidenav__inner`.
  */
 /**
  * The canvas carries the rail's colour, which is what light and dark already do —
@@ -671,84 +817,32 @@ body {
  * paint with — rebinding would drop charcoal columns into a light page.
  */
 :root[data-theme='brand'] .fds-app-shell {
-  background: var(--global-gray-light-1300);
+  /* The same value the chrome above takes — design-sdk's dark canvas. It was
+     `--global-gray-light-1300` (#050505) when Classic had a palette of its own;
+     leaving it there now would put the old near-black behind a rail painted in
+     dark mode's lighter tone, which is the seam this rule exists to prevent. */
+  background: var(--global-neutral-gray-dark-1300);
 }
 
 :root[data-theme='brand'] .app-sidenav-theme,
-:root[data-theme='brand'] .app-sidenav-theme [data-theme] {
-  --background-surface-subtle: var(--global-gray-light-1300); /* #050505 */
-
-  /* The ground is a NEUTRAL near-black, not a saturated navy, so the washes are
-     neutral too — a blue alpha over near-black reads as a colour cast rather
-     than as a state, and selection was the worst of it: brand-a200 over #050505
-     composites to a murky navy that looks like a rendering artefact, not a
-     chosen colour.
-
-     All three states are now plain white at rising alpha, which is the same
-     move fds's dark rail makes over its own surface. Selected lands at
-     luminance 0.0262 against the brand-blue it replaces at 0.0270 — the same
-     brightness, so only the hue changed. Rest → hover → selected →
-     selected+hover step +0.0082, +0.0165, +0.0267: monotonic, and the rail's
-     label clears 7:1 on every one of them. */
-  --background-gray-hover-light: var(--global-white-a10); /* .08 white */
-  --background-gray-default: var(--global-white-a25); /* selected, .16 */
-  --background-gray-hover-dark: var(--global-white-a50); /* selected + hover, .24 */
-
-  --border-gray-muted: var(--global-gray-dark-a518); /* 1.31:1 separators */
-  /* The nested tree's trunk and elbows. A neutral line on a neutral rail, and
-     stronger than the light rail's 1.35:1 hairline for the same reason as
-     before — a near-surface line vanishes on a dark ground. Stepped back from
-     600 to 700 so the line does not get louder as the ground gets darker: it
-     keeps roughly the brightness it had, rather than the same ratio. */
-  --border-gray-default: var(--global-gray-dark-700); /* #585C5F, 3.02:1 */
-
-  /* Still brand, and still not the dark rail's brand-a200: composited over this
-     ground that is 1.49:1, an invisible ring. brand-400 is 5.96:1. */
-  --border-focused-default: var(--global-brand-400);
-
-  /* fds's neutral dark ramp, measured against #050505.
-     NOT gray-dark-0 for the primary: pure white on a near-black ground is
-     20.38:1 and glares — the ramp is stepped down one so the top of the
-     hierarchy is a bright grey instead. 14.00 / 9.37 / 5.47 keeps the same
-     shape as the navy set's 11.67 / 9.17 / 6.87, on even ramp steps. */
-  --text-gray-primary: var(--global-gray-dark-100); /* #D5D6D7, 14.00:1 */
-  --text-gray-secondary: var(--global-gray-dark-300); /* #AEB0B2, 9.37:1 */
-  --text-gray-tertiary: var(--global-gray-dark-500); /* #808589, 5.47:1 */
-}
-
-/* ---- Brand: the top bar that is NOT inside the sheet --------------------
- *
- * `.fds-topnav` paints from `--background-surface-subtle`, which in light and
- * dark is also the canvas token — so the bar and the page behind it are one
- * plane and the bar reads as part of the canvas rather than as a strip on it.
- * Brand broke that: the canvas moved to the theme colour while the bar kept the
- * root's light grey, leaving a pale plate floating on the brand ground.
- *
- * Rebinding the token here (rather than setting `background`) restores the
- * light/dark behaviour exactly, and carries the same neutral text ramp the rail
- * uses — the breadcrumb reads `--text-neutral-normal` and the action buttons
- * read `--text-neutral-muted`, so both families are set.
- *
- * Applies to every page: the bar has one home now (AppShell's slot, above the
- * sheet), so there is no longer a light-surfaced variant to exclude.
- */
+:root[data-theme='brand'] .app-sidenav-theme [data-theme],
 :root[data-theme='brand'] .fds-topnav {
-  --background-surface-subtle: var(--global-gray-light-1300);
+  /* design-sdk's own dark values, token for token. */
+  --background-surface-subtle: var(--global-neutral-gray-dark-1300);
+  --background-gray-hover-light: var(--global-neutral-gray-dark-a509);
+  --background-gray-default: var(--global-neutral-gray-dark-a512);
+  --background-gray-hover-dark: var(--global-neutral-gray-dark-a532);
+  --border-gray-muted: var(--global-neutral-gray-dark-a518);
+  --border-gray-default: var(--global-neutral-gray-dark-600);
+  --border-focused-default: var(--global-chromatic-brand-a200);
+  --text-gray-primary: var(--global-neutral-white-500);
+  --text-gray-secondary: var(--global-neutral-gray-dark-300);
+  --text-gray-tertiary: var(--global-neutral-gray-dark-500);
 
-  /* fds families — breadcrumb, icon buttons. */
-  --text-neutral-normal: var(--global-gray-dark-100); /* 14.00:1 */
-  --text-neutral-subtle: var(--global-gray-dark-300); /* 9.37:1 */
-  --text-neutral-muted: var(--global-gray-dark-500); /* 5.47:1 */
-
-  /* design-sdk families — TopNav's own chrome. */
-  --text-gray-primary: var(--global-gray-dark-100);
-  --text-gray-secondary: var(--global-gray-dark-300);
-  --text-gray-tertiary: var(--global-gray-dark-500);
-
-  /* Action buttons hover against the black, not against the light root. */
-  --background-gray-hover-light: var(--global-gray-dark-a512);
-  --background-gray-default: var(--global-gray-dark-a518);
-  --background-gray-hover-dark: var(--global-gray-dark-a532);
+  /* fds's own dark values — the breadcrumb and the icon buttons read these. */
+  --text-neutral-normal: var(--global-gray-dark-0);
+  --text-neutral-subtle: var(--global-gray-dark-300);
+  --text-neutral-muted: var(--global-gray-dark-500);
 }
 
 /* Action-list rows: put the title's line box back to 20px.
@@ -763,7 +857,7 @@ body {
  * must not drift if the ramp is retuned again.
  */
 .ds-action-list-item__title {
-  line-height: 20px;
+  line-height: var(--line-height-200);
 }
 
 /* fds avatars are circle-only — there is no `variant`. Squaring the handful
@@ -863,6 +957,20 @@ body {
 /* The gap SideNavBarContent used to put between the menu and the Connect group
    moves here, onto the element that now actually holds them both.
 
+   12px (`--spacing-12`), up from the SDK's 8px. This is the ONE number that
+   separates one block of the rail from the next — a section from the section
+   below it, and from a plain run of rows — so it is what decides whether the
+   rail reads as groups or as one long list. It sits above the 2px
+   (`--spacing-2`) between rows WITHIN a block, which is what makes a group
+   cohere: the space around a set has to beat the space inside it.
+
+   FDS SCALE, not design-sdk's. The two systems both ship `--spacing-*` and
+   they are NOT the same ramp: fds names its steps by value (`--spacing-12` is
+   12px) while design-sdk indexes them (`--spacing-04` is the fourth step,
+   which happens to be 12px today). Identical result, different contracts — so
+   every value this file sets comes from fds, and only the SDK's own untouched
+   rules still read the SDK ramp.
+
    `overflow-y` is ours to set: `.ds-scroll__viewport` deliberately declares only
    `scrollbar-width: none` and `overscroll-behavior`, leaving the axis to the
    consumer — the Table does the same on `.ds-table__scroll`. Without it the
@@ -871,20 +979,20 @@ body {
   display: flex;
   flex: 1 1 auto;
   flex-direction: column;
-  gap: var(--spacing-03);
+  gap: var(--spacing-12);
   min-height: 0;
   overflow-y: auto;
 }
 
 /* Push the overlay bar out into the rail's own gutter.
  *
- * `.ds-scroll__bar--y` is `right: var(--spacing-01)` — 2px inside the SCROLL
+ * `.ds-scroll__bar--y` is `right: var(--spacing-2)` — 2px inside the SCROLL
  * ROOT. That works for <main>, whose `padding-inline: 16px` leaves the bar a
  * lane of its own. The rail has no such padding: its scroll root stops at the
  * same edge the rows do, so the thumb landed at 223-228 with the row badges
  * ending at 224 — the bar was drawn ON TOP of the "12", "3" and "Beta" pills.
  *
- * The rail is already inset --spacing-03 (8px) from its own edge, and that
+ * The rail is already inset --spacing-8 (8px) from its own edge, and that
  * 8px lane is empty. Shifting the bar by exactly that inset moves it off the
  * content and re-measures its 2px margin from the RAIL edge instead of the
  * viewport's — which is where a panel's scrollbar belongs.
@@ -893,7 +1001,7 @@ body {
  * too, but it shrinks every row's hover and selected wash on the right only,
  * leaving the rail visibly lopsided (8px left, 18px right). */
 .app-sidenav__scroll .ds-scroll__bar--y {
-  right: calc(-1 * var(--spacing-03));
+  right: calc(-1 * var(--spacing-8));
 }
 
 /* ---- Nested nav items ---------------------------------------------------
@@ -916,12 +1024,12 @@ body {
 
 .fds-sidenav-menu.app-sidenav__sub,
 .fds-mobile-nav .fds-sidenav-menu.app-sidenav__sub {
-  --nav-tree-x: 16px; /* trunk sits under the parent icon's centre: 8px + 8px */
-  --nav-tree-tick: 8px; /* gap between the rule and the child labels */
+  --nav-tree-x: var(--spacing-16); /* trunk sits under the parent icon's centre: 8px + 8px */
+  --nav-tree-tick: var(--spacing-8); /* gap between the rule and the child labels */
   position: relative;
   width: auto;
-  margin: var(--spacing-01) 0 var(--spacing-01) var(--nav-tree-x);
-  padding-left: calc(var(--nav-tree-tick) + var(--spacing-01));
+  margin: var(--spacing-2) 0 var(--spacing-2) var(--nav-tree-x);
+  padding-left: calc(var(--nav-tree-tick) + var(--spacing-2));
   gap: 0; /* the SDK's list gap would open holes between rows */
 }
 
@@ -935,10 +1043,19 @@ body {
    below the last tentacle. Ending at `centre - radius` hands the line over to
    the arc exactly where the arc takes it. */
 .app-sidenav__sub {
-  --nav-tree-radius: 6px;
-  --nav-tree-half-row: 18px; /* half the 36px row */
+  --nav-tree-radius: var(--spacing-6);
+  --nav-tree-half-row: calc(var(--spacing-16) + var(--spacing-2)); /* half the 36px row */
 }
 
+/* THE TREE'S INK, for both the trunk here and the elbows below.
+
+   `--border-neutral-highlighted` — fds's own stronger border step, #afb6bb in
+   light against `--border-neutral-default`'s #dee1e3. It replaces design-sdk's
+   `--border-gray-default`: darker, as asked, and on the fds scale rather than
+   the SDK's, so the tree takes its colour from the same system as everything
+   else in this file.
+
+   Both are theme-aware, so this is one token and not a light/dark pair. */
 .app-sidenav__sub::before {
   content: '';
   position: absolute;
@@ -946,13 +1063,13 @@ body {
   top: 0;
   bottom: calc(var(--nav-tree-half-row) + var(--nav-tree-radius));
   width: 0;
-  border-left: 1px solid var(--border-gray-default);
+  border-left: var(--border-width-thick) solid var(--border-neutral-highlighted);
 }
 
 .app-sidenav__sub .fds-sidenav-menu-item {
   position: relative;
   justify-content: flex-start;
-  padding: var(--spacing-01) 0; /* 32px button + 4px = 36px row, 50% = 18px */
+  padding: var(--spacing-2) 0; /* 32px button + 4px = 36px row, 50% = 18px */
 }
 
 /* The per-row elbow, curving off the trunk into each label.
@@ -966,23 +1083,23 @@ body {
   content: '';
   position: absolute;
   /* Back out to the trunk: the list's left padding is tick + 2px. */
-  left: calc((var(--nav-tree-tick) + var(--spacing-01)) * -1);
+  left: calc((var(--nav-tree-tick) + var(--spacing-2)) * -1);
   top: 0;
   width: var(--nav-tree-tick);
   height: var(--nav-tree-half-row); /* down to the row's centre */
-  border-left: 1px solid var(--border-gray-default);
-  border-bottom: 1px solid var(--border-gray-default);
+  border-left: var(--border-width-thick) solid var(--border-neutral-highlighted);
+  border-bottom: var(--border-width-thick) solid var(--border-neutral-highlighted);
   border-bottom-left-radius: var(--nav-tree-radius);
 }
 
 .app-sidenav__sub .fds-sidenav-menu-button {
   width: 100%;
-  height: 32px;
+  height: var(--spacing-32);
 }
 
-.app-sidenav__sub .fds-sidenav-menu-button__icon {
-  color: var(--text-gray-secondary);
-}
+/* The nested rows' icons used to be dimmed to secondary here, one step below
+   the top-level rows. Every row's icon is secondary now (see the rail's row
+   ink, below the state washes), so there is nothing left for this to do. */
 
 .app-sidenav__toggle {
   display: inline-flex;
@@ -1006,113 +1123,263 @@ body {
  *
  * So the sizes are ENFORCED here rather than merely recommended:
  *
- *   glyph        clamped to 14px square, whatever `size` the host passed
+ *   glyph        clamped to 16px square, whatever `size` the host passed
  *   icon slot    16px, the SDK's, untouched — so every label starts at the
  *                same x no matter what the glyph does
  *   label        14px / 400, one ellipsised line, never wraps
  *
- * NAV_ICON_SIZE (14) is exported so correct data is easy to write; this block
+ * NAV_ICON_SIZE (16) is exported so correct data is easy to write; this block
  * is what makes incorrect data harmless.
  */
+/* `.app-sidenav__group-label > svg` was in this list and is gone with the
+   section chevron — a section label holds text and nothing else now. */
 .fds-sidenav-menu-button__icon > svg,
-.app-sidenav__group-label > svg,
 .fds-sidenav-menu-badge > svg {
-  width: var(--shell-nav-icon-size, 14px);
-  height: var(--shell-nav-icon-size, 14px);
+  width: var(--app-nav-icon-size);
+  height: var(--app-nav-icon-size);
   /* lucide and most icon sets set width/height as ATTRIBUTES; CSS beats a
      presentation attribute, so this wins without !important. flex-shrink keeps
      a stubborn icon from being squeezed instead of resized. */
   flex: none;
 }
 
-/* A label is one line, and it ellipsises. Not a style preference: a wrapped
-   label changes the row's height, and rows of different heights make the icon
-   column look broken. The clipped case is exactly what the tooltip exists for. */
+/* ---- The row is a flex line, not three absolutely-positioned boxes --------
+ *
+ * The SDK lays a row out by pinning each part to an edge: the icon at
+ * `left: 8px`, the label at `left: calc(8px + 16px + 8px)`, the trailing slot
+ * at `right: 8px`. That works, but it hard-codes the icon's width into the
+ * label's offset — change the icon slot and you must remember to change a
+ * `calc` in another rule — and it needs a mirrored copy of all three rules for
+ * RTL.
+ *
+ * So the row is rebuilt the ordinary way: one flex line, `gap` between the
+ * parts, each part sized by what it is. The gap is the SAME 8px; nothing moves.
+ * What changes is that the 8px is now stated once, as a gap, instead of being
+ * arithmetic inside the label's `left` — and RTL comes for free, because flex
+ * already follows the writing direction.
+ *
+ * THE ICON KEEPS `position: relative`. It is not decoration: the collapsed
+ * state's dot is an `::after` on the icon slot, and it needs the slot to stay
+ * its containing block. Making it `static` would silently reparent the dot to
+ * the button and move it. */
+.fds-sidenav-menu-button {
+  gap: var(--spacing-8);
+}
+
+.fds-sidenav-menu-button__icon {
+  position: relative;
+  inset: auto;
+  transform: none;
+  flex: none;
+}
+
 .fds-sidenav-menu-button__label {
+  position: static;
+  inset: auto;
+  /* Takes the slack, so the trailing slot is pushed to the far edge. */
+  flex: 1 1 auto;
+  /* Load-bearing. A flex item's automatic minimum size is its CONTENT, so
+     without this the label refuses to shrink below its full text width, the
+     row overflows, and `text-overflow: ellipsis` never fires — the clip the
+     tooltip exists for would never happen. */
+  min-width: 0;
+  /* A label is one line, and it ellipsises. Not a style preference: a wrapped
+     label changes the row's height, and rows of different heights make the
+     icon column look broken. */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.fds-sidenav-menu-button__trailing {
+  position: static;
+  inset: auto;
+  /* `transform: none` is not tidy-up — it is the fix. The SDK centres this slot
+     the absolute way, `top: 50%` plus `translateY(-50%)`. Dropping the
+     positioning without dropping the transform leaves the translate applied to
+     a flex item that is already centred, so the badge rides half its own height
+     too high. `align-items: center` on the row does the centring now. */
+  transform: none;
+  flex: none;
+}
+
+/* COLLAPSED — the row is a 32px square holding one 16px glyph, so the label
+   and the badge must contribute no width and no gap. They are collapsed to
+   zero rather than `display: none` so the SDK's opacity/visibility transition
+   still runs: on a hover peek the labels fade in, and a display switch would
+   pop them. */
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-menu-button {
+  gap: 0;
+}
+
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-menu-button__label,
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-menu-button__trailing {
+  flex: 0 0 0;
+  max-width: 0;
+  overflow: hidden;
+}
+
 /* ---- Rail typography ---------------------------------------------------
-   Base for every nav label is 14px regular (--font-size-200 / --font-weight-400).
-   The SDK defaults the menu button to --font-size-100 (13px in this app), so the
-   size is lifted one step here; the group labels stay one step below the base
-   (--font-size-50) so the hierarchy still reads. The active item is marked by
-   its background and primary text colour, so it keeps the same weight — no
-   bolding (the SDK's own `--active { font-weight: 500 }` is overridden). */
-.fds-sidenav-menu-button,
-.app-sidenav__sub .fds-sidenav-menu-button__label {
-  font-size: var(--font-size-200);
-  font-weight: var(--font-weight-400);
-  line-height: var(--line-height-200);
-}
+   ONE SIZE, TWO WEIGHTS. Every nav label is 14px (--font-size-200); the SDK
+   defaults the menu button to --font-size-100 (13px in this app), so the size
+   is lifted one step here and then never varies again. Depth is carried by
+   WEIGHT alone:
 
-.fds-sidenav-menu-button--active {
-  font-weight: var(--font-weight-400);
-}
+     entity (top level)   medium    the things you pick between
+     sub-entity (nested)  regular   the things inside one of them
+     group label          12px medium, one size down — see the block below
 
-/* ---- Collapsible group section -----------------------------------------
-   The section label doubles as its disclosure control (see NavGroup). It is
-   laid out like a nav row — full width, label flush at the 8px icon inset,
-   chevron trailing at the same 8px — so it matches the nested Workflows row.
-   The SDK's label span is absolutely positioned with `left` only (shrink to
-   fit), so it is stretched to both edges first. */
-.fds-sidenav-group-label:has(.app-sidenav__group-label) .fds-sidenav-group-label__text {
-  left: 0;
-  right: 0;
+   Weight rather than size for the nesting, because the rows already sit at
+   different x (the tree indents them) and shrinking the text as well would say
+   the same thing twice while making the deeper rows harder to read. Same size
+   keeps them equally legible; the lighter weight is enough to rank them.
+
+   NOT A TYPE STYLE OF OUR OWN. Each of these is one of fds's NAMED styles,
+   declared property for property rather than invented:
+
+     entity       .BodyLargeMedium    size-200 / lh-200 / w-500 / ls-100
+     sub-entity   .BodyLargeRegular   the same, at w-400
+     group label  .BodyXSmallMedium   size-25 / lh-25 / w-500   (see below)
+
+   Written as the tokens rather than by adding the class, because the elements
+   are the SDK's own markup — this file reaches them by overriding their
+   classes, and the label span inside the button is not ours to put a class on.
+   Same declarations either way; if a preset changes, these follow, because
+   every value is the token the preset reads.
+
+   The weight tokens are the SEMANTIC names, not fds's numeric aliases, because
+   `--font-weight-600` is remapped to 500 at the top of this file — the numbers
+   lie here while `medium` and `regular` still mean what they say. */
+/* NOTHING IS DECLARED HERE ANY MORE, and that is the point of the block above:
+   the four properties this rule used to set — size, leading, weight, tracking —
+   were the named style's own values, copied. Copies drift. The style is now
+   worn as a class by the label itself (see `styledLabel` in AppSideNav), so
+   this file states no type at all. */
+
+/* The nested rows used to drop to regular with a `font-weight` here. They still
+   drop to regular — they wear `BodyLargeRegular` instead of `BodyLargeMedium`,
+   chosen at the call site in AppSideNav where the row knows its own depth.
+
+   The active row's weight rule went the same way. The SDK hard-codes
+   `--active { font-weight: 500 }` on the BUTTON, and this file used to cancel
+   it; it no longer has to, because the label's own class outranks anything the
+   button passes down. So landing on a row cannot change its weight, and an
+   active nested row stays regular, with no rule here at all. */
+
+/* ---- Group section label -----------------------------------------------
+   A NAME ABOVE ITS ROWS, and nothing else. It used to be a button that folded
+   the section away; the control is gone (see NavGroup), so everything that made
+   it look pressable goes with it — no hover fill, no focus ring, no chevron, no
+   pointer. What is left is a quiet caption.
+
+   12px MEDIUM, against the rows' 14px regular. Smaller than a row so a section
+   name does not compete with the rows under it, and medium rather than regular
+   so it still reads as a heading at that size rather than as faded body text.
+
+   EVERY VALUE HERE IS A TOKEN — `--font-size-50` is this app's 12px step (the
+   ramp is retuned at the top of this file) and `--font-weight-medium` is 500.
+   The semantic weight name rather than `--font-weight-500`, because the numeric
+   names are not trustworthy in this file: `--font-weight-600` is remapped to
+   500 up there, so "600" no longer means semibold here while "medium" still
+   means medium.
+
+   No colour is set: the SDK's own `.fds-sidenav-group-label` supplies
+   `--text-gray-tertiary` and this span inherits it. One owner.
+
+   ---- Built in normal flow, the same as the row --------------------------
+
+   The SDK stacks the two halves of this header ON TOP of each other: the text
+   span is `position: absolute` (left/top/bottom) and the collapsed-state
+   hairline is an in-flow sibling underneath it, so whichever is wanted fades
+   in over the other. That is why it needed `left: 0; right: 0` patched onto
+   the text and then the 8px inset re-applied by hand — an absolutely
+   positioned child does not sit inside its parent's padding.
+
+   Both are now flex items on one line. The header already IS a flex row
+   (`display: flex; align-items: center; padding: 0 8px`), so the text simply
+   starts at the parent's padding and the hand-applied inset goes away.
+
+   The two never show at once — text when open, hairline in the 48px strip —
+   so each collapses to zero width in the state that is not its own. Zeroed
+   rather than `display: none`, exactly as the row's label is, so the SDK's
+   opacity transition still runs and a hover peek fades rather than pops. */
+.fds-sidenav-group-label__text {
+  position: static;
+  inset: auto;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .app-sidenav__group-label {
-  appearance: none;
-  border: none;
-  background: transparent;
-  font: inherit;
-  color: inherit;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--spacing-02);
-  width: 100%;
-  padding: var(--spacing-01) var(--spacing-03);
-  border-radius: var(--global-border-radius-medium);
+  /* A flex child of `__text` now, not a block that has to re-create the inset:
+     the header's own padding puts it at 8px. */
+  flex: 1 1 auto;
+  min-width: 0;
+  /* NO TYPE DECLARED HERE. The size, leading, weight and tracking all come
+     from `BodyXSmallMedium`, the SDK's own named style, applied as a class on
+     this span in AppSideNav. This rule owns layout and the uppercasing only —
+     so there is nothing here to drift out of step with the system when the
+     style changes. */
+  /* CAPS IN CSS, NOT IN THE DATA. `text-transform` leaves the DOM text as
+     "Connect", so a screen reader still reads the word; nav data typed as
+     "CONNECT" would be announced letter by letter by some of them, and would
+     also force every consumer to shout in their own nav. The host passes
+     ordinary labels and the rail decides how they are set. */
+  text-transform: uppercase;
+  /* Tracking is the named style's too, and it is zero. It was 1px here for a
+     while — `--global-ls-expanded`, a PRIMITIVE rather than a semantic token,
+     reached for because there is no positive step in the semantic scale.
+     Small caps do read better with some tracking, but a value the system does
+     not expose is exactly what should not be invented here: if letter-spaced
+     caps are wanted, the style should name the step. */
   white-space: nowrap;
-  cursor: pointer;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.app-sidenav__group-label:hover {
-  background: var(--background-gray-hover-light);
-  color: var(--text-gray-secondary);
+/* OPEN — the hairline is the half that is not wanted. The SDK already fades it
+   to `opacity: 0`; in flow it would still take the full width and squeeze the
+   name out, so it takes none. */
+.fds-sidenav[data-state='expanded'] .fds-sidenav-group-label__divider {
+  flex: 0 0 0;
+  max-width: 0;
+  overflow: hidden;
 }
 
-.app-sidenav__group-label:focus-visible {
-  outline: none;
-  box-shadow:
-    0 0 0 2px var(--background-surface-intense),
-    0 0 0 6px var(--border-focused-default);
+/* THE RAIL'S SEPARATORS ARE THE SDK'S OWN AGAIN.
+ *
+ * Two of them — the section hairline the 48px strip shows where the name would
+ * be, and the rule above the Help row — and the SDK draws both from
+ * `--border-gray-muted`, its faintest step: a 1.31:1 hairline that barely
+ * separates anything on the rail's surface.
+ *
+ * They were repainted here with fds's `--border-neutral-default`, which is a
+ * touch lighter in light and a touch heavier in dark. Both overrides are gone:
+ * a separator is part of a component the SDK styles, so it takes the SDK's
+ * value, and the nav tree keeps its own louder ink because that pseudo-element
+ * is ours and has no default to defer to. */
+
+/* COLLAPSED — the other way round: the name goes, the hairline spans the strip.
+
+   This also retires a hack. The divider used to need `pointer-events: none`,
+   because as an in-flow sibling with `opacity: 0` it painted over the
+   absolutely-positioned label and swallowed clicks along its 1px centre line —
+   precisely where the label sat. Nothing overlaps anything now, so there is no
+   click to swallow and the hack is gone with the overlap that caused it. */
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-group-label__text {
+  flex: 0 0 0;
+  max-width: 0;
+  overflow: hidden;
 }
 
-/* The SDK's collapsed-state hairline is decorative (aria-hidden), but it is an
-   in-flow sibling with `opacity: 0` while the rail is open — which gives it a
-   stacking context that paints over the absolutely-positioned label and eats
-   clicks along its 1px centre line, exactly where the button's centre sits. */
-.fds-sidenav-group-label__divider {
-  pointer-events: none;
+.fds-sidenav:not([data-state='expanded']) .fds-sidenav-group-label__divider {
+  flex: 1 1 auto;
 }
 
-.app-sidenav__group-chevron {
-  flex-shrink: 0;
-  transition: transform var(--fds-duration-quick) var(--fds-easing-standard);
-}
+/* The section chevron and its rotate rule are gone with the control itself —
+   a section no longer folds, so there is nothing for a chevron to report. The
+   ACCORDION chevron is a different element and is untouched. */
 
-/* Same convention as the nested group's chevron: down when folded, up when open. */
-.app-sidenav__group-label[aria-expanded='true'] .app-sidenav__group-chevron {
-  transform: rotate(180deg);
-}
-
-/* Hidden only while the rail is open. In the 48px icon strip the label is a
-   bare hairline with nothing to click, so a folded section must not swallow
-   its icons — they stay visible there. */
 /* ---- Collapsible nav sections ------------------------------------------
    Sub-lists open and close on a height transition rather than appearing all at
    once. `0fr -> 1fr` resolves the track to the list's own height, so nothing has
@@ -1142,8 +1409,9 @@ body {
 }
 
 /* The nested sub-list has no place in the 48px strip — the parent icon stands
-   in for it. (The "Connect" section is the other case: it is forced open there
-   instead, so its icons stay reachable.) */
+   in for it, and the flyout is how you reach the children there. This is the
+   ACCORDION only (`app-sidenav__group` is the class on its <li>); a section has
+   no collapsible wrapper at all any more, so its rows are simply always there. */
 .fds-sidenav:not([data-state='expanded']) .app-sidenav__group .app-sidenav__collapsible {
   display: none;
 }
@@ -1152,6 +1420,28 @@ body {
   .app-sidenav__collapsible {
     transition: none;
   }
+}
+
+/* ---- Rail header: the brand mark fills its box --------------------------
+ *
+ * The SDK gives the brand a 32×32 box and then draws a 28×28 mark inside it —
+ * its `BrandLogo` defaults to `size = 28` — so the artwork sat with 2px of dead
+ * space on every side and read smaller than the box it was given.
+ *
+ * Sized from the CONTAINER rather than by passing a bigger `size`, because the
+ * logo is a host slot: whatever node a consumer puts there fills the box, and
+ * none of them has to know what the SDK's default happens to be.
+ *
+ * Non-square artwork is safe. `preserveAspectRatio` is on by default, so an SVG
+ * letterboxes inside the square rather than stretching to it — the same
+ * property that keeps Forge's 42×43 mark honest in the launcher.
+ *
+ * The header's own 8px padding STAYS. That is what lines the logo up with the
+ * 8px inset every nav row below it uses; removing it would push the mark to the
+ * rail's edge and break the column the rest of the rail is measured from. */
+.fds-sidenav-header__brand > svg {
+  width: 100%;
+  height: 100%;
 }
 
 /* ---- Rail header: workspace row ----------------------------------------
@@ -1167,7 +1457,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: flex-start;
-  gap: var(--spacing-02);
+  gap: var(--spacing-4);
   width: 100%;
   min-width: 0;
 }
@@ -1176,14 +1466,13 @@ body {
 .app-sidenav__workspace-org {
   display: inline-flex;
   align-items: center;
-  gap: var(--spacing-02);
+  gap: var(--spacing-4);
   min-width: 0;
-  height: 28px;
-  padding: var(--spacing-01) 0;
+  height: var(--spacing-28);
+  padding: var(--spacing-2) 0;
   color: var(--text-gray-primary);
-  font-size: var(--font-size-200);
-  font-weight: var(--font-weight-500);
-  line-height: var(--line-height-200);
+  /* Type comes from `BodyLargeMedium`, worn as a class on the span itself —
+     the same named style the entity rows use. */
 }
 
 .app-sidenav__workspace-name {
@@ -1204,12 +1493,12 @@ body {
 .fds-sidenav:not([data-state='expanded']) .fds-sidenav-menu-item[data-indicator] .fds-sidenav-menu-button__icon::after {
   content: '';
   position: absolute;
-  top: -2px;
-  right: -3px;
-  width: 6px;
-  height: 6px;
+  top: calc(-1 * var(--spacing-2));
+  right: calc(-1 * var(--spacing-2));
+  width: var(--spacing-6);
+  height: var(--spacing-6);
   border-radius: 50%;
-  border: 2px solid var(--background-surface-subtle);
+  border: var(--border-width-thicker) solid var(--background-surface-subtle);
   box-sizing: content-box;
 }
 
@@ -1218,7 +1507,7 @@ body {
 }
 
 .fds-sidenav-menu-item[data-indicator='alert'] .fds-sidenav-menu-button__icon::after {
-  background: var(--background-error-default);
+  background: var(--background-negative-default);
 }
 
 /* ---- Rail footer: help -----------------------------------------------------
@@ -1252,7 +1541,7 @@ body {
    factory panel is a big screen with no hover. */
 @media (pointer: coarse) {
   .fds-sidenav-provider {
-    --fds-sidenav-item-size: 44px;
+    --fds-sidenav-item-size: calc(var(--spacing-36) + var(--spacing-8));
   }
 }
 
@@ -1301,8 +1590,8 @@ body {
    not display:none, so it stays in the accessibility tree. */
 .ds-popover:has(.app-rail-flyout) .ds-popover__header {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: var(--border-width-thin);
+  height: var(--border-width-thin);
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
@@ -1312,8 +1601,8 @@ body {
    panel contributes width and chrome only. The card's own 16px padding and
    16px gap would double every inset. */
 .ds-popover:has(.app-rail-flyout) {
-  width: 264px;
-  max-width: 264px;
+  width: calc(var(--spacing-48) * 5 + var(--spacing-24));
+  max-width: calc(var(--spacing-48) * 5 + var(--spacing-24));
   padding: 0;
   gap: 0;
 }
@@ -1328,17 +1617,17 @@ body {
    inline transform on the positioner nor the panel's enter/exit keyframes.
    Keyed on the COMPUTED side so a flipped panel is nudged the right way. */
 .ds-popover:has(.app-rail-flyout)[data-side='right'] {
-  translate: -8px 0;
+  translate: calc(-1 * var(--spacing-8)) 0;
 }
 
 .ds-popover:has(.app-rail-flyout)[data-side='left'] {
-  translate: 8px 0;
+  translate: var(--spacing-8) 0;
 }
 
 /* ActionList's 300px cap is sized for a dropdown under a control, not a
    full-height rail. */
 .ds-popover:has(.app-rail-flyout) .ds-action-list {
-  max-height: min(60vh, 480px);
+  max-height: min(60vh, calc(var(--spacing-48) * 10));
 }
 
 /* The "2h ago" column. */
@@ -1346,48 +1635,6 @@ body {
   font-size: var(--font-size-50);
   color: var(--text-gray-tertiary);
   white-space: nowrap;
-}
-
-/* A corner tick: "there is more behind this icon".
-   Deliberately NOT the `data-indicator` dot — that means STATE (a count, an
-   alert) and already owns `__icon::after`. Overloading it would render "has
-   children" and "has 3 alerts" identically. This hangs off the button instead,
-   which is free.
-
-   Weight is the whole design problem here. It is a HINT, and it sits on only
-   two of twenty icons, so it must lose every contest against the glyphs it
-   annotates — at full tertiary ink and 6px it read as a mark in its own right
-   and pulled the eye down the rail. 4px at just under half opacity is legible
-   when looked for and gone when not.
-
-   Opacity rather than a dimmer token so it stays correct in all three themes:
-   the ink already flips with the theme, and this just holds it back. */
-.fds-sidenav:not([data-state='expanded'])
-  .fds-sidenav-menu-item[data-has-flyout]
-  > .app-sidenav__tip .fds-sidenav-menu-button::after {
-  content: '';
-  position: absolute;
-  right: 3px;
-  bottom: 3px;
-  border: 2px solid transparent;
-  border-right-color: var(--text-gray-tertiary);
-  border-bottom-color: var(--text-gray-tertiary);
-  opacity: 0.45;
-}
-
-/* Full strength once the row is engaged — hovered, focused, or with its panel
-   open. The hint is quiet at rest and confirms itself the moment you reach for
-   the icon it belongs to. */
-.fds-sidenav:not([data-state='expanded'])
-  .fds-sidenav-menu-item[data-has-flyout]
-  > .app-sidenav__tip .fds-sidenav-menu-button:hover::after,
-.fds-sidenav:not([data-state='expanded'])
-  .fds-sidenav-menu-item[data-has-flyout]
-  > .app-sidenav__tip .fds-sidenav-menu-button:focus-visible::after,
-.fds-sidenav:not([data-state='expanded'])
-  .fds-sidenav-menu-item[data-has-flyout]
-  > .app-sidenav__tip .fds-sidenav-menu-button[aria-expanded='true']::after {
-  opacity: 1;
 }
 
 /* An open flyout is an ENGAGED row, not a selected one. It must NOT borrow
@@ -1419,9 +1666,9 @@ body {
  * Popover exposes no className of its own and three of them now share the app.
  */
 .ds-popover:has(.app-launcher) {
-  width: 320px;
-  max-width: 320px;
-  padding: var(--spacing-04);
+  width: calc(var(--spacing-64) * 5);
+  max-width: calc(var(--spacing-64) * 5);
+  padding: var(--spacing-12);
 }
 
 /* No arrow, and no ✕ — the reference launcher has neither, and the grid fills
@@ -1437,8 +1684,8 @@ body {
    tree, and the ✕ that shares that row goes with it. */
 .ds-popover:has(.app-launcher) .ds-popover__header {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: var(--border-width-thin);
+  height: var(--border-width-thin);
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
@@ -1447,15 +1694,15 @@ body {
 .app-launcher__grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-02);
+  gap: var(--spacing-4);
 }
 
 .app-launcher__tile {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-02);
-  padding: var(--spacing-04) var(--spacing-02);
+  gap: var(--spacing-4);
+  padding: var(--spacing-12) var(--spacing-4);
   border: none;
   border-radius: var(--global-border-radius-medium);
   background: transparent;
@@ -1479,14 +1726,31 @@ body {
   background: var(--background-gray-default);
 }
 
+/* THE ICON CONTAINER: a bordered box, and nothing else.
+ *
+ * It used to be a filled circle — `border-radius: 50%` over
+ * `--background-gray-default` — which was right for a line glyph inherited from
+ * the rail's icon set and is wrong for a brand mark. Each app now hands over
+ * its own artwork, already a coloured plate with its own corner radius, so a
+ * circular crop would cut the corners off every one of them and a background
+ * would sit behind artwork that is already opaque.
+ *
+ * So the box CONTAINS and does not re-shape: no background, no clipping, and a
+ * radius one step larger than the artwork's own so the border sits outside the
+ * plate's corners rather than cutting across them. The mark is centred at its
+ * natural aspect — `preserveAspectRatio` letterboxes it, which is what keeps
+ * Forge's 42×43 from being stretched square.
+ *
+ * `--border-neutral-default` is the same hairline every panel edge in the app
+ * uses, so the tile reads as part of the same system as the panel holding it. */
 .app-launcher__glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  background: var(--background-gray-default);
+  width: calc(var(--spacing-48) + var(--spacing-4));
+  height: calc(var(--spacing-48) + var(--spacing-4));
+  border: var(--border-width-thin) solid var(--border-neutral-default);
+  border-radius: var(--radius-l);
   color: var(--text-gray-primary);
 }
 
@@ -1504,8 +1768,8 @@ body {
 /* ---- Top bar: notification quick view ----------------------------------- */
 
 .ds-popover:has(.notif-menu) {
-  width: 360px;
-  max-width: 360px;
+  width: calc(var(--spacing-36) * 10);
+  max-width: calc(var(--spacing-36) * 10);
   padding: 0;
   gap: 0;
 }
@@ -1535,15 +1799,15 @@ body {
  * flyout already uses on its own hidden arrow. */
 .ds-popover:has(.notif-menu)[data-side='bottom'],
 .ds-popover:has(.app-launcher)[data-side='bottom'] {
-  translate: 0 calc(-1 * var(--spacing-04));
+  translate: 0 calc(-1 * var(--spacing-12));
 }
 
 /* This panel draws its own heading row, so Popover's header is hidden the same
    way — it is still what names the dialog. */
 .ds-popover:has(.notif-menu) .ds-popover__header {
   position: absolute;
-  width: 1px;
-  height: 1px;
+  width: var(--border-width-thin);
+  height: var(--border-width-thin);
   overflow: hidden;
   clip-path: inset(50%);
   white-space: nowrap;
@@ -1557,17 +1821,17 @@ body {
    from the content but loses the card padding the list already supplies. */
 .ds-popover:has(.notif-menu) .ds-popover__footer {
   justify-content: center;
-  padding: var(--spacing-02) var(--spacing-03) var(--spacing-03);
-  border-top: 1px solid var(--border-gray-muted);
+  padding: var(--spacing-4) var(--spacing-8) var(--spacing-8);
+  border-top: var(--border-width-thin) solid var(--border-neutral-default);
 }
 
 .notif-menu__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--spacing-03);
+  gap: var(--spacing-8);
   margin: 0;
-  padding: var(--spacing-04) var(--spacing-04) var(--spacing-02);
+  padding: var(--spacing-12) var(--spacing-12) var(--spacing-4);
   font-size: var(--font-size-200);
   font-weight: var(--font-weight-600);
   color: var(--text-gray-primary);
@@ -1575,7 +1839,7 @@ body {
 
 .notif-menu__unread {
   font-size: var(--font-size-50);
-  font-weight: var(--font-weight-400);
+  font-weight: var(--font-weight-regular);
   color: var(--text-gray-tertiary);
 }
 
@@ -1623,7 +1887,7 @@ body {
      glyph sits 8px inside the bar's left edge (the IconButton's own 32px square
      around a 16px icon); 8px here puts the trailing avatar 8px inside the right
      edge. Both controls now hold the same margin from the bar they sit in. */
-  padding-right: var(--spacing-03);
+  padding-right: var(--spacing-8);
 }
 
 .fds-topnav {
@@ -1688,12 +1952,16 @@ body {
    have pulled the avatar's right edge 4px off the content edge it was aligned
    to earlier. */
 .profile-trigger:hover {
-  box-shadow: 0 0 0 4px var(--background-interaction-highlighted);
+  box-shadow: 0 0 0 var(--spacing-4) var(--background-interaction-highlighted);
 }
 
+/* fds's own focus affordance, the same one the launcher tiles use. It was a 2px
+   opaque brand outline here — a third focus treatment among controls that sit
+   side by side in one bar. `--focus-ring-shadow` is the composite fds ships:
+   an inner ring in the surface colour so the halo reads on any ground, then the
+   brand ring outside it. */
 .profile-trigger:focus-visible {
-  outline: 2px solid var(--border-brand-default, var(--text-brand-default));
-  outline-offset: 2px;
+  box-shadow: var(--focus-ring-shadow);
 }
 
 /* `.ai-icon` and `.svg-defs` used to sit here. They style the ASSISTANT BUTTON,
@@ -1717,9 +1985,9 @@ body {
    it separates the pill from the bell glyph underneath. */
 .topnav__bell-count {
   position: absolute;
-  top: -2px;
-  right: -2px;
+  top: calc(-1 * var(--spacing-2));
+  right: calc(-1 * var(--spacing-2));
   pointer-events: none;
-  box-shadow: 0 0 0 2px var(--background-surface-subtle);
+  box-shadow: 0 0 0 var(--spacing-2) var(--background-surface-subtle);
 }
 
