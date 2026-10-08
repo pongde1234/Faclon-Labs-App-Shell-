@@ -454,9 +454,13 @@ The two on the right are chrome and always in that order, so a user learns one
 place for "my account" and one for "what happened". Anything a product adds goes
 to their **left**, where it cannot displace them.
 
-**Deliberately not exported:** the application launcher (the app grid) and the
-assistant button. One lists applications only the host can enumerate, the other
-opens an assistant this package knows nothing about. Both go in `actions`.
+**What ships and what does not.** The launcher grid (`AppLauncher`) and the
+window its Apps tile opens (`AppCenter`) are both exported — they are chrome,
+and every install should get the same ones. What does *not* ship is the
+**content**: which applications exist, which this user may open, and what
+happens when one is added. Those arrive as props. The assistant is not exported
+at all — it opens something this package knows nothing about, so it goes in the
+top bar's `assistant` slot whole.
 
 > **The demo puts them back, and that is the proof.** `npm run dev` renders the
 > product's top bar exactly — gradient sparkle, app grid, bell, avatar — with

@@ -284,13 +284,120 @@ Full rationale in [STORY.md](STORY.md) §3.
 
 ## Behaviour worth knowing
 
-- **The launcher grid caps at 8 apps.** Past that it shows the first eight and a
-  ninth **More** tile that calls `onShowAll` — eight plus one is three full rows,
-  so the panel keeps one shape whether you have nine applications or ninety. The
-  cap is absolute: nine apps show eight and hide one, rather than special-casing
-  the row that happens to fit. Order is your priority signal — the launcher never
-  reorders. **Omit `onShowAll` and nothing is capped**, because hiding apps behind
-  a tile that leads nowhere would make them unreachable.
+- **A tile label is TWO lines, then truncated, with the full name on hover.** The
+  tooltip fires only when the name is actually cut — the same rule the rail
+  states, and a tooltip repeating visible text is noise. `useLabelClipped` in
+  `AppLauncher.tsx` measures it; `MaybeTooltip` does the suppression, because
+  fds's Tooltip has no `isDisabled`.
+
+  It briefly wrapped to two lines instead, which fit more names whole (14 of
+  18 against 9) at the cost of a tile taller than it was wide. One line won on
+  the shape of the grid.
+
+- **Launcher tiles have a hover state and nothing else.** No selected, no
+  current-app marking. They are links out to other applications, and the
+  component cannot honestly tell an application from a page inside one — it is
+  handed ids. The demo proves the hazard: `steamtrap` is both an app id and a
+  nav route, so an `aria-current` wash (since removed, with the `activeId`
+  prop) lit that tile permanently once you had opened it.
+
+  The keyboard focus ring is NOT that, and stays. The panel moves focus to the
+  first tile when it opens, so that ring can appear on open.
+
+- **The launcher shows every app it is given, then an Apps tile, and scrolls.**
+  No cap. The grid renders `apps` in order — order is your priority signal; the
+  launcher never reorders — and `onManage` puts a button in a pinned footer
+  that opens the **App Center**. Its label follows the job: **Add applications**
+  when the grid is empty, **Manage applications** when it is not, with the glyph
+  matching. The footer is outside the
+  scroller, so flex holds it still while the grid moves; the panel itself is
+  capped at **70vh**, which is a cap and not a height, so a short launcher stays
+  short.
+
+  It briefly capped at 8 with the tile as a ninth cell, for a fixed 3×3. That
+  went when `apps` stopped being a whole catalogue and became **your chosen
+  quick-access set** — there is nothing to protect the panel from when the list
+  is one you picked, and the cap's cost was putting your ninth app two clicks
+  away.
+
+- **`AppCenter` is where applications are added and removed.** It ships with the
+  window, the filtering and a two-action model: an app's `isAdded` decides
+  whether its button reads **Remove** or **Add**, and that is the whole of the
+  state. (It briefly carried `available | connected | needs-reconnect`, a
+  Connected/Disconnected tab pair and a status badge per row; all three went,
+  because the shell has no connection to lose and a "disconnected" state was
+  chrome describing a condition nothing here can observe or repair.) The
+  catalogue itself is yours: pass `apps` and `categories`, and every press comes
+  back through `onAppAction(id, action)` where `action` is `'add'` or
+  `'remove'`. Filtering is client-side over the array you pass, which suits tens
+  of apps rather than thousands.
+
+- **The top section is "Your apps".**
+  `isAdded` is the only promotion there is: an added app leaves its category
+  section, moves to the top, and appears in the launcher outside. A static
+  `isFeatured` used to sit beside it — two ways to be promoted, with nothing to
+  say which won when they disagreed.
+
+  Third name it has had. "Quick access" named a category of thing rather than
+  these apps; "In your launcher" said where they go but leaned on a word the
+  reader never sees — nothing in the interface is labelled "launcher". The
+  *where* lives in the note beneath instead, in the interface's own vocabulary
+  ("Shown in the Applications menu"), which is also what stops **Remove**
+  reading as delete or uninstall.
+
+- **Array order IS the launcher's order.** No `order` field to keep in step.
+  `onReorder` hands back the *complete* new list of added ids, so a host applies
+  it verbatim instead of reconstructing an index. **Omit `onReorder` and nothing
+  is draggable** — no handles, no drop targets, no keyboard move — because a
+  rearrangement that silently snaps back is worse than a fixed list.
+
+- **Rearranging is off while searching.** A filtered list hides rows, and
+  dropping something "after the second one you can see" has no honest meaning
+  when there are three you cannot. The handles disappear until the query clears.
+
+- **`actions` lands in the icon group, and that group is the one to add to.**
+  The bar is four containers: the toggle and trail, the assistant, **the icon
+  group**, then the avatar. The grip and the bell share the icon group at a
+  **2px** gap — fds's smallest step above zero, settled after trying 6, 2 and 0
+  on screen. They are bare marks with no border or fill, so at 6px they stopped
+  reading as one cluster; at 0 their 32px hover squares abutted. Anything added
+  later goes in the same box and inherits that spacing; a host passes it through
+  `actions` and needs to do nothing else.
+
+  The avatar sits outside it, 8px clear. It is a filled circle with an image or
+  initials against the others' line glyphs, so at the icons' spacing it ended
+  the cluster on something that did not match it.
+
+- **Reordering is POINTER-ONLY.** The row carries `draggable`; the grip beside
+  it is a decorative `aria-hidden` span, not a control. There was a keyboard
+  route — arrow keys on a focusable grip, announced through a live region — and
+  it was removed by ruling. The grip was demoted with it: a focusable button
+  with nothing behind it is a tab stop that answers no key and no click, which
+  is worse than no button.
+
+  Know what this costs: **a keyboard or screen-reader user cannot reorder at
+  all**, and HTML5 drag does not fire on touch either, so the same is true on a
+  tablet. If that matters, `@dnd-kit/sortable` (already an fds peer dep, not
+  installed) brings keyboard and touch sensors with it.
+
+- **One filter, fixed in place.** A search bar over the list, outside
+  `.app-center__list` so it does not travel with the apps. Three filter rows
+  have been through this window and gone: the Connected/Disconnected tabs with
+  the status model, a "Works with" capability chip row after them, and the
+  category rail last — it cost a permanent quarter of the window to narrow
+  twenty apps the search already reaches. The categories remain as the section
+  headings they always were.
+
+- **Nothing found is an `EmptyState`, not a line of grey text.** fds's own
+  component with `NoSearchResultIllustration` — the guard ties the picture to
+  the *reason* a region is empty, and a "no data" drawing here would claim the
+  catalogue is empty when the truth is the query is too narrow. **Clear
+  filters** appears only when something is actually filtering.
+
+- **`AppCenter.logo` has no fallback, unlike the rail's.** `IosenseShell.logo`
+  falls through to design-sdk's built-in iosense mark when unset, which is how
+  an unbranded install ships someone else's identity. Omit this one and the
+  header is its title and subtitle alone.
 
 - **Hover does not open the rail.** It opens from the top bar's toggle or
   Ctrl/Cmd+B, and peeks open when focus enters it from the keyboard — three

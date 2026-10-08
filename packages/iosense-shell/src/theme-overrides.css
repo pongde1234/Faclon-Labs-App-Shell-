@@ -194,6 +194,36 @@ body {
   --border-neutral-default: var(--border-gray-subtle);
 }
 
+/* ---- The same conflict, for the EmptyState artwork in Classic -------------
+ *
+ * fds recolours its ten illustrations onto eight private custom properties and
+ * inverts them under `[data-theme='dark']` ONLY. Its own guard names this as a
+ * known gap ("the inversion is keyed to data-theme") and tells a caller to put
+ * `data-theme` on the subtree — which is no use to us: `brand` IS our
+ * data-theme, and swapping it for `dark` on the modal would take every other
+ * token with it.
+ *
+ * So Classic drew the LIGHT artwork — a #FFFFFF paper and #F7F7F7 fills — on
+ * the dark panel the rest of the brand block gives it. One bright rectangle in
+ * the middle of an otherwise dark dialog.
+ *
+ * Rebound to DARK'S OWN BINDINGS, not to hexes: Classic already reuses dark's
+ * chrome values everywhere else, so this keeps the one-palette rule rather than
+ * starting a third set. The names are private (`--_es-*`) and that is a real
+ * cost — if fds renames them the drawing silently goes light again, which is
+ * ugly rather than broken. Nothing else reaches the artwork from outside.
+ */
+:root[data-theme='brand'] {
+  --_es-ink: var(--global-gray-dark-300);
+  --_es-mid: var(--global-gray-dark-500);
+  --_es-line: var(--global-gray-dark-600);
+  --_es-fill3: var(--global-gray-dark-800);
+  --_es-fill2: var(--global-gray-dark-900);
+  --_es-fill1: var(--global-gray-dark-1000);
+  --_es-paper: var(--global-gray-dark-1100);
+  --_es-brand: var(--global-brand-400);
+}
+
 /**
  * Floating-panel shell.
  *
@@ -382,18 +412,37 @@ body {
   pointer-events: none;
 }
 
+/* ---- The lane is the HIT TARGET, so it is wider than the paint -----------
+ *
+ * fds says this in its own `:root` block — an 8px lane carrying a 6px thumb,
+ * commented "also its hit target, which is why it is wider than the thumb
+ * itself". Our override had collapsed both to 4px: lane 4px inset 2px, thumb
+ * `left: 0; width: 100%`. Since `pointer-events: none` sits on the lane, the
+ * ONLY grabbable surface was that 4px strip — and it started 2px from the pane's
+ * edge, so a mouse user had a 4px-wide target to catch and nothing either side
+ * of it. The wheel worked; the bar as a CONTROL did not.
+ *
+ * So the lane goes to 8px and runs flush to the edge, and the thumb fills it for
+ * hit-testing but PAINTS only the middle 4px via transparent side borders plus
+ * `background-clip: padding-box`. The painted bar lands in exactly the same
+ * pixels as before — 2px in from the edge, 4px wide — so nothing moves on
+ * screen; only the invisible target doubles.
+ *
+ * `box-sizing` is declared because this app has NO universal border-box reset
+ * (checked: neither library ships one), so a content-box thumb would be 8px of
+ * width plus 4px of border inside an 8px lane. */
 .ds-scroll__bar--y {
   top: 0;
   bottom: 0;
-  right: var(--spacing-2);
-  width: var(--spacing-4);
+  right: 0;
+  width: var(--spacing-8);
 }
 
 .ds-scroll__bar--x {
   left: 0;
   right: 0;
-  bottom: var(--spacing-2);
-  height: var(--spacing-4);
+  bottom: 0;
+  height: var(--spacing-8);
 }
 
 /* With both axes live, each bar stops short so they do not cross in the corner. */
@@ -426,6 +475,15 @@ body {
    than blinking out mid-gesture. Dragging keeps it up even if the pointer
    leaves the frame. */
 .app-scroll-frame:hover .ds-scroll__thumb,
+/* Every other scroller in the app hangs off `.app-scroll-frame`, which a modal
+   body and the rail do not have — so their thumbs only ever appeared WHILE
+   scrolling, never on hover, and there was no way to see one was there before
+   you moved the wheel. Both named here rather than loosening the selector to
+   any `:hover`, which would light up a thumb whenever the pointer crossed any
+   scroller on the page. */
+.ds-modal-body-scroll:hover .ds-scroll__thumb,
+.app-sidenav__scroll:hover .ds-scroll__thumb,
+.app-launcher__scroll:hover .ds-scroll__thumb,
 .ds-scroll__bar[data-scrolling='true'] .ds-scroll__thumb,
 .ds-scroll__thumb[data-dragging='true'] {
   opacity: 1;
@@ -434,11 +492,18 @@ body {
 .ds-scroll__bar--y .ds-scroll__thumb {
   left: 0;
   width: 100%;
+  box-sizing: border-box;
+  /* 2px of transparent edge each side: grabbable, unpainted. */
+  border-inline: var(--spacing-2) solid transparent;
+  background-clip: padding-box;
 }
 
 .ds-scroll__bar--x .ds-scroll__thumb {
   top: 0;
   height: 100%;
+  box-sizing: border-box;
+  border-block: var(--spacing-2) solid transparent;
+  background-clip: padding-box;
 }
 
 .ds-scroll__thumb:hover,
@@ -509,17 +574,17 @@ body {
   height: var(--app-topbar-h);
 }
 
-/* ---- The top bar's three containers ------------------------------------
+/* ---- The top bar's four containers -------------------------------------
  *
- *   1  TopNavContent      the rail toggle and the trail
+ *   1  TopNavContent            the rail toggle and the trail
  *   2  .app-topbar__assistant   the assistant — one labelled button
- *   3  .app-topbar__icons       every icon: launcher, bell, avatar, and
- *                               whatever is added later
+ *   3  .app-topbar__icons       THE ICON GROUP: the launcher's grip, the bell,
+ *                               and whatever bare glyph is added later
+ *   4  .app-topbar__profile     the avatar, which is not one of them
  *
- * TWO DIFFERENT GAPS, which is the whole reason 2 and 3 are separate elements
- * rather than one row of controls: a flex row has exactly one `gap`, so the
- * assistant could not sit flush against the icons while the icons stayed 6px
- * apart from each other.
+ * THREE DIFFERENT GAPS, which is the whole reason these are separate elements
+ * rather than one row of controls: a flex row has exactly one `gap`, and these
+ * want 0, then 2px, then 8px.
  *
  * ZERO between the assistant and the icons. The assistant is a labelled ghost
  * button, so it already carries its own padding out to its edge — adding a gap
@@ -530,46 +595,55 @@ body {
 }
 
 .app-topbar__assistant,
-.app-topbar__icons {
+.app-topbar__icons,
+.app-topbar__profile {
   display: flex;
   align-items: center;
 }
 
-/* 6px inside the icon group — tighter than the SDK's 8px default, because
-   these are bare glyphs with no border or fill to separate them. */
+/* THE ICON GROUP: every bare glyph in the bar, and the container to add to.
+   The launcher's grip and the bell live here today; anything added later goes
+   in the same box and inherits this spacing for free.
+
+   2px, settled after trying 6, then 2, then 0 on screen. These are bare marks
+   with no border or fill of their own, so they need far less air than controls
+   that have one — at 6px they read as unrelated controls that happen to be
+   adjacent rather than one cluster.
+
+   ZERO WAS TRIED AND REJECTED. The arithmetic says it should work: at `Medium`
+   with `isHighlighted` each button is a 32px box around a 16px glyph, so even
+   flush there is 16px between the marks. But that 32px box is also the HOVER
+   SQUARE, and abutting squares turn a sweep across the group into one block
+   sliding along instead of two separate washes. 2px is the smallest step that
+   keeps them apart; below it fds's ramp offers only `--spacing-0`. */
 .app-topbar__icons {
-  gap: var(--spacing-6);
+  gap: var(--spacing-2);
 }
 
-/* A TOP-BAR ICON STAYS LIT WHILE ITS PANEL IS OPEN.
- *
- * Without this the launcher's grip button returns to rest the moment the
- * pointer leaves it, so an open panel floats with nothing connecting it to the
- * control that opened it — and on a click-opened popover the pointer leaves
- * immediately, which is every time.
- *
- * `aria-expanded` is the state, not a class of ours: Popover clones its trigger
- * through floating-ui's `getReferenceProps()`, and `useRole` puts
- * `aria-expanded` on it for exactly this. So the open state is read from the
- * accessibility tree rather than mirrored into React — there is no second copy
- * to fall out of step, and any other panel wired to a top-bar icon gets the
- * same treatment for free.
- *
- * BOTH HALVES MOVE, the same way a selected nav row's do. The fill goes one
- * step past fds's own hover (`--background-interaction-highlighted`), so "open"
- * reads as more committed than "pointer is here"; and the ink goes to the top
- * of the ladder, because a lit container under a muted glyph reads as a
- * half-pressed button rather than an open one.
- *
- * `--text-neutral-normal` is fds's strongest ink — the same role the rail's
- * selected row calls `--text-gray-primary`. The IconButton's own ladder is
- * muted at rest and subtle on hover, so this is the step above both: at rest
- * muted, hovered subtle, OPEN normal. */
-.app-topbar__icons .ds-icon-btn[aria-expanded='true'] {
-  background: var(--background-interaction-selected);
-  color: var(--text-neutral-normal);
+/* THE AVATAR, which is NOT one of the icons — a filled circle with an image or
+   initials against their line glyphs. It used to sit inside the group and end
+   the cluster on something that did not match it.
+
+   A margin rather than a gap on `.fds-topnav__actions`: that gap is 0 on
+   purpose, so the assistant button sits flush against the icons, and raising
+   it would push those apart too. One margin on the one element that needs
+   separating is the smaller change. */
+.app-topbar__profile {
+  margin-inline-start: var(--spacing-8);
 }
 
+/* A TOP-BAR ICON SHOWS HOVER AND NOTHING ELSE — it does NOT stay lit while its
+ * panel is open. (User ruling 2026-10-08, reversing the opposite rule that
+ * stood here.) There is deliberately no declaration: IconButton's own ladder is
+ * muted at rest and subtle on hover, and `isHighlighted` draws its square on
+ * hover and keyboard focus, so removing our rule leaves exactly the component
+ * default. Do not re-add an `[aria-expanded='true']` block here.
+ *
+ * Worth knowing if this is ever revisited: Popover still puts `aria-expanded`
+ * on the cloned trigger — it injects the attribute itself and its guard forbids
+ * overriding it — so an open launcher is announced as "expanded" to a screen
+ * reader while looking identical to a closed one. The attribute is right; only
+ * the paint is gone. */
 
 /**
  * Search inputs sit level with the controls beside them.
@@ -1666,9 +1740,92 @@ body {
  * Popover exposes no className of its own and three of them now share the app.
  */
 .ds-popover:has(.app-launcher) {
-  width: calc(var(--spacing-64) * 5);
-  max-width: calc(var(--spacing-64) * 5);
-  padding: var(--spacing-12);
+  /* ONE NUMBER DRIVES THE PANEL. The tile is the measurement that matters —
+     the panel is only whatever holds three of them — so the width is computed
+     from it rather than set beside it. Set the two independently (as they were,
+     a 320px panel against `1fr` columns) and a change to either leaves slack
+     the other does not know about.
+
+     72px, from fds's ramp: there is no `--spacing-72`, and the ramp is
+     value-named (0 2 4 6 8 12 16 20 24 28 32 36 48 64), so 64 + 8 is how 72 is
+     spelled here rather than a bare pixel literal. */
+  --app-launcher-tile: calc(var(--spacing-64) + var(--spacing-8));
+  /* SQUARE AGAIN, now that the label is ONE line: 8 + 32 glyph + 4 gap + 18
+     line + 8 = 70, which sits inside 72 with 2px to spare.
+
+     It was 88 to hold two wrapped lines. Two lines fit more names whole (14
+     of 18 against 9), but it made the tile noticeably taller than wide and
+     the grid heavy — user ruling 2026-10-08. One line plus a hover reveal is
+     the trade: more names are cut, and the cut ones are one hover away. */
+  --app-launcher-tile-h: var(--app-launcher-tile);
+  /* 8px between tiles, doubled from 4, where the tiles nearly touched and the
+     grid read as one block rather than a set of things to pick from. 8 also
+     MATCHES THE TILE'S OWN INNER PADDING, so one rhythm runs through the
+     panel: content sits 8 from its tile edge, tiles sit 8 apart. Panel comes
+     to 72*3 + 8*2 + 12*2 = 256px, against fds's 328 cap, and the wider gap
+     absorbs part of what a tile grows by on hover. */
+  --app-launcher-gap: var(--spacing-8);
+  --app-launcher-pad: var(--spacing-12);
+  /* 3 tiles + 2 gaps + 2 paddings = 72·3 + 4·2 + 12·2 = 248px. */
+  width: calc(
+    var(--app-launcher-tile) * 3 + var(--app-launcher-gap) * 2 + var(--app-launcher-pad) * 2
+  );
+  max-width: calc(
+    var(--app-launcher-tile) * 3 + var(--app-launcher-gap) * 2 + var(--app-launcher-pad) * 2
+  );
+  /* NEVER MORE THAN 70% OF THE VIEWPORT. A cap, not a height — a launcher with
+     four apps stays four apps tall; only a long one is held to this and scrolls
+     inside it. The figure is the user's (60 first, then 70): fds tokenises no
+     overlay height, so there is nothing to reference and a literal is the
+     honest way to write it. */
+  max-height: 70vh;
+  /* The panel's padding moves INTO the scroller and the footer. With it out
+     here, the footer's divider would stop 12px short of each edge and read as a
+     stray line rather than the panel's own seam. The width above is unchanged:
+     the same 12px is still spent, one level down. */
+  padding: var(--spacing-0);
+}
+
+/* ---- The shrink chain, down to the one thing that scrolls ----------------
+ *
+ * `max-height` alone caps nothing useful: without this, the grid keeps its full
+ * height and simply overflows the panel. Each wrapper between the cap and the
+ * scroller has to be allowed to shrink, and `min-height: 0` is the load-bearing
+ * half — a flex item's automatic minimum is its content, which is exactly the
+ * refusal-to-shrink that leaves a scroller never scrolling.
+ *
+ * `.ds-popover__content` and `.ds-popover__body` are fds's own wrappers (panel
+ * > content > body > ours), both already flex columns, neither expecting to be
+ * squeezed — they are in this list because they sit in the path, not because
+ * anything is wrong with them.
+ *
+ * NOTE THE DIFFERENCE from the App Center, which looks like the same problem
+ * and is not: there the modal is a definite height and `height: 100%` divides
+ * it, here the panel is CONTENT-SIZED up to a cap and flex-shrink does the
+ * work. A percentage height would resolve to `auto` against this and silently
+ * do nothing. */
+.ds-popover:has(.app-launcher) .ds-popover__content,
+.ds-popover:has(.app-launcher) .ds-popover__body,
+.app-launcher,
+.app-launcher__scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* THE FOOTER. Outside the scroller, so it is pinned by flex rather than by
+   `position: sticky` — it belongs to the panel, not to the list, and sticky
+   would need a scroll container to stick inside. */
+.app-launcher__footer {
+  flex: none;
+  padding: var(--app-launcher-pad);
+  /* THE DIVIDER IS BACK, because the button went back to `ghost`. It was
+     dropped while the button was the outlined `secondary`, which drew its own
+     edge and made a rule above it a second line saying the same thing. A ghost
+     button has no border and no fill, so without this the footer and the grid
+     run together. */
+  border-top: var(--border-width-thin) solid var(--border-neutral-default);
 }
 
 /* No arrow, and no ✕ — the reference launcher has neither, and the grid fills
@@ -1691,40 +1848,116 @@ body {
   white-space: nowrap;
 }
 
+/* THE PANEL SCROLLS INSTEAD OF CAPPING THE LIST.
+ *
+ * The grid used to stop at 8 apps with the Apps tile as a ninth cell, which
+ * bought a fixed 3x3 at the cost of putting your ninth app two clicks away.
+ * Now that this list is your chosen quick-access set rather than a whole
+ * catalogue, there is nothing to protect the panel from — so it shows every
+ * app and scrolls.
+ *
+ * THE MAX-HEIGHT IS ON THE VIEWPORT, which is what `.ds-scroll__viewport` asks
+ * of every consumer: it sets no overflow and no height, and its own comment
+ * says each consumer keeps "its own axes AND ITS OWN MAX-HEIGHT". Putting it
+ * here rather than flexing it from the popover means this scroller needs no
+ * definite height handed down — the trap the App Center's panes fell into.
+ *
+ * 4.5 tiles, so a fifth row is visibly SLICED when there is one. A clean edge
+ * at four rows looks like the end of the list; half a row cannot be mistaken
+ * for anything but more. */
+.app-launcher__scroll-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* The panel's padding, now that the panel has none — so the grid keeps its
+     12px inset while the footer's divider still reaches both edges. */
+  padding: var(--app-launcher-pad);
+}
+
+/* Fixed columns, not `1fr`. With `1fr` the tile was whatever a third of the
+   panel came to (95.34px, measured) — a number nobody chose, and one that moved
+   with the panel. The tile is now the stated size and the panel is sized to it. */
 .app-launcher__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: var(--spacing-4);
+  grid-template-columns: repeat(3, var(--app-launcher-tile));
+  gap: var(--app-launcher-gap);
 }
 
+/* ---- ONE LINE AT REST; A TRUNCATED NAME OPENS IN PLACE ON HOVER --------
+ *
+ * Google's launcher pattern, chosen over a tooltip by ruling. At rest every
+ * label is one ellipsised line; hovering a name that DID NOT FIT shows the
+ * rest of it in the tile. Hovering one that fits changes nothing but the wash.
+ *
+ * ONLY TRUNCATED TILES GROW, and that is the whole point of the structure
+ * below. An earlier version pinned the label at one line and swapped it to a
+ * fixed two-line height on hover, so EVERY tile jumped — including the ones
+ * with nothing hidden. Here the height is never set: the clamp goes from 1 to
+ * 2 and the box takes whatever the content actually needs, which for a short
+ * name is still one line.
+ *
+ * THE BUTTON RESERVES THE CELL, THE BOX DRAWS. The button is a fixed 72px so
+ * the grid row can never reflow and shove neighbours around under the pointer.
+ * `.app-launcher__box` is absolutely positioned inside it and may be TALLER
+ * than that — it carries the padding, the radius and the wash, and sizes to
+ * its own content, so a grown label and the surface behind it grow together.
+ *
+ * Neither a background on the button nor a `::before` could do that: the first
+ * is clipped to the button, and a pseudo-element cannot size itself to a
+ * sibling's content.
+ *
+ * THE BUDGET, at rest:  8 pad + 32 glyph + 6 gap + 18 line + 8 pad = 72
+ * all five on fds's ramp, an even 8px inset on every side. */
 .app-launcher__tile {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-4);
-  padding: var(--spacing-12) var(--spacing-4);
+  position: relative;
+  height: var(--app-launcher-tile-h);
+  padding: var(--spacing-0);
   border: none;
-  border-radius: var(--global-border-radius-medium);
   background: transparent;
-  color: var(--text-gray-primary);
+  color: var(--text-neutral-normal);
   cursor: pointer;
-  transition: background-color var(--fds-duration-quick) var(--fds-easing-standard);
 }
 
-.app-launcher__tile:hover {
-  background: var(--background-gray-hover-light);
-}
 
 .app-launcher__tile:focus-visible {
   outline: none;
+}
+
+/* FILLS THE TILE AND STOPS THERE. It was free to grow past the cell, back
+   when a hovered tile revealed its full name by getting taller; that reveal
+   is a tooltip now, so there is nothing to grow for and `inset: 0` pins all
+   four edges. The element stays because it carries the padding, the radius
+   and the wash — a background on the button would be clipped to the button,
+   which is the same reason it was split out originally. */
+.app-launcher__box {
+  position: absolute;
+  inset: 0;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--spacing-6);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-m);
+  background: transparent;
+  transition: background-color var(--global-duration-xquick) var(--global-easing-standard);
+}
+
+.app-launcher__tile:hover .app-launcher__box,
+.app-launcher__tile:focus-visible .app-launcher__box {
+  background: var(--background-interaction-highlighted);
+}
+
+.app-launcher__tile:focus-visible .app-launcher__box {
   box-shadow: var(--focus-ring-shadow);
 }
 
-/* The current page. `aria-current` is the source of truth, so the wash is keyed
-   off it rather than a second class that could disagree with the route. */
-.app-launcher__tile[aria-current='page'] {
-  background: var(--background-gray-default);
-}
+/* NO SELECTED STATE. There was one, keyed off `aria-current='page'` to mark
+   the app you were in — removed: these tiles are LINKS OUT to other
+   applications, and a grid of links has a hover and nothing else to say.
+   (It also could not be honest. The component is handed ids and cannot tell an
+   application from a page inside one; in the demo the two namespaces collide,
+   so opening Steam Trap left its tile lit on every later open.) */
 
 /* THE ICON CONTAINER: a bordered box, and nothing else.
  *
@@ -1743,27 +1976,534 @@ body {
  *
  * `--border-neutral-default` is the same hairline every panel edge in the app
  * uses, so the tile reads as part of the same system as the panel holding it. */
+/* THE ICON SLOT — a box the size of the artwork, and nothing more.
+ *
+ * 32px, which is exactly what the brand marks draw at. It was 52px, and those
+ * extra 20px were dead: the mark sat centred with ~10px of empty box above and
+ * below it, so the visible gap between a logo and its name was that slack plus
+ * the tile's own 4px — three times what it looked like it should be. Hugging
+ * the artwork makes the tile's `gap` the only space there is.
+ *
+ * NO STROKE AND NO FILL. It had a hairline, which fought the artwork: each
+ * brand mark is already a filled plate with its own corner radius, so the
+ * border read as a second frame around something already framed.
+ *
+ * No `color` either — it inherits the tile's, so a line glyph (lucide, which
+ * paints from currentColor) follows the tile's state while a brand mark keeps
+ * the fills baked into its own SVG. */
+/* THE SLOT CLIPS THE MARK TO ITS OWN RADIUS.
+ *
+ * The brand SVGs carry corners of their own — `rx="3.77528"` on a 42-unit
+ * viewBox — and at the 32px they render to that scales to about 2.9px, against
+ * this slot's 8px `--radius-m`. Two different roundings on the same square,
+ * which read as a squarer logo sitting inside a rounder well, and the empty
+ * placeholders beside them made the difference obvious.
+ *
+ * `overflow: hidden` clips descendants to the padding box AS ROUNDED BY
+ * border-radius, so one declaration puts every mark on the slot's corner —
+ * whatever radius its own artwork happens to use, and without touching the
+ * SVGs, which are transcribed from brand files and should stay verbatim.
+ *
+ * It only bites where the mark FILLS the box. The App Center draws its marks at
+ * 24 inside the same 32px slot, so their corners fall inside the rounding and
+ * nothing is cut; the rule is there so that stops being true safely. */
 .app-launcher__glyph {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: calc(var(--spacing-48) + var(--spacing-4));
-  height: calc(var(--spacing-48) + var(--spacing-4));
-  border: var(--border-width-thin) solid var(--border-neutral-default);
-  border-radius: var(--radius-l);
-  color: var(--text-gray-primary);
-}
-
-.app-launcher__label {
-  font-size: var(--font-size-50);
-  line-height: var(--line-height-50);
-  text-align: center;
-  /* Two lines max, so a long name never pushes the grid out of square. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  /* 32 again. It went to 24 to make room for a second line of label at rest;
+     now that the second line only appears on hover, the mark gets its size
+     back — and the mark is the thing you actually scan a launcher by. */
+  width: var(--spacing-32);
+  height: var(--spacing-32);
+  border-radius: var(--radius-m);
   overflow: hidden;
 }
+
+/* ---- THE MARK FILLS THE SLOT, so the SLOT'S radius is the one you see ----
+ *
+ * The empty placeholders show `--radius-m` plainly — the dashed border draws
+ * the shape — while a filled slot showed the LOGO'S own corner instead, because
+ * a mark smaller than the box never reaches the clip. The App Center passed its
+ * marks at 24 inside a 32px slot, so 8px of rounding did nothing and the row
+ * read as a squarer tile beside the round empty ones.
+ *
+ * Enforced HERE rather than by asking every caller to pass the right `size`.
+ * The slot owns its geometry; a host that passes 24, or 40, or an `<img>` with
+ * no intrinsic size at all, gets the same square either way. CSS beats the
+ * SVG's width/height presentation attributes, so no caller can opt out.
+ *
+ * NOT A STRETCH. `viewBox` plus the default `preserveAspectRatio` letterboxes,
+ * so Forge's 42x43 scales to fit and stays 42x43 — the mark is sized to the
+ * container, never moulded to it, which is the rule these logos came in under.
+ *
+ * No exclusion needed: every tile in this grid is an application now. The one
+ * line glyph that had to stay small was the Manage tile's, and that tile is a
+ * footer button rather than a cell in the grid. */
+.app-launcher__glyph > *,
+.app-center__row-glyph > * {
+  width: 100%;
+  height: 100%;
+}
+
+/* AN APP WITH NO ARTWORK YET. The slot is rendered either way, so the grid
+   holds its shape while logos are still being drawn — and an empty one says so
+   rather than leaving a hole: a dashed outline reads as "something goes here",
+   which a solid one would not. Replace it by passing `icon`; nothing else about
+   the tile changes. */
+.app-launcher__glyph:empty {
+  border: var(--border-width-thin) dashed var(--border-neutral-default);
+  background: var(--background-surface-subtle);
+}
+
+/* ---- The App Center ----------------------------------------------------
+ *
+ * A fixed search bar over a scrolling catalogue. The list scrolls on its own,
+ * because ModalBody scrolls its whole content as one and the filter row may
+ * not move while the apps do.
+ *
+ * ---- WE SET NO WIDTH AND NO HEIGHT. Both are fds's. ----------------------
+ *
+ * The width is entirely `size="lg"`: `.ds-modal--size-lg` caps it at 1024px
+ * and `.ds-modal` sizes it `calc(100vw - var(--spacing-48))` below that. The
+ * height is entirely `.ds-modal`'s own `max-height: 80vh`.
+ *
+ * THERE IS NO TOKEN FOR EITHER. fds writes 400px / 760px / 1024px / 80vh as
+ * literals in those rules and exposes no `--modal-*` custom property, so there
+ * is nothing to reference — which is exactly why the right answer is to
+ * reference nothing and let its rules stand, rather than invent a token or
+ * copy its numbers.
+ *
+ * THIS USED TO CARRY `height: 80vh`, hand-copied from that cap. It bought a
+ * frame that did not resize while filtering, and cost a magic number that
+ * would have silently disagreed with every other dialog the day fds changed
+ * its own. Removed.
+ *
+ * Without a definite height, a percentage cannot be used below it — a
+ * content-sized box hands its children nothing to resolve `height: 100%`
+ * against, which is how the whole modal came to scroll as one. So the chain
+ * SHRINKS instead, exactly as the launcher popover does against its cap: every
+ * wrapper down to the scroller takes `flex: 1 1 auto; min-height: 0`, the
+ * `min-height` being the load-bearing half since a flex item's automatic
+ * minimum is its content. `.ds-modal-body` is fds's own and is not a flex
+ * container, so it is made one here — scoped by `:has()`, so no other dialog
+ * is touched. */
+.ds-modal:has(.app-center) .ds-modal-body {
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- The header's mark sits BESIDE the title, not above it ---------------
+ *
+ * `.ds-modal-header__row` is `align-items: flex-start`, which is right when
+ * there is a subtitle: the titles are then a two-line block and the mark
+ * should align to the FIRST line, not float in the middle of both.
+ *
+ * This header has no subtitle any more, so the titles are one 24px line
+ * (BodyLargeSemibold, 16/24) against a 28px leading cell that also carries
+ * `margin-block: -2px`. Top-aligned, the mark therefore started 2px above the
+ * text and stood 4px taller than it — it read as hanging over the title rather
+ * than sitting next to it.
+ *
+ * The HORIZONTAL gap was never the problem and is untouched: the row's 16px
+ * gap minus the leading's `calc(8px - 16px)` margin nets Figma's 8px exactly.
+ *
+ * Scoped, because the rule only holds for a header with no subtitle — any
+ * other dialog in the app that has one still wants `flex-start`. */
+.ds-modal:has(.app-center) .ds-modal-header__row {
+  align-items: center;
+}
+
+/* ONE COLUMN. This was [rail | list]; the category rail is gone — it spent a
+   fixed quarter of the window filtering twenty apps the search already reaches,
+   and the categories it filtered by are still here as the section headings. */
+.app-center {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* ---- Why both panes are flex columns ------------------------------------
+ *
+ * `.ds-scroll` — the wrapper ScrollArea renders — is `position: relative` and
+ * NOTHING ELSE, and `.ds-scroll__viewport` deliberately sets no overflow and no
+ * height. fds says so in that rule's own comment: "each consumer keeps its own
+ * axes AND ITS OWN MAX-HEIGHT."
+ *
+ * Giving the viewport `overflow-y: auto` alone therefore does nothing. A block
+ * with auto height grows to fit its content, so it never overflows; it just
+ * spills past the grid cell and gets clipped by `.ds-modal`'s `overflow:
+ * hidden`. The bar is not even rendered — `useOverlayScrollbar` measures
+ * scrollHeight against clientHeight, finds them equal, and reports
+ * `isOverflowing: false`, so `ScrollBars` returns null. No bar, no scrolling,
+ * and the rows past the fold are simply cut off.
+ *
+ * So the pane becomes a flex column and the viewport takes what is left of it —
+ * which is EXACTLY the shape fds gives its own modal body
+ * (`.ds-modal-body-scroll` is `display: flex; flex-direction: column;
+ * min-height: 0`, and `.ds-modal-body` is `flex: 1 1 auto; min-height: 0;
+ * overflow-y: auto`). The `min-height: 0` on both is load-bearing: a flex
+ * item's automatic minimum is its content, so without it the pane grows to fit
+ * its list and we are back to the same bug one level up.
+ *
+ * The height this all resolves against is fds's own `max-height: 80vh` on
+ * `.ds-modal`, shrunk down through the body scroller to `.app-center`. */
+/* `.app-center__list` is itself a `.ds-scroll`, so it needs the same column
+   treatment as the panes: its viewport is the thing that scrolls, and a
+   `position: relative` block hands nothing down. */
+.app-center__list {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.app-center__list-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.app-center__list-scroll {
+  padding: var(--spacing-16);
+}
+
+/* The SEARCH BAR, fixed above the list it filters.
+ *
+ * It was in `ModalHeader`'s `trailing` slot at a fixed 256px, beside the title.
+ * It sits here now, over the pane it actually acts on, and spans it — a field
+ * the width of the results reads as belonging to them, where one tucked into
+ * the title row reads as searching the whole dialog (including the categories,
+ * which it never did).
+ *
+ * `flex: none` and OUTSIDE the scroller, for the reason the capability chips
+ * that used to occupy this row learned the hard way: anything inside
+ * `.app-center__list` scrolls away with the apps, and a filter you have to
+ * scroll back up to reach is worse than no filter.
+ *
+ * It carries its own padding because no scroller supplies it here — 16px to
+ * match the list below, and 12px before its bottom rule, which is the line
+ * that separates the control from the results.
+ *
+ * NO WIDTH: `.fds-search-input` is already `width: 100%`, so the old cap was
+ * the only thing stopping it filling the bar.
+ *
+ * (Two filter rows have now been through this spot and gone: the
+ * Connected/Disconnected tabs with the status model, and the "Works with"
+ * capability chips after them. Four ways to narrow twenty apps was three more
+ * than it needed.) */
+.app-center__search {
+  flex: none;
+  /* EVEN ON ALL FOUR SIDES. It was 16/16/12 — the 12 at the bottom was there
+     to tighten the field against its own rule, which read as a mistake next
+     to the 16 above it. */
+  padding: var(--spacing-16);
+  border-bottom: var(--border-width-thin) solid var(--border-neutral-default);
+}
+
+/* Between sections only. The scroller's own 16px already sits above the first
+   one, and a `padding-top` on every section stacked onto it for 32px. */
+.app-center__section + .app-center__section {
+  padding-top: var(--spacing-16);
+}
+
+/* Type is `.BodyLargeMedium`, which IS the pair this hand-mixed (font-size-200
+   + font-weight-medium). The h3 also needs its UA margin cleared. */
+.app-center__section-title {
+  margin: 0 0 var(--spacing-8);
+  color: var(--text-neutral-normal);
+}
+
+/* A HEADING AND ITS OWN SUBTEXT ARE ONE BLOCK, so they sit closer than a
+   heading sits to the rows beneath it. 8px read as two separate things stacked;
+   4px is fds's own title-to-description step, the one EmptyState's gap ladder
+   uses for exactly this pair.
+
+   Scoped with `:has(+ …)` rather than just lowering the margin, because the
+   category headings have no note under them — for those, 8px is the gap to
+   their rows and tightening it would crowd the list. */
+.app-center__section-title:has(+ .app-center__section-note) {
+  margin-bottom: var(--spacing-4);
+}
+
+/* Three columns at the modal's full width, fewer as the viewport narrows —
+   `repeat(…)` rather than a breakpoint, so the `lg` width and a phone are the
+   same rule.
+ *
+ * `auto-fill`, NOT `auto-fit`, and that one word is the whole difference. Both
+ * lay down the same tracks; `auto-fit` then COLLAPSES the ones with nothing in
+ * them, so a section holding a single app — Automation with only Scheduler
+ * left in it — had its two empty tracks drop to zero and the one row stretched
+ * across the entire modal. `auto-fill` keeps the empty tracks at their size, so
+ * a lone row stays one column wide and the space beside it simply stays empty,
+ * which is what it is. */
+.app-center__rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: var(--spacing-4);
+}
+
+.app-center__row {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-12);
+  padding: var(--spacing-8);
+  border-radius: var(--radius-m);
+  /* SCROLL COST. fds's ScrollArea drives its overlay thumb from React state:
+     every scroll event sets `isScrolling`, schedules a rAF that reads
+     `scrollHeight`/`clientHeight`/`scrollTop` and sets the thumb offset, and a
+     `useLayoutEffect` with no dependency array re-reads that geometry after
+     EVERY render. So each scroll frame costs a React commit plus a forced
+     reflow of the whole list.
+
+     `contain: layout` tells the browser a row's internal layout cannot affect
+     anything outside it, so that reflow stops walking into twenty rows of
+     flex children and clamped text. It does not remove the per-frame work —
+     that is fds's to fix — it makes each frame cheaper. */
+  contain: layout;
+}
+
+.app-center__row:hover {
+  background: var(--background-interaction-highlighted);
+}
+
+/* ---- Rearranging the launcher set ----------------------------------------
+ *
+ * The HANDLE is an affordance and a keyboard route, not the drag source: the
+ * row carries `draggable`, because a 16px grip is a cruel thing to aim at and
+ * HTML5 drag moves the element the attribute sits on.
+ *
+ * IN ITS OWN CELL, beside the mark — user ruling 2026-10-08, reversing a
+ * version that stacked the two in one 32px box. Stacking reclaimed 28px of row
+ * width, but it swapped the app's identity for a grey grip the moment you
+ * hovered, and on a surface where the marks are how you find anything that is
+ * a poor trade. The width is the price of keeping both. */
+.app-center__drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  /* `grab` rather than `move`: it says "this lifts". No `:focus-visible` rule
+     any more either — the element is a decorative span now, not a button, so
+     there is no focus to ring. */
+  cursor: grab;
+  padding: var(--spacing-0);
+  border: none;
+  color: var(--text-neutral-muted);
+  /* ALWAYS VISIBLE — user ruling 2026-10-08, reversing a hover-only reveal.
+     There is deliberately no `opacity`, no reveal rule and no transition here:
+     the grip is simply drawn, in the muted ink that keeps it quieter than the
+     app name beside it.
+
+     Worth knowing if this is revisited: hiding it until hover is only safe
+     with `opacity`, never `display: none` or `visibility: hidden` — those take
+     a real button out of the accessibility tree and the tab order, which
+     deletes the keyboard route to reordering. */
+  background: transparent;
+}
+
+.app-center__drag:active {
+  cursor: grabbing;
+}
+
+/* The row being carried. Faded rather than hidden — a gap that opens where the
+   row used to be loses the thing you are aiming with. */
+.app-center__row[data-dragging='true'] {
+  /* fds's own `--disabled-opacity`. Not a token invented for this and hidden
+     behind a fallback — a fallback makes a missing token look deliberate and
+     silently ships whatever number follows the comma. */
+  opacity: var(--disabled-opacity);
+}
+
+/* NOTHING MARKS A DROP TARGET ANY MORE, and that is the point.
+ *
+ * Two versions tried to: an inset line on the leading edge, then the row's own
+ * hover wash. Both answered "which row are you over?" when the question a
+ * reorder raises is "where will this end up?" — and marking a single row is
+ * the vocabulary of dropping a file INTO a folder, which reads as replacing
+ * the thing you are pointing at.
+ *
+ * The list now re-renders in the would-be order on every `dragover`, so the
+ * other apps visibly step up or down to open the place this one will take.
+ * The shift IS the feedback; a highlight on top of it would be a second,
+ * contradictory answer. All that is left is the carried row's own fade. */
+
+/* A line under the "Your apps" heading saying WHERE these end up and, when the
+   order can be changed, how. Two sentences of chrome beat a drag affordance
+   nobody notices — and the heading is short precisely because this says the
+   rest. */
+.app-center__section-note {
+  margin: 0 0 var(--spacing-8);
+  color: var(--text-neutral-muted);
+}
+
+/* Same slot contract as the launcher's: a fixed square that draws a dashed
+   placeholder when the app has no mark yet, so rows stay aligned either way. */
+.app-center__row-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--spacing-32);
+  height: var(--spacing-32);
+  border-radius: var(--radius-m);
+  /* Same clip as the launcher's slot, for the same reason — see the note
+     there. Inert while these marks render at 24 inside 32, and correct the
+     moment one is sized to fill. */
+  overflow: hidden;
+}
+
+.app-center__row-glyph:empty {
+  border: var(--border-width-thin) dashed var(--border-neutral-default);
+  background: var(--background-surface-subtle);
+}
+
+/* `min-width: 0` so the description can ellipsise — a flex item's automatic
+   minimum is its content, which would otherwise push the button off the row. */
+.app-center__row-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Type is `.BodyMediumMedium`, again the exact pair this hand-mixed. */
+/* A plain block now. It was a flex row with a 4px gap, which existed only to
+   space the name from the "Beta" / "MCP" badges that used to follow it — with
+   those gone the gap had nothing to space and the flex context nothing to lay
+   out but one string. */
+/* ONE LINE, ELLIPSISED — the same treatment the description below it already
+   had, and the mismatch was visible: a long name WRAPPED where its own
+   description truncated, so one card grew taller than the two beside it and
+   the whole band went ragged. A row here is a fixed shape with a button
+   pinned to its right; the name is one line by design.
+
+   It works because `.app-center__row-text` carries `min-width: 0`. A flex
+   item's automatic minimum is its content, so without that the text column
+   would refuse to shrink and push the button off the row instead of
+   ellipsising. */
+.app-center__row-name {
+  color: var(--text-neutral-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Quick-access names are PRIMARY, like every other row. A secondary override
+   sat here briefly; it is gone, so the base rule's `--text-neutral-normal`
+   applies — that is fds's spelling of "primary" (its ladder is
+   normal / subtle / muted where design-sdk says primary / secondary /
+   tertiary, the same ramp under different words). The weight is the named
+   `.BodyMediumRegular` on the element, down from `.BodyMediumMedium`. */
+
+/* Type is `.BodySmallRegular`. */
+.app-center__row-description {
+  color: var(--text-neutral-muted);
+  /* ONE LINE, ELLIPSISED. Briefly two, which carried more descriptions whole
+     but let a long one make its card taller — and because the grid stretches
+     every card in a row to the tallest, one wordy description inflated the
+     two beside it. One line keeps every row the same height.
+
+     `nowrap` rather than a one-line clamp, for the same reason as the
+     launcher label: a clamped box overflows downward and draws no ellipsis,
+     where this overflows sideways, which is what `text-overflow` needs. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The frame around fds's EmptyState, and the whole of what we add to it.
+   Nothing here touches the illustration, the type or the gap ladder — those are
+   the component's and its guard forbids re-spacing them. This only CAPS THE
+   WIDTH, which the guard asks the caller to do: EmptyState centres itself
+   inside whatever box it is given and declares no max width of its own, so at
+   the modal's full span the description would run to a single over-long line.
+   The auto margins centre the cap itself. */
+.app-center__empty {
+  max-width: calc(var(--spacing-64) * 6);
+  margin-inline: auto;
+  padding-block: var(--spacing-32);
+}
+
+/* TYPE IS `.BodySmallRegular`, ON THE ELEMENT — not a size and a leading mixed
+   here. The named style carries all four (size, leading, weight, tracking) as
+   one decision, which is the whole point of having named styles: a hand-mixed
+   pair can drift from the ramp one property at a time and nothing notices.
+   This rule now sets only what is NOT type.
+
+   Nothing may re-declare `font-size` or `line-height` below — theme-overrides
+   loads after design-sdk, so anything here beats the named class and silently
+   takes the decision back. */
+.app-launcher__label {
+  text-align: center;
+  /* CAPPED, NOT STRETCHED — and the difference is why a long name was being
+     cut at BOTH ends.
+
+     The box must be bounded or there is no overflow to clip: the tile is
+     `align-items: center`, so a column flex child sizes to its CONTENT, and a
+     label box as wide as its own text leaves `overflow: hidden` nothing to do.
+     `align-self: stretch` bounded it — but it made the box 56px even for short
+     names, so an OVERFLOWING line was then centred inside that box and clipped
+     on the left as well as the right, with the ellipsis only on the right.
+     "Steam Trap" came out as "eam Tr…".
+
+     `max-width: 100%` bounds it without stretching it. A short name gets a box
+     its own width, centred by the tile's `align-items: center`; a long one is
+     capped at the tile's 56px, so the text starts flush at the left edge and
+     only the right is cut — which is where the ellipsis goes. */
+  max-width: 100%;
+  /* TWO LINES, THEN TRUNCATE, with the full name a hover away.
+
+     A FIXED HEIGHT of exactly two lines, and this is the load-bearing part.
+     The tile centres its contents, so every label box must be the same height
+     or a one-line tile would centre a shorter stack and drop its mark below
+     its neighbours'. Pinning the box at two lines makes one-line and two-line
+     tiles geometrically identical: the glyph row stays level and centring is
+     safe. A one-line name simply sits in the top half of its box.
+
+     `overflow-wrap: break-word` is the backstop for a name with no space to
+     wrap at. At 10px few names reach the 56px line at all; it
+     breaks across the two lines rather than overrunning and being cut by
+     `overflow: hidden` with no ellipsis to show for it. Everything else fits a
+     line whole, so this almost never fires. */
+  /* ONE LINE AT REST, UP TO TWO ON HOVER.
+
+     NO HEIGHT IS SET, deliberately — that is what makes only the truncated
+     tiles move. The clamp alone decides: at rest every label is one line
+     because it is clamped to one, so the row of marks is level; on hover the
+     clamp lifts to two and the box takes what the CONTENT needs, which for a
+     name that already fitted is still one line.
+
+     Pinning the height instead (18px, swapping to 36px on hover) grew every
+     tile on hover, including the ones with nothing hidden.
+
+     `overflow-wrap: break-word` is the backstop for a name with no space to
+     wrap at: it breaks across the two revealed lines rather than overrunning
+     and being cut with nothing to show for it. */
+  /* A TRUE SINGLE LINE, not a one-line clamp. Both show one line, but they
+     overflow on different axes and only one of them can be measured simply:
+     a `-webkit-box` clamped to 1 wraps internally and hides the rest, so the
+     overflow is VERTICAL and the width test reads clean. `nowrap` overflows
+     sideways, which is what `useLabelClipped` checks and what
+     `text-overflow` needs in order to draw the ellipsis at all.
+
+     `overflow-wrap: break-word` went with the clamp — nothing wraps now, so
+     nothing can break. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  .app-launcher__box {
+    transition: none;
+  }
+}
+
 
 /* ---- Top bar: notification quick view ----------------------------------- */
 

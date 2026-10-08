@@ -56,7 +56,16 @@ export { NotificationBell } from './NotificationBell'
 // themselves do not ship: only the host can enumerate which applications exist
 // and which this user may open, so they arrive as a prop.
 export { AppLauncher } from './AppLauncher'
-export type { LauncherApp } from './AppLauncher'
+export type { AppLauncherProps, LauncherApp } from './AppLauncher'
+// The App Center — the window the launcher's Apps tile opens. Same split: the
+// window, the filtering and the add/remove model ship; the applications do not.
+export { AppCenter } from './AppCenter'
+export type {
+  AppCenterProps,
+  AppCategory,
+  ManagedApp,
+  ManagedAppAction,
+} from './AppCenter'
 export { ProfileMenu } from './ProfileMenu'
 export { WorkspaceLabel } from './WorkspaceSwitcher'
 

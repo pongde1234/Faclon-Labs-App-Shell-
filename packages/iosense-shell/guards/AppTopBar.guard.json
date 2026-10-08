@@ -15,8 +15,17 @@
   ],
   "decision": {
     "authority": "This guard is the authority for the iosense top bar.",
-    "aliases": ["top nav", "header", "app bar", "masthead"],
-    "order": ["ownership", "trail", "actions"],
+    "aliases": [
+      "top nav",
+      "header",
+      "app bar",
+      "masthead"
+    ],
+    "order": [
+      "ownership",
+      "trail",
+      "actions"
+    ],
     "beforeTheRules": "This bar owns the control that collapses the RAIL. That is deliberate: a control which hides a panel cannot live inside that panel, because collapsed there are 48px and nowhere to put it.",
     "rules": [
       {
@@ -56,7 +65,7 @@
       }
     ],
     "constraints": [
-      "The application launcher and the assistant button are NOT part of this package — see antiPatterns.",
+      "The bar mounts the bell and the avatar itself. Everything else arrives as a slot: the assistant through `assistant`, extra icons through `actions`. The launcher component (AppLauncher) IS exported by this package, but the bar does not mount it — the host puts it in `actions`.",
       "`isSticky` is left at the SDK default, which is what pins the bar.",
       "The bar's left padding is zeroed by theme-overrides.css so the leading glyph sits 8px inside the bar, matching the avatar's inset on the right."
     ],
@@ -73,9 +82,9 @@
   },
   "antiPatterns": [
     {
-      "dont": "Re-adding the application launcher or the assistant button",
+      "dont": "Mounting the launcher or the assistant inside AppTopBar",
       "do": "Pass your own control through `actions`",
-      "why": "both are product surfaces rather than chrome — one opens an assistant this package knows nothing about, the other lists applications only the host can enumerate. They were removed from the export on purpose"
+      "why": "the bar has no way to know WHICH applications exist or what the assistant opens, so both arrive as slots — the assistant through `assistant`, the launcher through `actions`. AppLauncher and AppCenter are exported by this package; their CONTENT is the host's"
     },
     {
       "dont": "Giving a section crumb the href of its first child",
@@ -94,7 +103,7 @@
     }
   ],
   "examples": {
-    "canonical": "<AppTopBar\n  trail={[{ label: 'Workflows' }, { label: 'All Workflows', href: '/workflows' }, { label: 'Workflow runs' }]}\n  onNavigate={setActiveId}\n  profile={profile}\n  preference={preference}\n  onPreferenceChange={setPreference}\n  notifications={notifications}\n  unreadCount={unread}\n  onOpenNotifications={() => setActiveId('notifications')}\n  isPinned={isPinned}\n  onTogglePin={togglePin}\n  isMobile={isMobile}\n  isNavDrawerOpen={drawerOpen}\n/>",
+    "canonical": "<AppTopBar\n  trail={[{ label: 'Workflows' }, { label: 'All Workflows', href: '/workflows' }, { label: 'Workflow runs' }]}\n  onNavigate={setActiveId}\n  profile={profile}\n  preference={preference}\n  onPreferenceChange={setPreference}\n  unreadCount={unread}\n  onOpenNotifications={() => setActiveId('notifications')}\n  isPinned={isPinned}\n  onTogglePin={togglePin}\n  isMobile={isMobile}\n  isNavDrawerOpen={drawerOpen}\n/>",
     "incorrect": [
       {
         "code": "trail={[{ label: 'Workflows', href: '/workflows/all' }, { label: 'Workflow runs' }]}",
@@ -102,7 +111,7 @@
       },
       {
         "code": "<AppTopBar actions={<AppLauncher />} />",
-        "why": "the launcher was deliberately removed from this package; if the host has one, it supplies it — but it is not chrome"
+        "why": "AppLauncher ships here and `actions` IS where it goes - but not like this. It needs `apps` and `onSelect`, and its child IS the trigger, which Popover clones: `<AppLauncher apps={apps} onSelect={go}><IconButton icon={Grip} ... /></AppLauncher>`. Given no child it renders a panel nothing can open"
       }
     ]
   }

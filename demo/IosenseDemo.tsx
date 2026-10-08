@@ -3,6 +3,7 @@ import { CircleQuestionMark, Grip } from 'lucide-react'
 import { Button, IconButton } from '@faclon-labs/fds/button'
 
 import {
+  AppCenter,
   AppLauncher,
   IosenseShell,
   NavFooterRow,
@@ -14,7 +15,11 @@ import {
 
 // The product's own content. It lives HERE, in the demo, not in the package.
 import { BruceAiLogo } from './BruceAiLogo'
-import { IOSENSE_APPS } from './iosenseApps'
+import {
+  IOSENSE_APP_CATEGORIES,
+  IOSENSE_CATALOGUE,
+} from './iosenseAppCatalogue'
+import { IosenseLogo } from './IosenseLogo'
 import { IOSENSE_NAV, IOSENSE_RECORD_PARENT, IOSENSE_SECTION_DEFAULT } from './iosenseNav'
 import { OverviewPage, PlaceholderPage } from './OverviewPage'
 import { DEMO_PROFILE } from './sampleData'
@@ -83,6 +88,46 @@ export function IosenseDemo() {
   // Opens on Home, which is the page that actually has content in it.
   const [activeId, setPage] = useState('home')
 
+  // The App Center's own state. Owned here rather than inside AppLauncher:
+  // Modal is a sibling of the launcher, not its child, so the thing that opens
+  // it and the thing that renders it both need to reach this.
+  const [isAppCenterOpen, setIsAppCenterOpen] = useState(false)
+
+  /**
+   * The catalogue, in state rather than imported straight into the prop.
+   *
+   * THE HOST OWNS WHICH APPS ARE ADDED, and `AppCenter` is controlled: it never
+   * touches the array it is given, it only reports the press through
+   * `onAppAction`. That is the right split for a shell — adding an app is an
+   * API call that can fail, and a component that flipped its own button
+   * optimistically would end up disagreeing with the server.
+   *
+   * The cost is that the host must actually DO something with the press.
+   * Passing the imported constant and logging the callback (which is what was
+   * here) renders a button that never changes, which reads as broken rather
+   * than as controlled.
+   */
+  const [catalogue, setCatalogue] = useState(IOSENSE_CATALOGUE)
+
+  /**
+   * THE LAUNCHER IS DERIVED, not a second hand-written list. Its set is
+   * whatever is added, in catalogue order — which is what the App Center's
+   * "Your apps" section lists. Adding an app there makes it appear here, and
+   * dragging it up there moves it here too.
+   *
+   * This replaces `IOSENSE_APPS`, which was a parallel array of 13 apps kept
+   * deliberately apart from the catalogue's 20. That separation was readable
+   * while nothing could be added; once it could, two lists meant adding an app
+   * visibly did nothing to the launcher.
+   */
+  const launcherApps = useMemo(
+    () =>
+      catalogue
+        .filter((app) => app.isAdded)
+        .map((app) => ({ id: app.id, label: app.name, icon: app.icon })),
+    [catalogue],
+  )
+
   // Every id goes through resolveSection, so a parent row's id can never become
   // the active page — those rows have no content of their own.
   const navigate = useCallback((id: string) => setPage(resolveSection(id, IOSENSE_SECTION_DEFAULT)), [])
@@ -103,7 +148,14 @@ export function IosenseDemo() {
   )
 
   return (
+    <>
     <IosenseShell
+      /* The brand mark, in the rail header where it belongs. The prop's own
+         doc says to set it: left unset, design-sdk draws its built-in iosense
+         mark, so an unbranded install silently ships our identity. It moved
+         here when the App Center's header dropped its own copy — one mark in
+         the chrome, none competing with the product marks in the launcher. */
+      logo={<IosenseLogo />}
       navItems={IOSENSE_NAV}
       activeId={activeId}
       onNavigate={navigate}
@@ -151,13 +203,12 @@ export function IosenseDemo() {
            opening is Popover's job and it supplies its own handler to the
            clone. Leaving this out is a type error, not a behaviour change. */
         <AppLauncher
-          apps={IOSENSE_APPS}
-          activeId={activeId}
+          apps={launcherApps}
           onSelect={navigate}
-          /* The ninth tile's destination. The package deliberately has no
-             second panel of its own — where the rest of the applications live
-             is the host's to decide, so it hands the click back. */
-          onShowAll={() => navigate('apps')}
+          /* Draws the Apps tile after the last app and opens the App Center.
+             Only the open happens here — the launcher has already closed itself
+             by the time this runs, so the two panels are never both on screen. */
+          onManage={() => setIsAppCenterOpen(true)}
         >
           <IconButton
             icon={Grip}
@@ -178,5 +229,47 @@ export function IosenseDemo() {
         <PlaceholderPage id={activeId} title={title} />
       )}
     </IosenseShell>
+
+      {/* A SIBLING of the shell, not a child of the launcher that opens it.
+          Modal unmounts entirely while closed, and nesting it inside the
+          Popover would tie its lifetime to the panel that closes on the very
+          click that opens this — the same rule ProfileMenu follows for the
+          appearance modal. */}
+      <AppCenter
+        isOpen={isAppCenterOpen}
+        onDismiss={() => setIsAppCenterOpen(false)}
+        apps={catalogue}
+        categories={IOSENSE_APP_CATEGORIES}
+        /* What a real host would do asynchronously, the demo does synchronously:
+           write the new value and let the row redraw from it. There is no
+           account behind this, so the change lives as long as the page does.
+
+           `action === 'add'` rather than `!app.isAdded`. The two agree today,
+           but the point of being handed the action is to set the state the user
+           ASKED FOR instead of inverting whatever the flag happens to say by
+           the time the handler runs — which, once a real host puts a network
+           round trip in here, is not necessarily what they saw. */
+        onAppAction={(id, action) =>
+          setCatalogue((prev) =>
+            prev.map((app) => (app.id === id ? { ...app, isAdded: action === 'add' } : app)),
+          )
+        }
+        /* The launcher set rearranged. The callback hands over the COMPLETE new
+           order of the added ids, so applying it is a reindex rather than a
+           splice: pull those apps out in the given order and put them back at
+           the front, leaving everything not added where it was. The array's
+           order IS the order — the launcher reads the same one. */
+        onReorder={(orderedIds) =>
+          setCatalogue((prev) => {
+            const byId = new Map(prev.map((app) => [app.id, app]))
+            const moved = orderedIds
+              .map((id) => byId.get(id))
+              .filter((app): app is (typeof prev)[number] => Boolean(app))
+            const rest = prev.filter((app) => !orderedIds.includes(app.id))
+            return [...moved, ...rest]
+          })
+        }
+      />
+    </>
   )
 }

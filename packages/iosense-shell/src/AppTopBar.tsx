@@ -167,14 +167,28 @@ export function AppTopBar({
         </Breadcrumb>
       </TopNavContent>
 
-      {/* THE BAR IS THREE CONTAINERS, left to right:
+      {/* THE BAR IS FOUR CONTAINERS, left to right:
             1. TopNavContent above — the rail toggle and the trail
             2. the assistant
-            3. the icons
-          Two and three live in here. The gap BETWEEN them is zero and the gap
-          WITHIN the icons is 6px, both set in theme-overrides.css — which is
-          why they are two elements rather than one flat row: a single row can
-          only have one gap.
+            3. THE ICON GROUP — bare glyphs, tight together
+            4. the avatar
+          Two, three and four live in here. Each is its own element because a
+          single flat row can only have ONE gap, and these want three different
+          ones: 0 between the assistant and the icons, 2px inside the icons,
+          and 8px before the avatar.
+
+          THE ICON GROUP IS THE HOME FOR EVERY BARE GLYPH IN THIS BAR — the
+          launcher's grip, the bell, and anything added later. It is the one
+          container to add to; `actions` lands inside it, so a host needs to do
+          nothing special. They sit tighter than the rest of the bar because
+          they are bare marks with no border or fill of their own: at a wider
+          gap they stop reading as one cluster and start reading as three
+          unrelated controls.
+
+          THE AVATAR IS NOT ONE OF THEM, which is why it moved out. It is a
+          filled circle carrying an image or initials — it has a shape of its
+          own where the others are line glyphs, so grouping it at the icons'
+          spacing made the cluster end in something that did not match it.
 
           Neither the assistant nor the launcher is part of this package. Both
           are product surfaces rather than chrome — one opens an assistant this
@@ -185,6 +199,8 @@ export function AppTopBar({
         <div className="app-topbar__icons">
           {actions}
           <NotificationBell unreadCount={unreadCount} onOpen={onOpenNotifications} />
+        </div>
+        <div className="app-topbar__profile">
           <ProfileMenu
             profile={profile}
             onOpenProfile={() => onNavigate('profile')}

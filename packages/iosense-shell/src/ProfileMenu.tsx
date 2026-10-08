@@ -1,4 +1,4 @@
-import { useState, type ReactElement } from 'react'
+import { startTransition, useState, type ReactElement } from 'react'
 import { LogOut, Palette, Settings, User } from 'lucide-react'
 import { Avatar } from '@faclon-labs/fds/avatar'
 import { Badge } from '@faclon-labs/fds/badge'
@@ -37,17 +37,30 @@ export function ProfileMenu({
 
   const close = () => setIsOpen(false)
 
+  /**
+   * CLOSE URGENTLY, THEN DO THE THING — the same ordering AppLauncher's `pick`
+   * documents, and for the same reason.
+   *
+   * The menu plays a `ds-dropdown-menu-out` animation on close. Run the close
+   * and the action in one tick and React batches them into a single commit, so
+   * whatever the action costs — a route change, mounting a modal's portal and
+   * focus trap — is rendered BEFORE the browser paints `data-status="close"`.
+   * The menu freezes, then the animation starts late or is skipped.
+   *
+   * `startTransition` makes the close the urgent update: it commits and paints
+   * first, and the rest follows as interruptible work.
+   */
   const openProfile = () => {
     close()
-    onOpenProfile()
+    startTransition(() => onOpenProfile())
   }
 
-  // Close the menu FIRST. DropdownMenu and Modal each own a focus trap, and
-  // opening the modal from inside the open menu would put both on screen at
-  // once — the same ordering openProfile uses.
+  // Close the menu FIRST, for a second reason on top of the above: DropdownMenu
+  // and Modal each own a focus trap, and opening the modal from inside the open
+  // menu would put both on screen at once.
   const openAppearance = () => {
     close()
-    setIsAppearanceOpen(true)
+    startTransition(() => setIsAppearanceOpen(true))
   }
 
   return (
